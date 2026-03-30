@@ -72,6 +72,25 @@
     .scale-info-desc{font-size:12px;color:var(--text-mid);line-height:1.6;}
     .scale-info-notes{margin-top:8px;font-size:11px;color:var(--text-dim);letter-spacing:.08em;}
 
+    /* Editor mode */
+    .editor-panel{max-width:720px;margin:0 auto 14px;background:var(--surface);border:1px solid #2a2a2a;border-radius:var(--radius);padding:14px 16px;}
+    .editor-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px;}
+    .editor-label{font-size:10px;letter-spacing:.15em;color:var(--text-dim);text-transform:uppercase;min-width:70px;}
+    .editor-select{background:#1a1a1a;border:1px solid #333;color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer;}
+    .deg-btn{width:32px;height:32px;border-radius:6px;border:2px solid #333;background:#1a1a1a;color:#555;font-size:13px;font-weight:800;cursor:pointer;transition:all .15s;}
+    .deg-btn.active{background:var(--edit-color,var(--accent))22;border-color:var(--edit-color,var(--accent));color:var(--edit-color,var(--accent));}
+    .editor-hint{font-size:11px;color:var(--text-dim);padding:8px 12px;background:#111;border-radius:6px;border-left:3px solid #333;}
+    .editor-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+    .btn-save{padding:8px 18px;border-radius:8px;border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;}
+    .btn-save:hover{background:var(--accent);color:#000;}
+    .btn-clear{padding:8px 18px;border-radius:8px;border:1px solid #555;background:#1a1a1a;color:#777;font-size:12px;font-weight:700;cursor:pointer;}
+    .btn-clear:hover{border-color:#e74c3c;color:#e74c3c;}
+    .btn-reset{padding:8px 18px;border-radius:8px;border:1px solid #333;background:#111;color:#444;font-size:11px;cursor:pointer;}
+    .btn-reset:hover{color:#888;border-color:#555;}
+    .edit-mode-active #fretboard{cursor:crosshair;}
+    .editor-saved{color:var(--accent);font-size:11px;margin-left:8px;opacity:0;transition:opacity .3s;}
+    .editor-saved.show{opacity:1;}
+
     footer{text-align:center;margin-top:28px;font-size:10px;color:#333;letter-spacing:.08em;}
     footer a{color:var(--accent);text-decoration:none;opacity:.5;}
   </style>
@@ -87,8 +106,9 @@
 
 <div class="tabs">
   <button class="tab active" data-mode="visual">👁 Visualización</button>
-  <button class="tab" data-mode="connect">🔗 Conectar Posiciones</button>
+  <button class="tab" data-mode="connect">🔗 Conectar</button>
   <button class="tab" data-mode="quiz">🎯 Quiz</button>
+  <button class="tab" data-mode="edit">✏️ Editor</button>
 </div>
 
 <div class="scale-section">
@@ -107,6 +127,7 @@
 
 <div class="scale-info" id="scale-info" style="display:none;"></div>
 <div class="quiz-panel" id="quiz-panel" style="display:none;"></div>
+<div class="editor-panel" id="editor-panel" style="display:none;"></div>
 
 <footer>Afinación estándar · E A D G B e · Trastes 0–12 · <a href="index.html">← Hub</a></footer>
 
@@ -122,7 +143,7 @@ function noteAt(open,fret){ return CHROMATIC[(CHROMATIC.indexOf(open)+fret)%12];
 
 // Scale patterns: each position is array of {si, fret, degree}
 // degree: 1=root, 2=2nd, 3=3rd, 4=4th, 5=5th, 6=6th, 7=7th
-const SCALES = {
+let SCALES = {
   'ionian_G': {
     name: 'Sol Mayor — Jónica',
     sub: 'La que ya conocés · Pos. 1',
@@ -131,12 +152,12 @@ const SCALES = {
     notes: ['G','A','B','C','D','E','F#'],
     fase: 'Fase 0',
     positions: [[
-      {si:5,fret:2,d:1},{si:5,fret:4,d:2},
-      {si:4,fret:2,d:3},{si:4,fret:4,d:4},
-      {si:3,fret:1,d:5},{si:3,fret:2,d:6},{si:3,fret:4,d:7},
-      {si:2,fret:1,d:1},{si:2,fret:3,d:2},
-      {si:1,fret:1,d:3},{si:1,fret:3,d:4},
-      {si:0,fret:2,d:5},{si:0,fret:4,d:6}
+      {si:5,fret:3,d:1},{si:5,fret:5,d:2},
+      {si:4,fret:2,d:3},{si:4,fret:3,d:4},{si:4,fret:5,d:5},
+      {si:3,fret:2,d:6},{si:3,fret:4,d:7},{si:3,fret:5,d:1},
+      {si:2,fret:2,d:2},{si:2,fret:4,d:3},{si:2,fret:5,d:4},
+      {si:1,fret:3,d:5},{si:1,fret:5,d:6},
+      {si:0,fret:3,d:1},{si:0,fret:5,d:2}
     ]]
   },
   'penta_minor_A': {
@@ -201,14 +222,49 @@ const SCALES = {
 
 // ─── State ────────────────────────────────────────────────────────────
 const state = {
-  mode: 'visual',        // visual | connect | quiz
+  mode: 'visual',        // visual | connect | quiz | edit
   selectedScale: null,
   positionIdx: 0,
   quizScore: 0,
   quizTotal: 0,
   quizAnswer: null,
   quizCorrectNote: null,
+  // editor
+  editScaleId: null,
+  editDots: [],          // [{si, fret, d}]
+  editDegree: 1,
 };
+
+// ─── Custom scale overrides (localStorage) ───────────────────────────
+function loadCustomScales(){
+  try{
+    const raw=localStorage.getItem('maru_escalas_custom');
+    if(!raw) return;
+    const overrides=JSON.parse(raw);
+    Object.entries(overrides).forEach(([id,data])=>{
+      if(SCALES[id]) SCALES[id].positions=data.positions;
+    });
+  }catch(e){}
+}
+
+function saveCustomScales(){
+  try{
+    const raw=localStorage.getItem('maru_escalas_custom');
+    const overrides=raw?JSON.parse(raw):{};
+    overrides[state.editScaleId]={positions:SCALES[state.editScaleId].positions.slice()};
+    localStorage.setItem('maru_escalas_custom',JSON.stringify(overrides));
+  }catch(e){}
+}
+
+function resetCustomScale(id){
+  try{
+    const raw=localStorage.getItem('maru_escalas_custom');
+    if(!raw) return;
+    const overrides=JSON.parse(raw);
+    delete overrides[id];
+    localStorage.setItem('maru_escalas_custom',JSON.stringify(overrides));
+  }catch(e){}
+}
 
 // ─── SVG Fretboard ────────────────────────────────────────────────────
 const SVG_W=920,SVG_H=220,NUT_X=48,RIGHT_X=SVG_W-16;
@@ -439,8 +495,132 @@ function generateQuiz(){
   });
 }
 
+// ─── Editor ──────────────────────────────────────────────────────────
+function enterEditMode(scaleId){
+  state.editScaleId=scaleId||Object.keys(SCALES)[0];
+  const scale=SCALES[state.editScaleId];
+  state.editDots=JSON.parse(JSON.stringify(scale.positions[0]||[]));
+  state.editDegree=1;
+  document.querySelector('.fretboard-inner').classList.add('edit-mode-active');
+}
+
+function renderEditorPanel(){
+  const panel=document.getElementById('editor-panel');
+  if(state.mode!=='edit'){panel.style.display='none';document.querySelector('.fretboard-inner').classList.remove('edit-mode-active');return;}
+  panel.style.display='block';
+  document.querySelector('.fretboard-inner').classList.add('edit-mode-active');
+  if(!state.editScaleId) enterEditMode(null);
+  const scale=SCALES[state.editScaleId];
+
+  panel.innerHTML=`
+    <div class="editor-row">
+      <span class="editor-label">Escala</span>
+      <select class="editor-select" id="edit-scale-sel">
+        ${Object.entries(SCALES).map(([id,s])=>`<option value="${id}"${id===state.editScaleId?' selected':''}>${s.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="editor-row">
+      <span class="editor-label">Grado</span>
+      ${[1,2,3,4,5,6,7].map(d=>`<button class="deg-btn${state.editDegree===d?' active':''}" data-deg="${d}" style="--edit-color:${scale.color}">${d}</button>`).join('')}
+    </div>
+    <div class="editor-hint">Hacé <strong>click</strong> en el diapasón para agregar notas. Click en un punto existente para borrarlo.</div>
+    <div class="editor-actions">
+      <button class="btn-save" id="btn-save-scale">Guardar cambios</button>
+      <button class="btn-clear" id="btn-clear-pos">Limpiar todo</button>
+      <button class="btn-reset" id="btn-reset-scale">Restablecer default</button>
+      <span class="editor-saved" id="editor-saved">✓ Guardado</span>
+    </div>
+  `;
+
+  panel.querySelector('#edit-scale-sel').addEventListener('change',e=>{
+    enterEditMode(e.target.value);
+    renderEditorPanel();
+    renderEditorDots();
+  });
+  panel.querySelectorAll('.deg-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      state.editDegree=parseInt(btn.dataset.deg);
+      renderEditorPanel();
+    });
+  });
+  panel.querySelector('#btn-save-scale').addEventListener('click',()=>{
+    // Commit editDots as position[0] of the selected scale
+    SCALES[state.editScaleId].positions[0]=JSON.parse(JSON.stringify(state.editDots));
+    saveCustomScales();
+    const saved=document.getElementById('editor-saved');
+    saved.classList.add('show');
+    setTimeout(()=>saved.classList.remove('show'),2000);
+  });
+  panel.querySelector('#btn-clear-pos').addEventListener('click',()=>{
+    state.editDots=[];
+    renderEditorDots();
+  });
+  panel.querySelector('#btn-reset-scale').addEventListener('click',()=>{
+    resetCustomScale(state.editScaleId);
+    // Reload page to restore default data
+    location.reload();
+  });
+}
+
+function renderEditorDots(){
+  const dotsG=document.getElementById('fb-dots'); dotsG.innerHTML='';
+  if(state.mode!=='edit') return;
+  const scale=SCALES[state.editScaleId]||Object.values(SCALES)[0];
+  state.editDots.forEach(p=>{
+    const cx=fretX(p.fret),cy=stringY(p.si);
+    const isRoot=p.d===1;
+    const col=isRoot?scale.color:scale.color+'88';
+    const c=makeDot(cx,cy,isRoot?14:11,col);
+    if(isRoot) c.setAttribute('filter','url(#glow)');
+    dotsG.appendChild(c);
+    const noteName=noteAt(OPEN_NOTES[p.si],p.fret);
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',cx);t.setAttribute('y',cy+4);t.setAttribute('text-anchor','middle');
+    t.setAttribute('font-size','9');t.setAttribute('font-weight','800');
+    t.setAttribute('fill',isRoot?'#fff':'#000');t.setAttribute('font-family','Trebuchet MS,sans-serif');
+    t.textContent=noteName;dotsG.appendChild(t);
+    // Degree badge
+    const deg=document.createElementNS('http://www.w3.org/2000/svg','text');
+    deg.setAttribute('x',cx+(isRoot?12:10));deg.setAttribute('y',cy-(isRoot?12:10));
+    deg.setAttribute('font-size','8');deg.setAttribute('fill',scale.color);
+    deg.setAttribute('font-weight','700');deg.setAttribute('font-family','Trebuchet MS,sans-serif');
+    deg.textContent=p.d;dotsG.appendChild(deg);
+  });
+}
+
+// SVG click handler (edit mode)
+function handleFretClick(svgX,svgY){
+  let best=null,bestDist=Infinity;
+  for(let si=0;si<6;si++){
+    for(let fret=0;fret<=12;fret++){
+      const cx=fretX(fret),cy=stringY(si);
+      const d=Math.hypot(svgX-cx,svgY-cy);
+      if(d<bestDist){bestDist=d;best={si,fret};}
+    }
+  }
+  if(bestDist>28) return;
+  const {si,fret}=best;
+  const idx=state.editDots.findIndex(p=>p.si===si&&p.fret===fret);
+  if(idx>=0){ state.editDots.splice(idx,1); }
+  else{ state.editDots.push({si,fret,d:state.editDegree}); }
+  renderEditorDots();
+}
+
 // ─── Render ─────────────────────────────────────────────────────────
 function render(){
+  if(state.mode==='edit'){
+    renderEditorPanel();
+    renderEditorDots();
+    document.getElementById('legend').style.display='none';
+    document.getElementById('pos-nav').style.display='none';
+    document.getElementById('scale-info').style.display='none';
+    document.getElementById('quiz-panel').style.display='none';
+    document.getElementById('scale-grid').closest('.scale-section').style.display='none';
+    return;
+  }
+  document.getElementById('scale-grid').closest('.scale-section').style.display='';
+  document.getElementById('editor-panel').style.display='none';
+  document.querySelector('.fretboard-inner').classList.remove('edit-mode-active');
   renderDots();
   renderLegend();
   renderPosNav();
@@ -496,7 +676,17 @@ document.querySelectorAll('.tab').forEach(tab=>{
 });
 
 // ─── Init ─────────────────────────────────────────────────────────────
+loadCustomScales();  // apply any saved overrides before rendering
 initFretboard();
+
+// SVG click → edit mode
+document.getElementById('fretboard').addEventListener('click',function(e){
+  if(state.mode!=='edit') return;
+  const rect=this.getBoundingClientRect();
+  const scaleX=SVG_W/rect.width, scaleY=SVG_H/rect.height;
+  handleFretClick((e.clientX-rect.left)*scaleX,(e.clientY-rect.top)*scaleY);
+});
+
 buildScaleButtons();
 render();
 
