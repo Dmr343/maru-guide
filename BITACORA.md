@@ -1,6 +1,14 @@
 # Bitácora — maru_guide
 
 
+## 2026-03-31 | 10:40
+
+**Resumen:** Sesión de consulta teórica sobre la construcción de la escala pentatónica menor y su relación con la escala menor natural.
+
+**Archivos clave:** _(sin modificaciones)_
+
+---
+
 ## 2026-03-31 | 10:32
 
 **Resumen:** Sesión de consulta teórica sobre la escala pentatónica menor y su aplicabilidad para improvisar en guitarra.
