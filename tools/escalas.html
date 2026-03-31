@@ -72,6 +72,24 @@
     .scale-info-desc{font-size:12px;color:var(--text-mid);line-height:1.6;}
     .scale-info-notes{margin-top:8px;font-size:11px;color:var(--text-dim);letter-spacing:.08em;}
 
+    /* Calc mode */
+    .calc-panel{max-width:720px;margin:0 auto 14px;}
+    .calc-type-row{display:flex;gap:8px;justify-content:center;margin-bottom:12px;}
+    .calc-type-btn{padding:8px 22px;border-radius:20px;border:2px solid #333;background:#1a1a1a;color:#555;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;}
+    .calc-type-btn.major.active{border-color:#d4a847;background:#d4a84722;color:#d4a847;}
+    .calc-type-btn.minor.active{border-color:#8e44ad;background:#8e44ad22;color:#c39bd3;}
+    .calc-formula-box{background:var(--surface);border:1px solid #2a2a2a;border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;}
+    .calc-formula-label{font-size:10px;letter-spacing:.2em;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;}
+    .calc-formula-steps{display:flex;align-items:center;flex-wrap:wrap;gap:0;font-size:13px;font-family:monospace;}
+    .calc-step-note{padding:4px 8px;border-radius:6px;font-weight:800;font-size:13px;background:#111;border:1px solid #333;}
+    .calc-step-note.root-note{border-color:var(--calc-color,#d4a847);color:var(--calc-color,#d4a847);box-shadow:0 0 8px var(--calc-color,#d4a847)44;}
+    .calc-step-sep{padding:2px 5px;color:#444;font-size:11px;font-weight:700;}
+    .calc-step-sep.T{color:#666;}
+    .calc-step-sep.S{color:#e74c3c88;}
+    .calc-hint{text-align:center;padding:10px;font-size:12px;color:var(--text-dim);background:#111;border-radius:8px;border:1px dashed #2a2a2a;}
+    .calc-result-notes{margin-top:8px;font-size:11px;color:var(--text-dim);letter-spacing:.06em;text-align:center;}
+    .calc-mode-active #fretboard{cursor:crosshair;}
+
     /* Editor mode */
     .editor-panel{max-width:720px;margin:0 auto 14px;background:var(--surface);border:1px solid #2a2a2a;border-radius:var(--radius);padding:14px 16px;}
     .editor-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px;}
@@ -109,6 +127,7 @@
   <button class="tab" data-mode="connect">🔗 Conectar</button>
   <button class="tab" data-mode="quiz">🎯 Quiz</button>
   <button class="tab" data-mode="edit">✏️ Editor</button>
+  <button class="tab" data-mode="calc">🎸 Calcular</button>
 </div>
 
 <div class="scale-section">
@@ -128,6 +147,7 @@
 <div class="scale-info" id="scale-info" style="display:none;"></div>
 <div class="quiz-panel" id="quiz-panel" style="display:none;"></div>
 <div class="editor-panel" id="editor-panel" style="display:none;"></div>
+<div class="calc-panel" id="calc-panel" style="display:none;"></div>
 
 <footer>Afinación estándar · E A D G B e · Trastes 0–12 · <a href="index.html">← Hub</a></footer>
 
@@ -233,7 +253,36 @@ const state = {
   editScaleId: null,
   editDots: [],          // [{si, fret, d}]
   editDegree: 1,
+  // calc
+  calcType: 'major',     // 'major' | 'minor'
+  calcRoot: null,        // {si, fret, note}
 };
+
+// ─── Scale formulas ──────────────────────────────────────────────────
+const FORMULAS = {
+  major: { steps: [2,2,1,2,2,2,1], label: 'Mayor', color: '#d4a847' },
+  minor: { steps: [2,1,2,2,1,2,2], label: 'Menor', color: '#8e44ad' },
+};
+
+function buildScaleNotes(rootNote, formula){
+  const idx = CHROMATIC.indexOf(rootNote);
+  const notes = [rootNote];
+  let cur = idx;
+  formula.steps.forEach(step=>{ cur=(cur+step)%12; notes.push(CHROMATIC[cur]); });
+  return notes.slice(0,7);
+}
+
+function allPositionsOfNotes(scaleNotes){
+  const positions=[];
+  for(let si=0;si<6;si++){
+    for(let fret=0;fret<=12;fret++){
+      const note=noteAt(OPEN_NOTES[si],fret);
+      const di=scaleNotes.indexOf(note);
+      if(di>=0) positions.push({si,fret,d:di+1});
+    }
+  }
+  return positions;
+}
 
 // ─── Custom scale overrides (localStorage) ───────────────────────────
 function loadCustomScales(){
@@ -495,6 +544,113 @@ function generateQuiz(){
   });
 }
 
+// ─── Calc mode ───────────────────────────────────────────────────────
+function renderCalcPanel(){
+  const panel=document.getElementById('calc-panel');
+  if(state.mode!=='calc'){panel.style.display='none';document.querySelector('.fretboard-inner').classList.remove('calc-mode-active');return;}
+  panel.style.display='block';
+  document.querySelector('.fretboard-inner').classList.add('calc-mode-active');
+
+  const formula=FORMULAS[state.calcType];
+  const color=formula.color;
+
+  let scaleNotes=null, formulaHTML='';
+  if(state.calcRoot){
+    scaleNotes=buildScaleNotes(state.calcRoot.note, formula);
+    // Build formula row: note —T— note —S— note ...
+    const stepsLabel=formula.steps.map(s=>s===2?'T':'S');
+    const notesRow=[...scaleNotes, scaleNotes[0]]; // close the octave
+    formulaHTML=notesRow.map((n,i)=>{
+      const noteEl=`<span class="calc-step-note${i===0?' root-note':''}" style="--calc-color:${color}">${n}</span>`;
+      if(i<stepsLabel.length){
+        return noteEl+`<span class="calc-step-sep ${stepsLabel[i]}">${stepsLabel[i]===2?'T':'─'+stepsLabel[i]+'─'}</span>`;
+      }
+      return noteEl;
+    }).join('');
+  } else {
+    // Show the abstract formula
+    const stepsLabel=formula.steps.map(s=>s===2?'T':'S');
+    const row=['●',...stepsLabel.map(()=>'○')];
+    formulaHTML=`<span style="color:${color};font-size:12px;letter-spacing:.05em;">`
+      +stepsLabel.map((s,i)=>`<span class="calc-step-sep ${s}">&nbsp;${s}&nbsp;</span>`).join('○')
+      +`</span>`;
+    // Simpler: just show T T S T T T S with the raw labels
+    formulaHTML=formula.steps.map(s=>{
+      const label=s===2?'T':'S';
+      return `<span class="calc-step-sep ${label}" style="font-size:14px;padding:4px 8px;background:#111;border-radius:4px;border:1px solid #222;">${label}</span>`;
+    }).join('<span style="color:#333;padding:0 3px;">—</span>');
+  }
+
+  panel.innerHTML=`
+    <div class="calc-type-row">
+      <button class="calc-type-btn major${state.calcType==='major'?' active':''}" data-type="major">Mayor</button>
+      <button class="calc-type-btn minor${state.calcType==='minor'?' active':''}" data-type="minor">Menor</button>
+    </div>
+    <div class="calc-formula-box">
+      <div class="calc-formula-label">Fórmula ${formula.label}: T=tono (2 semitonos) · S=semitono (1 semitono)</div>
+      <div class="calc-formula-steps" id="calc-formula-steps">${formulaHTML}</div>
+      ${scaleNotes?`<div class="calc-result-notes">Notas: ${scaleNotes.join(' · ')}</div>`:''}
+    </div>
+    ${!state.calcRoot?'<div class="calc-hint">Hacé click en cualquier nota del diapasón para calcular la escala desde esa raíz</div>':''}
+  `;
+
+  panel.querySelectorAll('.calc-type-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      state.calcType=btn.dataset.type;
+      renderCalcPanel();
+      renderCalcDots();
+    });
+  });
+}
+
+function renderCalcDots(){
+  const dotsG=document.getElementById('fb-dots'); dotsG.innerHTML='';
+  if(state.mode!=='calc'||!state.calcRoot) return;
+  const formula=FORMULAS[state.calcType];
+  const scaleNotes=buildScaleNotes(state.calcRoot.note, formula);
+  const positions=allPositionsOfNotes(scaleNotes);
+  const color=formula.color;
+
+  positions.forEach(p=>{
+    const cx=fretX(p.fret), cy=stringY(p.si);
+    const isRoot=p.d===1;
+    const r=isRoot?15:11;
+    const fill=isRoot?color:color+'88';
+    const c=makeDot(cx,cy,r,fill);
+    if(isRoot) c.setAttribute('filter','url(#glow)');
+    dotsG.appendChild(c);
+    // Note name
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',cx);t.setAttribute('y',cy+4);t.setAttribute('text-anchor','middle');
+    t.setAttribute('font-size','8');t.setAttribute('font-weight','800');
+    t.setAttribute('fill',isRoot?'#000':'#000');t.setAttribute('font-family','Trebuchet MS,sans-serif');
+    t.textContent=noteAt(OPEN_NOTES[p.si],p.fret);dotsG.appendChild(t);
+    // Degree badge top-right
+    const deg=document.createElementNS('http://www.w3.org/2000/svg','text');
+    deg.setAttribute('x',cx+(isRoot?13:10));deg.setAttribute('y',cy-(isRoot?12:9));
+    deg.setAttribute('font-size','8');deg.setAttribute('fill',color);
+    deg.setAttribute('font-weight','800');deg.setAttribute('font-family','Trebuchet MS,sans-serif');
+    deg.textContent=p.d;dotsG.appendChild(deg);
+  });
+}
+
+function handleCalcClick(svgX,svgY){
+  let best=null,bestDist=Infinity;
+  for(let si=0;si<6;si++){
+    for(let fret=0;fret<=12;fret++){
+      const cx=fretX(fret),cy=stringY(si);
+      const d=Math.hypot(svgX-cx,svgY-cy);
+      if(d<bestDist){bestDist=d;best={si,fret};}
+    }
+  }
+  if(bestDist>28) return;
+  const {si,fret}=best;
+  const note=noteAt(OPEN_NOTES[si],fret);
+  state.calcRoot={si,fret,note};
+  renderCalcPanel();
+  renderCalcDots();
+}
+
 // ─── Editor ──────────────────────────────────────────────────────────
 function enterEditMode(scaleId){
   state.editScaleId=scaleId||Object.keys(SCALES)[0];
@@ -608,19 +764,32 @@ function handleFretClick(svgX,svgY){
 
 // ─── Render ─────────────────────────────────────────────────────────
 function render(){
-  if(state.mode==='edit'){
-    renderEditorPanel();
-    renderEditorDots();
+  const hideAll=()=>{
     document.getElementById('legend').style.display='none';
     document.getElementById('pos-nav').style.display='none';
     document.getElementById('scale-info').style.display='none';
     document.getElementById('quiz-panel').style.display='none';
+    document.getElementById('editor-panel').style.display='none';
+    document.getElementById('calc-panel').style.display='none';
     document.getElementById('scale-grid').closest('.scale-section').style.display='none';
+    document.querySelector('.fretboard-inner').classList.remove('edit-mode-active','calc-mode-active');
+  };
+  if(state.mode==='edit'){
+    hideAll();
+    renderEditorPanel();
+    renderEditorDots();
+    return;
+  }
+  if(state.mode==='calc'){
+    hideAll();
+    renderCalcPanel();
+    renderCalcDots();
     return;
   }
   document.getElementById('scale-grid').closest('.scale-section').style.display='';
   document.getElementById('editor-panel').style.display='none';
-  document.querySelector('.fretboard-inner').classList.remove('edit-mode-active');
+  document.getElementById('calc-panel').style.display='none';
+  document.querySelector('.fretboard-inner').classList.remove('edit-mode-active','calc-mode-active');
   renderDots();
   renderLegend();
   renderPosNav();
@@ -679,12 +848,14 @@ document.querySelectorAll('.tab').forEach(tab=>{
 loadCustomScales();  // apply any saved overrides before rendering
 initFretboard();
 
-// SVG click → edit mode
+// SVG click → edit / calc mode
 document.getElementById('fretboard').addEventListener('click',function(e){
-  if(state.mode!=='edit') return;
+  if(state.mode!=='edit'&&state.mode!=='calc') return;
   const rect=this.getBoundingClientRect();
   const scaleX=SVG_W/rect.width, scaleY=SVG_H/rect.height;
-  handleFretClick((e.clientX-rect.left)*scaleX,(e.clientY-rect.top)*scaleY);
+  const svgX=(e.clientX-rect.left)*scaleX, svgY=(e.clientY-rect.top)*scaleY;
+  if(state.mode==='edit') handleFretClick(svgX,svgY);
+  else handleCalcClick(svgX,svgY);
 });
 
 buildScaleButtons();
