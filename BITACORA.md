@@ -1,6 +1,18 @@
 # Bitácora — maru_guide
 
 
+## 2026-03-31 | 12:48
+
+**Resumen:** Se amplió la lógica de visualización de escalas para permitir hasta 3 notas por cuerda dentro de cada zona del mástil.
+
+**Cambios:**
+- Refactorización mayor de `tools/escalas.html`: +159 líneas, restructuración del algoritmo de zonas
+- Actualizados `tools/acordes.html`, `diapason.html`, `guia.html`, `index.html`, `oido.html` con ajuste menor (+1 línea cada uno)
+
+**Archivos clave:** `tools/escalas.html`, `tools/acordes.html`, `tools/diapason.html`
+
+---
+
 ## 2026-03-31 | 12:47
 
 **Resumen:** Se implementó lógica de zonas de fret por cuerda para garantizar orden ascendente de pitch en la visualización de escalas en el mástil.
