@@ -1,6 +1,21 @@
 # Bitácora — maru_guide
 
 
+## 2026-03-31 | 11:49
+
+**Resumen:** Se implementó el modo "Recorrido Diagonal" en el visualizador de escalas, que muestra un camino secuenciado de notas conectadas en diagonal a través del diapasón con indicadores de slide.
+
+**Cambios:**
+- Añadido toggle `↗ Diagonal · OFF/ON` que activa vista de recorrido diagonal en el mástil
+- Las notas fuera del recorrido se muestran tenues como contexto visual
+- Línea punteada conecta las notas del recorrido de izquierda a derecha
+- Numeración secuencial (1, 2, 3…) visible en cada nota del camino
+- Indicador `↗` en cyan marca transiciones de cuerda donde se aplica slide
+
+**Archivos clave:** `tools/escalas.html`
+
+---
+
 ## 2026-03-31 | 10:50
 
 **Resumen:** Se refinó la interfaz de la herramienta de escalas para simplificar la navegación y mejorar la visualización de fórmulas de escalas.
