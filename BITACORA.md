@@ -1,6 +1,19 @@
 # Bitácora — maru_guide
 
 
+## 2026-03-31 | 12:05
+
+**Resumen:** Se corrigió el algoritmo de visualización diagonal de escalas en el mástil para eliminar cuerdas al aire y distribuir las notas proporcionalmente desde la raíz.
+
+**Cambios:**
+- Filtro `fret >= 1` para excluir notas en cuerda al aire del diagrama
+- Cálculo de avance proporcional por cuerda basado en `(12 - startFret) / 5`
+- Ventana de búsqueda adaptativa centrada en el punto exacto de cada cuerda
+
+**Archivos clave:** `tools/escalas.html`
+
+---
+
 ## 2026-03-31 | 11:49
 
 **Resumen:** Se implementó el modo "Recorrido Diagonal" en el visualizador de escalas, que muestra un camino secuenciado de notas conectadas en diagonal a través del diapasón con indicadores de slide.
