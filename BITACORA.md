@@ -1,6 +1,14 @@
 # Bitácora — maru_guide
 
 
+## 2026-03-31 | 10:32
+
+**Resumen:** Sesión de consulta teórica sobre la escala pentatónica menor y su aplicabilidad para improvisar en guitarra.
+
+**Archivos clave:** *(sin modificaciones)*
+
+---
+
 ## 2026-03-30 | 18:21
 
 **Resumen:** Se implementó el modo "Calcular" en la app de escalas, permitiendo derivar cualquier escala Mayor o Menor desde una raíz elegida directamente en el diapasón.
