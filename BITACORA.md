@@ -1,6 +1,20 @@
 # Bitácora — maru_guide
 
 
+## 2026-03-31 | 12:52
+
+**Resumen:** Se rediseñó el algoritmo de distribución de notas en el mástil para la app de escalas, reemplazando límites artificiales por lógica de grados consecutivos y cuerdas con máximo 3 notas.
+
+**Cambios:**
+- Grados de escala ahora se asignan en orden estrictamente consecutivo por el mástil
+- Cuerdas se llenan automáticamente según dónde caigan los grados (máx. 3 por cuerda)
+- El punto de inicio se ancla a la nota más temprana antes del fret 5
+- Eliminado el límite artificial de 2 notas por cuerda
+
+**Archivos clave:** `tools/escalas.html`
+
+---
+
 ## 2026-03-31 | 12:48
 
 **Resumen:** Se amplió la lógica de visualización de escalas para permitir hasta 3 notas por cuerda dentro de cada zona del mástil.
