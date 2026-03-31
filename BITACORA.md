@@ -1,6 +1,19 @@
 # Bitácora — maru_guide
 
 
+## 2026-03-31 | 15:04
+
+**Resumen:** Se implementó la lógica de navegación por cuerdas en el visualizador de escalas, priorizando subir de cuerda solo cuando la distancia al traste siguiente es estrictamente menor.
+
+**Cambios:**
+- Algoritmo de distribución de notas en cuerdas: `dNext < dSame` sube cuerda, `dNext >= dSame` permanece
+- Rediseño mayor de `tools/escalas.html` con 197 líneas netas añadidas y refactoring del renderizado
+- Ajustes menores de sincronización o metadatos en las demás herramientas HTML
+
+**Archivos clave:** `tools/escalas.html`, `tools/acordes.html`, `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html`
+
+---
+
 ## 2026-03-31 | 12:52
 
 **Resumen:** Se rediseñó el algoritmo de distribución de notas en el mástil para la app de escalas, reemplazando límites artificiales por lógica de grados consecutivos y cuerdas con máximo 3 notas.
