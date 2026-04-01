@@ -1,6 +1,19 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-01 | 15:19
+
+**Resumen:** Se implementó exploración interactiva de modos musicales (jónico, dórico, frigio, etc.) en el diapasón, partiendo de cualquier nota raíz seleccionada.
+
+**Cambios:**
+- `escalas.html`: lógica para calcular los 7 modos de una escala mayor y mostrarlos como botones seleccionables
+- Al elegir un modo, el diapasón se actualiza con la tónica correcta, fórmula de intervalos y color distintivo por modo
+- Cada modo muestra nombre, nota raíz, descripción sonora y resaltado visual diferenciado
+
+**Archivos clave:** `tools/escalas.html`, `tools/diapason.html`
+
+---
+
 ## 2026-04-01 | 14:00
 
 **Resumen:** Creado ranking de escalas prácticas para improvisar y actualizado herramientas HTML integradas.
