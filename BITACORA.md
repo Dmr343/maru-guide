@@ -1,6 +1,20 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-01 | 21:35
+
+**Resumen:** Se expandieron las herramientas interactivas del ecosistema de guitarra, con mejoras mayores en acordes y escalas, y se consultó sobre artistas de referencia para el perfil musical del usuario.
+
+**Cambios:**
+- Rediseño significativo de `tools/escalas.html` (+451 líneas): nuevas escalas o visualización ampliada
+- Expansión de `tools/acordes.html` (+260 líneas): nuevos acordes o funcionalidad interactiva
+- Actualización de `guia_guitarra.md` con contenido editorial
+- Ajustes menores de sincronización en `diapason.html`, `guia.html`, `index.html`, `oido.html`
+
+**Archivos clave:** `tools/escalas.html`, `tools/acordes.html`, `guia_guitarra.md`
+
+---
+
 ## 2026-04-01 | 20:42
 
 **Resumen:** Se implementaron herramientas interactivas de práctica en las apps de acordes y escalas, y se creó un documento de referencia de escalas con artistas de referencia.
