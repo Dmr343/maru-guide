@@ -12,6 +12,7 @@
       --gold:#d4a847;--radius:10px;--font:'Trebuchet MS','Segoe UI',sans-serif;
     }
     *{box-sizing:border-box;margin:0;padding:0;}
+    html{zoom:1.4;}
     body{background:var(--bg);color:var(--text);font-family:var(--font);padding:16px 12px 40px;min-height:100vh;}
     .back{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--text-dim);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;transition:color .15s;}
     .back:hover{color:var(--accent);}
@@ -95,6 +96,32 @@
     .beat-cell.active{background:var(--accent);border-color:var(--accent);color:#000;transform:scale(1.15);}
     .player-hint{text-align:center;font-size:11px;color:var(--text-dim);margin-top:10px;}
 
+    /* Minor toggle */
+    .minor-toggle{padding:6px 12px;border-radius:6px;border:1px solid #333;background:#1a1a1a;color:#555;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;margin-left:6px;}
+    .minor-toggle.active{border-color:#8e44ad;color:#9b59b6;background:#1a0a2a;}
+
+    /* Presets */
+    .presets-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+    .preset-btn{padding:7px 12px;border-radius:8px;border:1px solid #2a2a2a;background:#141414;color:#555;font-size:11px;cursor:pointer;transition:all .15s;text-align:left;}
+    .preset-btn:hover{border-color:#555;color:#aaa;}
+    .preset-btn .preset-name{font-weight:700;color:#888;display:block;font-size:12px;}
+    .preset-btn .preset-genre{font-size:10px;color:#444;display:block;margin-top:2px;}
+
+    /* Drill mode */
+    .drill-section{max-width:720px;margin:0 auto;}
+    .drill-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px;}
+    .drill-select{padding:8px 12px;border-radius:8px;border:1px solid #333;background:#1a1a1a;color:var(--text);font-size:14px;font-weight:700;cursor:pointer;min-width:100px;}
+    .drill-vs{font-size:18px;color:var(--text-dim);font-weight:700;}
+    .drill-bpc label{font-size:10px;color:var(--text-dim);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.1em;}
+    .drill-bpc select{padding:6px 10px;border-radius:6px;border:1px solid #333;background:#1a1a1a;color:var(--text);font-size:12px;cursor:pointer;}
+    .drill-display{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;margin-bottom:16px;}
+    .drill-chord-box{flex:1;min-width:180px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;transition:all .2s;}
+    .drill-chord-box.drill-active{border-color:var(--accent);box-shadow:0 0 16px #3498db22;}
+    .drill-chord-box.drill-inactive{opacity:.35;}
+    .drill-chord-name{font-size:22px;font-weight:700;color:var(--accent);margin-bottom:8px;}
+    .drill-counter{text-align:center;font-size:13px;color:var(--text-dim);margin-top:10px;}
+    .drill-counter span{color:var(--gold);font-weight:700;font-size:18px;}
+
     footer{text-align:center;margin-top:28px;font-size:10px;color:#333;letter-spacing:.08em;}
     footer a{color:var(--accent);text-decoration:none;opacity:.5;}
   </style>
@@ -110,6 +137,7 @@
 <div class="tabs">
   <button class="tab active" data-mode="shapes">📋 Formas</button>
   <button class="tab" data-mode="prog">🎵 Progresiones</button>
+  <button class="tab" data-mode="drill">🔄 Cambios</button>
 </div>
 
 <!-- SHAPES MODE -->
@@ -123,6 +151,8 @@
     <div class="chord-grid" id="barre5-grid"></div>
     <div class="category-label">Acordes de 7ª — Raíz en 5ª cuerda</div>
     <div class="chord-grid" id="seventh-grid"></div>
+    <div class="category-label">Barres — Raíz en 6ª cuerda (F como ejemplo)</div>
+    <div class="chord-grid" id="barre6-grid"></div>
   </div>
   <div class="chord-display" id="chord-display" style="display:none;"></div>
 </div>
@@ -133,9 +163,12 @@
     <div class="key-row">
       <span class="key-label">Tonalidad:</span>
       <div id="key-buttons"></div>
+      <button class="minor-toggle" id="minor-toggle">Mayor</button>
     </div>
     <div class="section-label">Acordes diatónicos — hacé click para agregar a la progresión</div>
     <div class="diatonic-chords" id="diatonic-chords"></div>
+    <div class="section-label">Progresiones rápidas</div>
+    <div class="presets-row" id="presets-row"></div>
     <div class="section-label">Tu progresión (hacé click en un acorde para quitarlo)</div>
     <div class="progression-slots" id="prog-slots">
       <span class="prog-empty">Agregá acordes arriba →</span>
@@ -163,6 +196,41 @@
   </div>
 </div>
 
+<!-- DRILL MODE -->
+<div id="mode-drill" style="display:none;">
+  <div class="drill-section">
+    <div class="drill-row">
+      <select class="drill-select" id="drill-a"></select>
+      <span class="drill-vs">↔</span>
+      <select class="drill-select" id="drill-b"></select>
+      <div class="drill-bpc">
+        <label>Compases</label>
+        <select id="drill-bpc">
+          <option value="2">2 tiempos</option>
+          <option value="4" selected>4 tiempos</option>
+          <option value="8">8 tiempos</option>
+        </select>
+      </div>
+    </div>
+    <div class="drill-display" id="drill-display"></div>
+    <div class="player">
+      <div class="player-controls">
+        <div class="tempo-control">
+          <button class="tempo-btn" id="drill-tempo-down">−5</button>
+          <div class="tempo-display">
+            <div class="tempo-val" id="drill-tempo-val">70</div>
+            <div class="tempo-unit">BPM</div>
+          </div>
+          <button class="tempo-btn" id="drill-tempo-up">+5</button>
+        </div>
+        <button class="play-btn stopped" id="drill-play-btn">▶ Practicar</button>
+        <div class="beat-dot" id="drill-beat-dot"></div>
+      </div>
+      <div class="drill-counter">Cambios: <span id="drill-count">0</span></div>
+    </div>
+  </div>
+</div>
+
 <footer>Afinación estándar · E A D G B e · <a href="index.html">← Hub</a></footer>
 
 <script>
@@ -185,26 +253,47 @@ const CHORDS = {
   'C_b5': {name:'C (cejilla)',type:'Barre 5ª cuerda',barre:3,strings:['x',3,5,5,5,3],fingers:'134411',tips:['Traste 3 en cuerda 5 = nota C.','Movelo al traste 5 para Dm, traste 7 para Em, etc.','Tip Maru: índice de lado, no plano.']},
   'Cm_b5':{name:'Cm (cejilla)',type:'Barre menor 5ª',barre:3,strings:['x',3,5,5,4,3],fingers:'134211',tips:['Misma forma pero el 3er dedo toca un traste antes.','Movelo = cualquier acorde menor.']},
   'C7_b5':{name:'C7 (cejilla)',type:'Dominante 7ª',barre:3,strings:['x',3,5,3,5,3],fingers:'131211',tips:['El acorde de blues por excelencia.','Suena a blues en cualquier traste.']},
+  // Barre 6th string
+  'F_b6': {name:'F (cejilla)',type:'Barre 6ª cuerda',barre:1,strings:[1,1,2,3,3,1],fingers:'134211',tips:['La forma E mayor desplazada. Traste 1 = F, traste 3 = G, traste 5 = A.','El barre más importante: un patrón = 12 acordes mayores.','Tip: el índice de costado, presión del antebrazo.']},
+  'Fm_b6':{name:'Fm (cejilla)',type:'Barre menor 6ª',barre:1,strings:[1,1,1,3,3,1],fingers:'134111',tips:['Igual que F mayor pero levantás el 2do dedo.','Traste 0 = Em abierto — esa es tu referencia.','Movelo = cualquier acorde menor.']},
+  'F7_b6':{name:'F7 (cejilla)',type:'Dom 7ª · 6ª cuerda',barre:1,strings:[1,1,2,1,3,1],fingers:'132111',tips:['El sonido blues dominante en forma de 6ª cuerda.','Pink Floyd, blues eléctrico. En acústica suena oscuro.']},
   // 7th chords
   'Cmaj7':{name:'Cmaj7',type:'Mayor 7ª',strings:['x',3,5,4,5,3],fingers:'131211',tips:['Sonido jazz elegante.','Mará: más sofisticado que el acorde mayor.']},
   'Cm7':  {name:'Cm7', type:'Menor 7ª',strings:['x',3,5,3,4,3],fingers:'131111',tips:['Sonido soul y R&B.','Barre completo en traste 3, levantás el índice una cuerda.']},
   'Cm7b5':{name:'Cm7♭5',type:'Semidisminuido',strings:['x',3,4,3,4,3],fingers:'121111',tips:['Tenso, cinematográfico.','Muy usado en jazz y bandas sonoras.']},
 };
 
-// Diatonic chords per key (major)
-const MAJOR_SCALE = [0,2,4,5,7,9,11];
-const DEGREES_QUALITY = ['mayor','menor','menor','mayor','mayor','menor','disminuido'];
-const DEGREES_SYMBOL  = ['I','ii','iii','IV','V','vi','vii°'];
+// Diatonic chords per key
+const MAJOR_SCALE   = [0,2,4,5,7,9,11];
+const MINOR_SCALE   = [0,2,3,5,7,8,10];
+const DEGREES_QUALITY       = ['mayor','menor','menor','mayor','mayor','menor','disminuido'];
+const DEGREES_SYMBOL        = ['I','ii','iii','IV','V','vi','vii°'];
+const MINOR_DEGREES_QUALITY = ['menor','disminuido','mayor','menor','menor','mayor','mayor'];
+const MINOR_DEGREES_SYMBOL  = ['i','ii°','III','iv','v','VI','VII'];
 const CHROMATIC = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const KEYS = ['C','D','E','F','G','A','B'];
 
-function getDiatonicChords(key) {
-  const root = CHROMATIC.indexOf(key);
-  return MAJOR_SCALE.map((interval, i) => {
+// Progression presets
+const PRESETS = [
+  {name:'i – iv – v',          degrees:[0,3,4], genre:'Blues menor · Alice in Chains, AIC', minor:true},
+  {name:'i – VI – III – VII',  degrees:[0,5,2,6], genre:'Rock menor · Opeth, Camel, Pink Floyd', minor:true},
+  {name:'i – iv – VII – III',  degrees:[0,3,6,2], genre:'Latin psicodélico · Los Pirañas', minor:true},
+  {name:'ii° – V – i',         degrees:[1,4,0], genre:'Jazz menor · Nujabes, Chico Buarque', minor:true},
+  {name:'i – VII – VI – VII',  degrees:[0,6,5,6], genre:'Rock prog / Ambient · Camel, Pink Floyd', minor:true},
+  {name:'I – IV – V',          degrees:[0,3,4], genre:'Blues/Rock clásico', minor:false},
+  {name:'I – V – vi – IV',     degrees:[0,4,5,3], genre:'Pop/Rock', minor:false},
+];
+
+function getDiatonicChords(key, minor) {
+  const scale  = minor ? MINOR_SCALE : MAJOR_SCALE;
+  const quals  = minor ? MINOR_DEGREES_QUALITY : DEGREES_QUALITY;
+  const syms   = minor ? MINOR_DEGREES_SYMBOL  : DEGREES_SYMBOL;
+  const root   = CHROMATIC.indexOf(key);
+  return scale.map((interval, i) => {
     const note = CHROMATIC[(root + interval) % 12];
-    const quality = DEGREES_QUALITY[i];
+    const quality = quals[i];
     const name = quality === 'menor' ? note + 'm' : quality === 'disminuido' ? note + '°' : note;
-    return { note, quality, name, degree: DEGREES_SYMBOL[i] };
+    return { note, quality, name, degree: syms[i] };
   });
 }
 
@@ -213,12 +302,19 @@ const state = {
   mode: 'shapes',
   selectedChord: null,
   key: 'G',
+  minor: false,
   progression: [],     // array of chord names
   playing: false,
   bpm: 80,
   currentSlot: 0,
   currentBeat: 0,
   beatsPerChord: 4,
+  // Drill
+  drillPlaying: false,
+  drillBpm: 70,
+  drillCount: 0,
+  drillCurrentIdx: 0,
+  drillBeatsPerChord: 4,
 };
 let audioCtx = null;
 let playInterval = null;
@@ -400,10 +496,11 @@ function renderChordDisplay() {
 // ─── Build chord buttons ──────────────────────────────────────────────
 function buildChordButtons() {
   const groups = {
-    'open-grid': ['Em','Am','G','C','D'],
-    'sus-grid':  ['Dsus2','Dsus4','Asus2','Asus4','Gsus2'],
-    'barre5-grid':['C_b5','Cm_b5','C7_b5'],
+    'open-grid':   ['Em','Am','G','C','D'],
+    'sus-grid':    ['Dsus2','Dsus4','Asus2','Asus4','Gsus2'],
+    'barre5-grid': ['C_b5','Cm_b5','C7_b5'],
     'seventh-grid':['Cmaj7','Cm7','Cm7b5'],
+    'barre6-grid': ['F_b6','Fm_b6','F7_b6'],
   };
   Object.entries(groups).forEach(([gridId, chordIds]) => {
     const grid = document.getElementById(gridId);
@@ -426,21 +523,26 @@ function buildChordButtons() {
 // ─── Diatonic chords + key ────────────────────────────────────────────
 function buildKeyButtons() {
   const container = document.getElementById('key-buttons');
-  container.innerHTML = KEYS.map(k =>
-    `<button class="key-btn ${state.key===k?'active':''}" data-key="${k}">${k}</button>`
-  ).join('');
+  container.innerHTML = KEYS.map(k => {
+    const label = state.minor ? k + 'm' : k;
+    return `<button class="key-btn ${state.key===k?'active':''}" data-key="${k}">${label}</button>`;
+  }).join('');
   container.querySelectorAll('.key-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       state.key = btn.dataset.key;
       buildKeyButtons();
       buildDiatonicChords();
+      buildPresets();
     });
   });
+  const toggle = document.getElementById('minor-toggle');
+  toggle.className = 'minor-toggle' + (state.minor ? ' active' : '');
+  toggle.textContent = state.minor ? 'Menor' : 'Mayor';
 }
 
 function buildDiatonicChords() {
   const container = document.getElementById('diatonic-chords');
-  const chords = getDiatonicChords(state.key);
+  const chords = getDiatonicChords(state.key, state.minor);
   container.innerHTML = chords.map(c => {
     const inProg = state.progression.includes(c.name);
     return `<button class="diatonic-chord ${inProg?'in-prog':''}" data-chord="${c.name}">
@@ -452,6 +554,29 @@ function buildDiatonicChords() {
       if (state.progression.length < 8) state.progression.push(btn.dataset.chord);
       buildDiatonicChords();
       renderProgSlots();
+    });
+  });
+}
+
+function buildPresets() {
+  const container = document.getElementById('presets-row');
+  const relevant = PRESETS.filter(p => p.minor === state.minor);
+  container.innerHTML = relevant.map((p, i) =>
+    `<button class="preset-btn" data-preset="${i}">
+      <span class="preset-name">${p.name}</span>
+      <span class="preset-genre">${p.genre}</span>
+    </button>`
+  ).join('');
+  container.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const preset = relevant[parseInt(btn.dataset.preset)];
+      const chords = getDiatonicChords(state.key, state.minor);
+      state.progression = preset.degrees
+        .filter(d => d < chords.length)
+        .map(d => chords[d].name);
+      buildDiatonicChords();
+      renderProgSlots();
+      renderBeats();
     });
   });
 }
@@ -477,13 +602,104 @@ function renderProgSlots() {
   buildDiatonicChords();
 }
 
+// ─── Drill mode ───────────────────────────────────────────────────────
+let drillInterval = null;
+let drillTickCount = 0;
+let drillStartTime = 0;
+
+function renderDrillDisplay() {
+  const chordA = document.getElementById('drill-a').value;
+  const chordB = document.getElementById('drill-b').value;
+  const current = state.drillCurrentIdx % 2;
+  const display = document.getElementById('drill-display');
+  const chords = [chordA, chordB];
+  display.innerHTML = chords.map((name, i) => {
+    const chord = CHORDS[name] || {name, strings:[], tips:[]};
+    const isActive = i === current && state.drillPlaying;
+    return `<div class="drill-chord-box ${state.drillPlaying ? (isActive ? 'drill-active' : 'drill-inactive') : ''}">
+      <div class="drill-chord-name">${chord.name}</div>
+      ${buildChordSVG(chord)}
+    </div>`;
+  }).join('');
+}
+
+function drillTick() {
+  if (!state.drillPlaying) return;
+  const interval = 60000 / state.drillBpm;
+  drillTickCount++;
+  const beat = drillTickCount % state.drillBeatsPerChord;
+  if (beat === 0) {
+    state.drillCurrentIdx++;
+    if (state.drillCurrentIdx % 2 === 0) {
+      state.drillCount++;
+      document.getElementById('drill-count').textContent = state.drillCount;
+    }
+    const chordId = state.drillCurrentIdx % 2 === 0
+      ? document.getElementById('drill-a').value
+      : document.getElementById('drill-b').value;
+    playChordAudio(CHORDS[chordId]?.name || chordId);
+    renderDrillDisplay();
+  }
+  playClick();
+  document.getElementById('drill-beat-dot').classList.toggle('on', drillTickCount % 2 === 0);
+  const elapsed = performance.now() - drillStartTime;
+  const nextDelay = interval * (drillTickCount + 1) - elapsed;
+  drillInterval = setTimeout(drillTick, Math.max(0, nextDelay));
+}
+
+function startDrill() {
+  state.drillPlaying = true;
+  drillTickCount = 0;
+  drillStartTime = performance.now();
+  state.drillCurrentIdx = 0;
+  state.drillBeatsPerChord = parseInt(document.getElementById('drill-bpc').value);
+  document.getElementById('drill-play-btn').className = 'play-btn playing';
+  document.getElementById('drill-play-btn').textContent = '⏹ Parar';
+  playChordAudio(CHORDS[document.getElementById('drill-a').value]?.name || '');
+  renderDrillDisplay();
+  drillTick();
+}
+
+function stopDrill() {
+  state.drillPlaying = false;
+  clearTimeout(drillInterval);
+  document.getElementById('drill-play-btn').className = 'play-btn stopped';
+  document.getElementById('drill-play-btn').textContent = '▶ Practicar';
+  document.getElementById('drill-beat-dot').classList.remove('on');
+  renderDrillDisplay();
+}
+
+function initDrill() {
+  const allChordIds = Object.keys(CHORDS);
+  ['drill-a','drill-b'].forEach((id, i) => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = allChordIds.map(k => `<option value="${k}">${CHORDS[k].name}</option>`).join('');
+    sel.selectedIndex = i === 0 ? allChordIds.indexOf('Em') : allChordIds.indexOf('Am');
+    sel.addEventListener('change', () => { if(!state.drillPlaying) renderDrillDisplay(); });
+  });
+  renderDrillDisplay();
+  document.getElementById('drill-play-btn').addEventListener('click', () => {
+    if (state.drillPlaying) stopDrill(); else startDrill();
+  });
+  document.getElementById('drill-tempo-down').addEventListener('click', () => {
+    state.drillBpm = Math.max(40, state.drillBpm - 5);
+    document.getElementById('drill-tempo-val').textContent = state.drillBpm;
+  });
+  document.getElementById('drill-tempo-up').addEventListener('click', () => {
+    state.drillBpm = Math.min(160, state.drillBpm + 5);
+    document.getElementById('drill-tempo-val').textContent = state.drillBpm;
+  });
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────
 buildChordButtons();
 renderChordDisplay();
 buildKeyButtons();
 buildDiatonicChords();
+buildPresets();
 renderProgSlots();
 renderBeats();
+initDrill();
 
 // Tabs
 document.querySelectorAll('.tab').forEach(tab => {
@@ -493,8 +709,18 @@ document.querySelectorAll('.tab').forEach(tab => {
     tab.classList.add('active');
     document.getElementById('mode-shapes').style.display = state.mode==='shapes'?'':'none';
     document.getElementById('mode-prog').style.display   = state.mode==='prog'?'':'none';
-    if(state.playing && state.mode==='shapes') stopPlaying();
+    document.getElementById('mode-drill').style.display  = state.mode==='drill'?'':'none';
+    if(state.playing && state.mode!=='prog') stopPlaying();
+    if(state.drillPlaying && state.mode!=='drill') stopDrill();
   });
+});
+
+// Minor toggle
+document.getElementById('minor-toggle').addEventListener('click', () => {
+  state.minor = !state.minor;
+  buildKeyButtons();
+  buildDiatonicChords();
+  buildPresets();
 });
 
 // BPM

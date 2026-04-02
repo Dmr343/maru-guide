@@ -280,8 +280,8 @@ No necesitás memorizar qué acordes van en cada tonalidad. Hay un patrón visua
 1. Encontrá el acorde tónico en la 6ª cuerda (ej: G en traste 3)
 2. El acorde en la misma cuerda 5 un traste más arriba = el acorde IV (ej: C en traste 3, cuerda 5)
 3. Dos trastes más arriba en la cuerda 5 = el acorde V (ej: D en traste 5, cuerda 5)
-4. Para los acordes menores: buscá 3 trastes atrás del tónico
-5. El acorde disminuido: 1 traste atrás del tónico
+4. Para los acordes menores: en la misma cuerda 5, buscá 3 trastes más arriba del tónico (ej: en G mayor, el acorde menor ii es Am → traste 12, o bajando: traste 0 de cuerda 5)
+5. El acorde disminuido: 1 traste más arriba del acorde V en la cuerda 5
 
 **Ejemplo en G mayor:** G (traste 3, cuerda 6) → C (traste 3, cuerda 5) → D (traste 5, cuerda 5)
 
@@ -410,6 +410,9 @@ El CAGED te da 5 posiciones de cualquier acorde en todo el mástil. Ya usaste el
 | 📺 Video | [Nadie me explicó el Sistema CAGED así](https://www.youtube.com/watch?v=D4B_ze31Ls0) |
 | 📄 PDF | `sistema-caged-menor-planillas.pdf` |
 
+### Qué escalas aprender — TOP-ESCALAS.md
+Guía corta y directa: cuáles memorizar, en qué orden, y por qué. Empezá por ahí antes de meterte en modos o escalas avanzadas.
+
 ### Los Modos — Solo cuando el oído ya lo escucha
 **Importante:** Los modos son un tema avanzado. No los estudies hasta que puedas improvisar cómodamente sobre diferentes progresiones y escuchar cuándo algo "resuelve" o "queda en tensión". Maru lo dice explícito: el centro tonal es 100% auditivo. La teoría explica lo que el oído ya percibe.
 
@@ -440,10 +443,11 @@ Un video de técnica avanzada que está en la colección pero no en esta ruta. P
 
 | App | Para qué fase | Qué hace |
 |-----|---------------|----------|
-| `diapason.html` | Fase 2 | Visualizá notas en el mástil. Modo ejercicio con metrónomo. |
-| `escalas.html` | Fases 1 y 4 | Visualizá patrones de escalas, conectá posiciones, quiz. |
-| `acordes.html` | Fase 3 | Aprende formas, generá backing tracks propios. |
-| `oido.html` | Fase 5 | Entrenamiento auditivo. Funciona sin guitarra. |
+| `diapason.html` | Fase 2+ | Visualizá notas en el mástil. Modo ejercicio con metrónomo. |
+| `escalas.html` | Fases 1, 2 y 4 | Visualizá patrones de escalas, conectá posiciones, quiz. |
+| `acordes.html` | Fase 3+ | Aprende formas de acordes, generá backing tracks propios. |
+| `oido.html` | Siempre | Entrenamiento auditivo. Funciona sin guitarra. |
+| `index.html` | Siempre | Panel de entrada a todas las herramientas. |
 | `guia.html` | Siempre | Esta misma guía, interactiva, con progreso guardado. |
 
 ---
