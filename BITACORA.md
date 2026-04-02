@@ -1,6 +1,20 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-01 | 19:51
+
+**Resumen:** Se simplificó el currículo de escalas y se corrigió la documentación principal de la guía de guitarra.
+
+**Cambios:**
+- `TOP-ESCALAS.md` reescrito: de 22 escalas a 3 (pentatónica menor → nota blues → pentatónica mayor) con orden de aprendizaje en 5 pasos
+- `guia_guitarra.md`: tabla de herramientas actualizada (añadido `index.html`, corregidas fases de `oido.html` y `acordes.html`)
+- `guia_guitarra.md`: Patrón J aclarado (en qué cuerda van los acordes menores) y Fase 5 enlazada a `TOP-ESCALAS.md`
+- `tools/escalas.html`: refactorización mayor (+316 líneas netas)
+
+**Archivos clave:** `TOP-ESCALAS.md`, `guia_guitarra.md`, `tools/escalas.html`
+
+---
+
 ## 2026-04-01 | 19:46
 
 **Resumen:** Revisión editorial de la guía principal (`TOP-ESCALAS.md` y guía base) identificando inconsistencias, errores tipográficos y referencias huérfanas entre documentos.
