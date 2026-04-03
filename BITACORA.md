@@ -1,6 +1,14 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-03 | 00:24
+
+**Resumen:** Sesión de consulta sobre equipamiento: comparativa de opciones de práctica silenciosa (Mustang Micro + audífonos BT) versus amp, con desglose de costos para guitarra LP Studio IBG.
+
+**Archivos clave:** `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html`
+
+---
+
 ## 2026-04-03 | 00:22
 
 **Resumen:** Consulta sobre equipamiento de entrada (guitarra eléctrica, amplificadores y accesorios) con precios reales de Bansbach para armar un setup mínimo viable.
