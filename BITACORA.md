@@ -1,6 +1,14 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-03 | 00:16
+
+**Resumen:** Consulta sobre comparativa de guitarras Bansbach y análisis de opciones de acabados (finish) para Les Paul.
+
+**Archivos clave:** `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html`
+
+---
+
 ## 2026-04-03 | 00:11
 
 **Resumen:** Se generó una comparativa de guitarras acústicas de la tienda Bansbach para apoyar una decisión de compra informada.
