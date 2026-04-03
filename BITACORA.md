@@ -1,6 +1,14 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-02 | 23:02
+
+**Resumen:** Consulta sobre selección de guitarra eléctrica con coil-split en presupuesto ajustado al mercado centroamericano.
+
+**Archivos clave:** `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html`
+
+---
+
 ## 2026-04-02 | 23:01
 
 **Resumen:** Sesión de consulta sobre hardware de guitarra eléctrica — diferencia entre humbuckers y single coils, y funcionamiento del coil-split.
