@@ -1,6 +1,14 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-02 | 23:38
+
+**Resumen:** Sesión de consulta sobre compra de guitarra eléctrica: comparación de modelos disponibles localmente y opciones para tocar con audífonos sin amplificador.
+
+**Archivos clave:** `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html`
+
+---
+
 ## 2026-04-02 | 23:36
 
 **Resumen:** Sesión de consulta sobre compra de guitarra eléctrica (Cort X100 en Bansbach, $385) con guía de inspección antes de comprar.
