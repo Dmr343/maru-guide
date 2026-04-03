@@ -1,6 +1,14 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-02 | 23:32
+
+**Resumen:** Consulta de asesoría para compra de guitarra eléctrica, comparando Squier Bullet, Epiphone LP Standard y Epiphone LP Modern según el perfil musical del usuario.
+
+**Archivos clave:** `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html`
+
+---
+
 ## 2026-04-02 | 23:27
 
 **Resumen:** Sesión de consultoría sobre compra de guitarra eléctrica: evaluación de una Squier Bullet Strat 2011 en paquete completo con amplificador Frontman 15R a $250.
