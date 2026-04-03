@@ -1,6 +1,14 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-02 | 22:59
+
+**Resumen:** Sesión de consulta sobre selección de guitarra eléctrica según perfil musical (oscuro/atmosférico), sin cambios de funcionalidad en el proyecto.
+
+**Archivos clave:** `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html`
+
+---
+
 ## 2026-04-02 | 22:56
 
 **Resumen:** Sesión de consultoría sobre selección de guitarra eléctrica para el perfil del usuario (melodista, improvisación, múltiples géneros).
