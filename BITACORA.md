@@ -1,6 +1,14 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-03 | 00:51
+
+**Resumen:** Sesión de consulta sobre compra de guitarra eléctrica (Les Paul Studio Bansbach) y equipamiento mínimo para empezar.
+
+**Archivos clave:** `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html`
+
+---
+
 ## 2026-04-03 | 00:50
 
 **Resumen:** Consulta de asesoría para selección de guitarra eléctrica y equipamiento dentro de presupuesto (~$555 USD).
