@@ -1,6 +1,20 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-02 | 23:44
+
+**Resumen:** Se realizaron ajustes menores en las herramientas HTML del ecosistema de guitarra (diapasón, guía, índice y oído).
+
+**Cambios:**
+- Añadida una línea en `tools/diapason.html`
+- Añadida una línea en `tools/guia.html`
+- Añadida una línea en `tools/index.html`
+- Añadida una línea en `tools/oido.html`
+
+**Archivos clave:** `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html`
+
+---
+
 ## 2026-04-02 | 23:43
 
 **Resumen:** Se analizó comparativa de guitarras eléctricas de entrada (Yamaha Pacifica 112J vs Epiphone LP Studio) para orientar una decisión de compra según el perfil musical del usuario.
