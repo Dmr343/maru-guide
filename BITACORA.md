@@ -1,6 +1,14 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-03 | 00:19
+
+**Resumen:** Consulta sobre equipamiento para guitarrista eléctrico principiante: opciones de dispositivos para tocar con audífonos y consideraciones sobre latencia Bluetooth.
+
+**Archivos clave:** `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html`
+
+---
+
 ## 2026-04-03 | 00:16
 
 **Resumen:** Consulta sobre comparativa de guitarras Bansbach y análisis de opciones de acabados (finish) para Les Paul.
