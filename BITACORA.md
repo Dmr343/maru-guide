@@ -1,6 +1,14 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-03 | 00:36
+
+**Resumen:** Se analizaron dos opciones de guitarra eléctrica (Epiphone Casino vs LP Studio IBG) según el perfil musical del usuario y disponibilidad local en David, Panamá.
+
+**Archivos clave:** `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html`
+
+---
+
 ## 2026-04-03 | 00:32
 
 **Resumen:** Análisis comparativo de amplificadores de práctica (Vox amPlug, Fender Mustang Micro, Boss Katana GO2) para armar un setup de práctica con audífonos dentro de un presupuesto de ~$555.
