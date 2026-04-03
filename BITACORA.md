@@ -1,6 +1,14 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-03 | 00:32
+
+**Resumen:** Análisis comparativo de amplificadores de práctica (Vox amPlug, Fender Mustang Micro, Boss Katana GO2) para armar un setup de práctica con audífonos dentro de un presupuesto de ~$555.
+
+**Archivos clave:** `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html`
+
+---
+
 ## 2026-04-03 | 00:29
 
 **Resumen:** Consulta sobre amplificadores de práctica para guitarra eléctrica, evaluando opciones en rango $150–$225 con salida de audífonos y Bluetooth.
