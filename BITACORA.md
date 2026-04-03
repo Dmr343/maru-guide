@@ -1,6 +1,14 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-02 | 23:40
+
+**Resumen:** Sesión de consulta sobre compra de guitarra eléctrica comparando modelos Fender/Squier vs Gibson LP Studio para el perfil musical del usuario.
+
+**Archivos clave:** `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html`
+
+---
+
 ## 2026-04-02 | 23:38
 
 **Resumen:** Sesión de consulta sobre compra de guitarra eléctrica: comparación de modelos disponibles localmente y opciones para tocar con audífonos sin amplificador.
