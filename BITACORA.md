@@ -1,6 +1,14 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-02 | 23:35
+
+**Resumen:** Sesión de consultoría sobre compra de guitarra eléctrica para el usuario, comparando opciones Squier vs Epiphone en el mercado costarricense.
+
+**Archivos clave:** `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html`
+
+---
+
 ## 2026-04-02 | 23:34
 
 **Resumen:** Sesión de consultoría sobre selección de guitarra eléctrica para un perfil específico de géneros (metal progresivo, grunge, rock psicodélico).
