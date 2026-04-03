@@ -1,6 +1,17 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-02 | 23:36
+
+**Resumen:** Sesión de consulta sobre compra de guitarra eléctrica (Cort X100 en Bansbach, $385) con guía de inspección antes de comprar.
+
+**Cambios:**
+- Actualización menor en `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html` (1 línea c/u)
+
+**Archivos clave:** `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html`
+
+---
+
 ## 2026-04-02 | 23:35
 
 **Resumen:** Sesión de consultoría sobre compra de guitarra eléctrica para el usuario, comparando opciones Squier vs Epiphone en el mercado costarricense.
