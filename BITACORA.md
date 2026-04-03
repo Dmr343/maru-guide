@@ -1,6 +1,17 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-02 | 23:45
+
+**Resumen:** Sesión de consulta sobre compra de guitarra eléctrica: análisis comparativo de opciones en el rango $180–450 orientado al perfil musical del usuario (melodista, influencias Opeth/Khruangbin/Nujabes).
+
+**Cambios:**
+- Actualización menor en `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html` (1 línea cada uno)
+
+**Archivos clave:** `tools/diapason.html`, `tools/guia.html`, `tools/index.html`, `tools/oido.html`
+
+---
+
 ## 2026-04-02 | 23:44
 
 **Resumen:** Se realizaron ajustes menores en las herramientas HTML del ecosistema de guitarra (diapasón, guía, índice y oído).
