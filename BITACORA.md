@@ -1,6 +1,21 @@
 # Bitácora — maru_guide
 
 
+## 2026-04-03 | 12:46
+
+**Resumen:** Se rediseñó la app de acordes para mostrar la relación entre escalas, tríadas y acordes, con diapasón interactivo y tab de improvisación.
+
+**Cambios:**
+- Reagrupación de acordes por familia teórica (Am/Do mayor, Sol mayor) con texto explicativo
+- Datos enriquecidos en cada acorde: raíz, notas, calidad e intervalos; se agregaron `Dm` y `Bm_b6`
+- Diapasón horizontal por acorde al hacer click, con estilo coherente al de escalas (raíz con glow, notas semitransparentes)
+- Panel "Escalas compatibles" que señala qué escalas contienen el acorde y cuáles ya se conocen (★)
+- Nuevo tab "Improvisar": seleccionás una escala y ves los acordes derivados con sus grados (i, III, iv...)
+
+**Archivos clave:** `tools/acordes.html`, `tools/guia.html`
+
+---
+
 ## 2026-04-03 | 00:51
 
 **Resumen:** Sesión de consulta sobre compra de guitarra eléctrica (Les Paul Studio Bansbach) y equipamiento mínimo para empezar.
