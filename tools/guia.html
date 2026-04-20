@@ -13,6 +13,7 @@
       --radius:10px;--font:'Trebuchet MS','Segoe UI',sans-serif;
     }
     *{box-sizing:border-box;margin:0;padding:0;}
+    html{zoom:1.4;}
     body{background:var(--bg);color:var(--text);font-family:var(--font);padding:16px 12px 60px;min-height:100vh;}
     .back{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--text-dim);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;transition:color .15s;}
     .back:hover{color:var(--accent);}
@@ -324,18 +325,32 @@ const PHASES = [
     id:'fase3',
     icon:'🎹',
     number:'Fase 3',
-    title:'Colores de Acorde',
-    tagline:'"Los acordes son el contexto que hace que tus riffs tengan más sentido."',
+    title:'Tríadas y Colores de Acorde',
+    tagline:'"Un acorde son 3 notas de tu escala. Ya las sabés tocar."',
     sessions:'Sesiones 29-50',
     color:'#3498db',
     session:[
       {time:'Reconexión (1\')',desc:'Lo que quieras.'},
-      {time:'Técnica (5\') — Sub-fase 3a',desc:'Em → Am → G → C → D + acordes sus2/sus4. Tensión/resolución.'},
-      {time:'Técnica (5\') — Sub-fase 3b',desc:'Barres 5ª cuerda (un shape por sesión). Los 3 tips de Maru.'},
-      {time:'Técnica (5\') — Sub-fase 3c',desc:'Patrón J para acordes diatónicos en tonalidad nueva.'},
-      {time:'Improvisación (20\')',desc:'Tocar progresión (Am-G-C-D o I-IV-V con barres), luego improvisar encima con la pentatónica. Escuchar cómo las mismas notas suenan diferente sobre cada acorde.'},
+      {time:'Técnica (5\') — Sesiones 29-38: Tríadas',desc:'Entendé que Em = E+G+B = notas de la pentatónica menor de Am. Tocá los acordes abiertos de la Familia Am (Am, Em, C, G, Dm) y luego improvisá encima con Am pentatónica.'},
+      {time:'Técnica (5\') — Sesiones 39-50: Formas y barres',desc:'Em → Am → G → C → D → Dm. Barres 5ª cuerda (un shape por sesión). Los 3 tips de Maru.'},
+      {time:'Técnica (5\') — Sub-fase 3b',desc:'Patrón J para acordes diatónicos en tonalidad nueva. Sus2/sus4 como colores.'},
+      {time:'Improvisación (20\')',desc:'Tocar progresión (Am-G-C-D o I-IV-V con barres), luego improvisar encima con la pentatónica. Escuchar cómo las mismas notas suenan diferente sobre cada acorde. Usar la app Acordes → tab "Improvisar".'},
     ],
     content:[
+      {
+        title:'Las tríadas: el acorde más simple (Sesiones 29-38)',
+        text:`<p>Un acorde es un grupo de 3 notas de una escala tocadas al mismo tiempo. Ya conocés esas notas — están en tu pentatónica.</p>
+<p style="margin-top:8px;"><strong>Cómo se construye una tríada:</strong></p>
+<ul style="padding-left:16px;">
+<li><strong>Mayor:</strong> Raíz + 3ra mayor + 5ta (ej: G = G + B + D)</li>
+<li><strong>Menor:</strong> Raíz + 3ra menor + 5ta (ej: Am = A + C + E)</li>
+</ul>
+<p style="margin-top:8px;"><strong>Am pentatónica (A C D E G) → 5 acordes:</strong></p>
+<ul style="padding-left:16px;">
+<li>Am = A+C+E · Em = E+G+B · C = C+E+G · G = G+B+D · Dm = D+F+A</li>
+</ul>
+<p style="margin-top:8px;"><em>Los acordes abiertos que aprendés SON voicings de estas tríadas distribuidos en 4-6 cuerdas.</em></p>`
+      },
       {
         title:'Los 3 tips de Maru para el barre',
         text:'<ul style="padding-left:16px;"><li><strong>Pulgar atrás del mástil:</strong> no debe asomar por encima</li><li><strong>Índice de lado, no plano:</strong> usás el hueso, no la yema. Girá el índice levemente.</li><li><strong>Presión del brazo derecho:</strong> el antebrazo empuja el cuerpo de la guitarra hacia vos. Reduce la fuerza necesaria en la mano izquierda.</li></ul><p style="margin-top:6px;"><em>Nota acústica: las primeras 2-3 semanas duelen. Es normal. Los callos se forman.</em></p>'

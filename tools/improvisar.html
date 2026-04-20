@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Improvisar — Escala + Progresiones</title>
+  <style>
+    :root {
+      --bg:#0e0e0e;--surface:#141414;--surface2:#1a1a1a;--border:#222;
+      --text:#e8d5b0;--text-dim:#555;--text-mid:#888;
+      --accent:#00cec9;--accent-dim:#0a2422;
+      --gold:#d4a847;--radius:10px;--font:'Trebuchet MS','Segoe UI',sans-serif;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html{zoom:1.4;}
+    body{background:var(--bg);color:var(--text);font-family:var(--font);padding:16px 12px 40px;min-height:100vh;}
+
+    .back{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--text-dim);
+      font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;transition:color .15s;}
+    .back:hover{color:var(--accent);}
+
+    .header{text-align:center;margin-bottom:20px;}
+    .header-label{font-size:10px;letter-spacing:.3em;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px;}
+    .header h1{font-size:clamp(16px,4vw,24px);font-weight:300;color:var(--accent);letter-spacing:.08em;}
+
+    /* ── Sección genérica ── */
+    .section{max-width:720px;margin:0 auto 14px;}
+    .section-label{font-size:10px;letter-spacing:.2em;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;}
+
+    /* ── Selector de tonalidad ── */
+    .root-grid{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;}
+    .root-btn{
+      padding:7px 11px;border-radius:7px;border:2px solid #2a2a2a;background:#1a1a1a;
+      color:#555;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;min-width:40px;text-align:center;
+    }
+    .root-btn:hover{border-color:#444;color:#aaa;}
+    .root-btn.active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
+
+    .type-row{display:flex;gap:8px;}
+    .type-btn{
+      padding:7px 20px;border-radius:20px;border:2px solid #333;background:#1a1a1a;
+      color:#555;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;
+    }
+    .type-btn.active-major{border-color:#d4a847;color:#d4a847;background:#d4a84722;}
+    .type-btn.active-minor{border-color:#8e44ad;color:#c39bd3;background:#8e44ad22;}
+
+    /* ── Info de escala ── */
+    .scale-info{
+      max-width:720px;margin:0 auto 14px;padding:10px 14px;
+      background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+      font-size:12px;color:var(--text-mid);display:none;
+    }
+    .scale-info strong{color:var(--text);}
+    .scale-info .notes{color:var(--accent);font-weight:700;letter-spacing:.04em;}
+
+    /* ── Paleta de acordes diatónicos ── */
+    .chord-palette{max-width:720px;margin:0 auto 14px;display:none;}
+    .chord-btns{display:flex;flex-wrap:wrap;gap:6px;}
+    .chord-btn{
+      flex:1;min-width:84px;max-width:110px;padding:10px 8px 8px;
+      border-radius:8px;border:2px solid #2a2a2a;background:#1a1a1a;
+      cursor:pointer;transition:all .15s;text-align:center;
+      display:flex;flex-direction:column;gap:2px;
+    }
+    .chord-btn:hover{filter:brightness(1.2);}
+    .chord-btn.in-prog{opacity:.55;}
+    .chord-btn-roman{font-size:10px;font-weight:700;letter-spacing:.06em;opacity:.7;}
+    .chord-btn-name{font-size:17px;font-weight:800;line-height:1.1;}
+    .chord-btn-notes{font-size:9px;letter-spacing:.03em;opacity:.6;line-height:1.4;}
+    .chord-btn-type{font-size:9px;letter-spacing:.06em;text-transform:uppercase;opacity:.45;margin-top:1px;}
+
+    /* ── Constructor de progresión ── */
+    .prog-area{max-width:720px;margin:0 auto 14px;display:none;}
+    .presets-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+    .sabor-row{display:flex;gap:6px;margin-bottom:6px;}
+    .sabor-btn{
+      padding:5px 14px;border-radius:16px;border:1px solid #2a2a2a;background:#141414;
+      color:#555;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.04em;
+    }
+    .sabor-btn:hover{border-color:#555;color:#999;}
+    .sabor-btn.active{border-color:var(--gold);color:var(--gold);background:#d4a84718;}
+    .preset-btn{
+      padding:6px 13px;border-radius:16px;border:1px solid #2a2a2a;background:#141414;
+      color:#555;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;
+    }
+    .preset-btn:hover{border-color:#555;color:#999;}
+    .preset-btn.active-preset{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+
+    .prog-slots{
+      display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:54px;
+      padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;
+    }
+    .prog-empty{font-size:12px;color:var(--text-dim);font-style:italic;}
+    .prog-slot{
+      display:flex;flex-direction:column;align-items:center;gap:1px;
+      padding:7px 13px;border-radius:8px;border:2px solid;
+      cursor:pointer;background:transparent;font-family:var(--font);
+      transition:transform .12s,box-shadow .12s;
+    }
+    .prog-slot:hover{transform:scale(1.05);}
+    .prog-slot.metro-active{transform:scale(1.1);filter:brightness(1.3);box-shadow:0 0 14px currentColor;}
+    .prog-slot.drag-over{outline:2px dashed #fff;outline-offset:2px;opacity:.75;}
+    .prog-slot[draggable="true"]{cursor:grab;}
+    .prog-slot[draggable="true"]:active{cursor:grabbing;}
+    .prog-slot-roman{font-size:10px;font-weight:700;letter-spacing:.06em;opacity:.75;}
+    .prog-slot-name{font-size:15px;font-weight:800;}
+    .prog-slot-remove{font-size:8px;opacity:.4;margin-top:1px;}
+
+    .prog-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+    .btn-sm{
+      padding:6px 14px;border-radius:6px;border:1px solid #333;background:#1a1a1a;
+      color:#666;font-size:11px;cursor:pointer;transition:all .15s;
+    }
+    .btn-sm:hover{color:#aaa;border-color:#555;}
+
+    /* ── Leyenda ── */
+    .legend{
+      max-width:720px;margin:0 auto 0;display:none;
+      flex-wrap:wrap;gap:10px;align-items:center;
+      padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px 8px 0 0;
+      border-bottom:none;
+    }
+
+    /* ── Controles de capas ── */
+    .layer-controls{
+      max-width:720px;margin:0 auto 12px;display:none;
+      flex-direction:column;gap:5px;
+      padding:7px 12px;background:var(--surface);border:1px solid var(--border);border-radius:0 0 8px 8px;
+    }
+    .layer-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+    .layer-toggle{
+      padding:4px 10px;border-radius:12px;border:1px solid #333;background:#141414;
+      color:#555;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.04em;
+    }
+    .layer-toggle:hover{border-color:#555;color:#999;}
+    .layer-toggle.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+    .layer-controls-hint{font-size:9px;color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase;min-width:82px;}
+    .legend-label{font-size:10px;letter-spacing:.15em;color:var(--text-dim);text-transform:uppercase;}
+    .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-mid);border-radius:6px;padding:2px 6px;transition:opacity .15s;}
+    .legend-item:hover{background:var(--surface2);}
+    .legend-item--hidden{opacity:.35;}
+    .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+
+    /* ── Filtro de posición ── */
+    .pos-filter{
+      max-width:720px;margin:0 auto 8px;
+      display:flex;flex-wrap:wrap;gap:5px;align-items:center;
+    }
+    .pos-filter-label{font-size:9px;letter-spacing:.2em;color:var(--text-dim);text-transform:uppercase;margin-right:4px;}
+    .pos-btn{
+      padding:5px 11px;border-radius:14px;border:1px solid #2a2a2a;background:#141414;
+      color:#555;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.03em;
+    }
+    .pos-btn:hover{border-color:#555;color:#999;}
+    .pos-btn.active-pos{border-color:var(--gold);color:var(--gold);background:#d4a84718;}
+
+    /* ── Mástil ── */
+    .fretboard-wrap{overflow-x:auto;padding-bottom:8px;margin-bottom:14px;}
+    .fretboard-inner{min-width:640px;max-width:900px;margin:0 auto;}
+    svg#fretboard{width:100%;display:block;}
+
+    /* ── Metrónomo ── */
+    .metro-bar{
+      display:none;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;
+      max-width:720px;margin:0 auto 16px;
+      padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    }
+    .metro-btn{
+      padding:8px 18px;border-radius:7px;border:1px solid #333;background:#1a1a1a;
+      color:#666;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;
+    }
+    .metro-btn.on{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+    .metro-bpm-row{display:flex;align-items:center;gap:6px;}
+    .metro-adj{
+      padding:5px 10px;border-radius:6px;border:1px solid #2a2a2a;background:#141414;
+      color:#666;font-size:12px;cursor:pointer;transition:color .15s;
+    }
+    .metro-adj:hover{color:#aaa;}
+    .metro-bpm-val{font-size:18px;font-weight:700;color:var(--gold);min-width:36px;text-align:center;}
+    .metro-beat-dot{width:10px;height:10px;border-radius:50%;background:#222;transition:background .06s,box-shadow .06s;}
+    .metro-beat-dot.on{background:var(--accent);box-shadow:0 0 8px var(--accent);}
+    .metro-chord-lbl{font-size:20px;font-weight:800;min-width:80px;text-align:center;transition:color .15s;}
+    .metro-bpc-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);}
+    .metro-bpc-row select{
+      background:#1a1a1a;border:1px solid #333;color:var(--text);border-radius:5px;
+      padding:4px 6px;font-size:11px;cursor:pointer;
+    }
+
+    footer{text-align:center;margin-top:28px;font-size:10px;color:#333;letter-spacing:.08em;}
+    footer a{color:var(--accent);text-decoration:none;opacity:.5;}
+  </style>
+</head>
+<body>
+
+<a href="index.html" class="back">← Hub</a>
+
+<div class="header">
+  <div class="header-label">Guitarra — Improvisación</div>
+  <h1>Improvisar sobre la escala</h1>
+</div>
+
+<!-- Selector de tonalidad -->
+<div class="section">
+  <div class="section-label">Tonalidad</div>
+  <div class="root-grid" id="root-grid"></div>
+  <div class="type-row">
+    <button class="type-btn active-minor" data-type="minor">Menor natural</button>
+    <button class="type-btn" data-type="major">Mayor natural</button>
+  </div>
+</div>
+
+<!-- Info de escala -->
+<div class="scale-info" id="scale-info"></div>
+
+<!-- Paleta de acordes -->
+<div class="chord-palette" id="chord-palette">
+  <div class="section-label">Acordes diatónicos — hacé click para agregar a la progresión</div>
+  <div class="chord-btns" id="chord-btns"></div>
+</div>
+
+<!-- Progresión -->
+<div class="prog-area" id="prog-area">
+  <div class="section-label">Progresión</div>
+  <div class="sabor-row" id="sabor-row"></div>
+  <div class="presets-row" id="presets-row"></div>
+  <div class="prog-slots" id="prog-slots">
+    <span class="prog-empty">Seleccioná una tonalidad y hacé click en un acorde para empezar</span>
+  </div>
+  <div class="prog-controls">
+    <button class="btn-sm" id="btn-clear">Limpiar</button>
+    <span style="font-size:10px;color:var(--text-dim);">Click en un slot para quitarlo · máx. 8 acordes</span>
+  </div>
+</div>
+
+<!-- Leyenda + controles de capas -->
+<div class="legend" id="legend"></div>
+<div class="layer-controls" id="layer-controls">
+  <div class="layer-row">
+    <span class="layer-controls-hint">Visualización:</span>
+    <button class="layer-toggle active" id="toggle-3s" title="Tríadas en 3 cuerdas (tecla 3)">Tríadas 3c</button>
+    <button class="layer-toggle" id="toggle-2s" title="Tríadas en 2 cuerdas (tecla 2)">Tríadas 2c</button>
+  </div>
+  <div class="layer-row">
+    <span class="layer-controls-hint">Armonía:</span>
+    <button class="layer-toggle" id="toggle-7s" title="Acordes con 7ma diatónica (tecla 7)">7mas</button>
+    <button class="layer-toggle" id="toggle-sus2" title="Acordes sus2 (tecla S)">Sus2</button>
+    <button class="layer-toggle" id="toggle-sus4" title="Acordes sus4 (tecla D)">Sus4</button>
+  </div>
+</div>
+
+<!-- Filtro de posición -->
+<div class="pos-filter" id="pos-filter"></div>
+
+<!-- Mástil -->
+<div class="fretboard-wrap">
+  <div class="fretboard-inner">
+    <svg id="fretboard" viewBox="0 0 920 220" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+</div>
+
+<!-- Metrónomo -->
+<div class="metro-bar" id="metro-bar">
+  <button class="metro-btn" id="metro-btn">▶ Ciclar</button>
+  <div class="metro-bpm-row">
+    <button class="metro-adj" id="metro-down">−5</button>
+    <div class="metro-bpm-val" id="metro-bpm-val">80</div>
+    <button class="metro-adj" id="metro-up">+5</button>
+    <span style="font-size:10px;color:var(--text-dim);letter-spacing:.1em;">BPM</span>
+  </div>
+  <div class="metro-bpc-row">
+    <span>Tiempos por acorde:</span>
+    <select id="metro-bpc">
+      <option value="2">2</option>
+      <option value="4" selected>4</option>
+      <option value="8">8</option>
+    </select>
+  </div>
+  <div class="metro-beat-dot" id="metro-beat-dot"></div>
+  <div class="metro-chord-lbl" id="metro-chord-lbl"></div>
+</div>
+
+<footer>Afinación estándar · E A D G B e · Trastes 0–12 · <a href="index.html">← Hub</a></footer>
+
+<script>
+// ── Constantes ────────────────────────────────────────────────────────────
+const CHROMATIC  = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const OPEN_NOTES = ['E','A','D','G','B','E'];
+const STR_LABELS = ['E','A','D','G','B','e'];
+const STR_THICK  = [3.2,2.6,2.0,1.5,1.0,0.6];
+const FRET_MARKS = [3,5,7,9,12];
+const SVG_NS     = 'http://www.w3.org/2000/svg';
+
+const SVG_W=920, NUT_X=48, RIGHT_X=SVG_W-16, SVG_H=220;
+const FRET_W=(RIGHT_X-NUT_X)/12;
+const STR_TOP=28, STR_BOT=SVG_H-28, STR_GAP=(STR_BOT-STR_TOP)/5;
+
+function fretX(f){ return f===0 ? NUT_X-4 : NUT_X+(f-0.5)*FRET_W; }
+function strY(si){ return STR_BOT-si*STR_GAP; }
+function noteAt(open,fret){ return CHROMATIC[(CHROMATIC.indexOf(open)+fret)%12]; }
+
+// Colores cromáticos por nota raíz (hue fijo por nota, saturación/brillo por tipo)
+const NOTE_HUES = {
+  'C':0,'C#':30,'D':60,'D#':90,'E':120,'F':150,
+  'F#':180,'G':210,'G#':240,'A':270,'A#':300,'B':330,
+};
+function chordColor(root, type){
+  const hue = NOTE_HUES[root] ?? 0;
+  if(type==='maj') return `hsl(${hue},75%,60%)`;
+  if(type==='min') return `hsl(${hue},60%,56%)`;
+  if(type==='dim') return `hsl(${hue},40%,52%)`;
+  return `hsl(${hue},75%,60%)`; // aug
+}
+
+// ── Motor armónico ────────────────────────────────────────────────────────
+const STEPS = {
+  major: [2,2,1,2,2,2,1],
+  minor: [2,1,2,2,1,2,2],
+};
+
+function buildScale(root, isMinor){
+  const steps = isMinor ? STEPS.minor : STEPS.major;
+  let cur = CHROMATIC.indexOf(root);
+  const notes = [root];
+  steps.slice(0,6).forEach(s=>{ cur=(cur+s)%12; notes.push(CHROMATIC[cur]); });
+  return notes; // 7 notes
+}
+
+function buildChords(scaleNotes){
+  const MAJ = ['I','II','III','IV','V','VI','VII'];
+  const MIN = ['i','ii','iii','iv','v','vi','vii'];
+  const TYPE_LABEL = {maj:'Mayor',min:'Menor',dim:'Disminuido',aug:'Aumentado'};
+
+  return scaleNotes.map((root,i)=>{
+    const third = scaleNotes[(i+2)%7];
+    const fifth  = scaleNotes[(i+4)%7];
+    const ri = CHROMATIC.indexOf(root);
+    const ti = (CHROMATIC.indexOf(third)-ri+12)%12;
+    const fi = (CHROMATIC.indexOf(fifth)-ri+12)%12;
+
+    let type, roman, name;
+    if(ti===4&&fi===7){ type='maj'; roman=MAJ[i]; name=root; }
+    else if(ti===3&&fi===7){ type='min'; roman=MIN[i]; name=root+'m'; }
+    else if(ti===3&&fi===6){ type='dim'; roman=MIN[i]+'°'; name=root+'°'; }
+    else { type='aug'; roman=MAJ[i]+'+'; name=root+'+'; }
+
+    return { degree:i, roman, name, type, typeLabel:TYPE_LABEL[type],
+             notes:[root,third,fifth], root, third, fifth };
+  });
+}
+
+function buildSeventhChords(scaleNotes){
+  return buildChords(scaleNotes).map((ch,i)=>{
+    const seventh = scaleNotes[(i+6)%7];
+    const ri = CHROMATIC.indexOf(ch.root);
+    const si7 = (CHROMATIC.indexOf(seventh)-ri+12)%12;
+    let ext, extLabel;
+    if(si7===11){ ext='maj7'; extLabel='maj7'; }
+    else if(si7===10){ ext='7';    extLabel=ch.type==='maj'?'7':'m7'; }
+    else if(si7===9){  ext='m7';   extLabel='m7'; }
+    else { ext='d7'; extLabel='dim7'; }
+    const name7 = ch.type==='maj'
+      ? (ext==='7' ? ch.root+'7' : ch.root+'maj7')
+      : ch.type==='min'
+        ? ch.root+'m7'
+        : ch.root+'m7b5';
+    return { ...ch, seventh, ext, name7 };
+  });
+}
+
+function buildSusChords(scaleNotes, susType){
+  return buildChords(scaleNotes).map((ch,i)=>{
+    const susNote = susType==='sus4' ? scaleNotes[(i+3)%7] : scaleNotes[(i+1)%7];
+    const nameSus = ch.root + susType;
+    return { ...ch, susNote, nameSus, notes:[ch.root, susNote, ch.fifth] };
+  });
+}
+
+function allPositions(scaleNotes){
+  const pos=[];
+  for(let si=0;si<6;si++){
+    for(let fret=0;fret<=12;fret++){
+      const note=noteAt(OPEN_NOTES[si],fret);
+      const di=scaleNotes.indexOf(note);
+      if(di>=0) pos.push({si,fret,note,d:di+1});
+    }
+  }
+  return pos;
+}
+
+// ── Motor de tríadas de 3 cuerdas ────────────────────────────────────────
+// Retorna todos los shapes (tríadas) de 3 cuerdas adyacentes para un acorde.
+// Cubre los 4 grupos de cuerdas: [0-1-2],[1-2-3],[2-3-4],[3-4-5]
+// e incluye las 3 inversiones posibles (las 6 permutaciones de notas por cuerda).
+const STRING_GROUPS=[[0,1,2],[1,2,3],[2,3,4],[3,4,5]];
+
+function buildTriadShapes(chordNotes){
+  // Pre-computar frets donde aparece cada nota en cada cuerda
+  const notePos={};
+  chordNotes.forEach(note=>{
+    notePos[note]={};
+    for(let si=0;si<6;si++){
+      notePos[note][si]=[];
+      for(let fret=1;fret<=12;fret++) // fret 0 excluido: evita triángulos que cruzan el mástil
+        if(noteAt(OPEN_NOTES[si],fret)===note)
+          notePos[note][si].push(fret);
+    }
+  });
+
+  const shapes=[];
+  const seen=new Set();
+  const [n0,n1,n2]=chordNotes;
+  // Las 6 permutaciones de las 3 notas
+  const perms=[[n0,n1,n2],[n0,n2,n1],[n1,n0,n2],[n1,n2,n0],[n2,n0,n1],[n2,n1,n0]];
+
+  STRING_GROUPS.forEach(([sa,sb,sc])=>{
+    perms.forEach(([na,nb,nc])=>{
+      for(const fa of (notePos[na][sa]||[])){
+        for(const fb of (notePos[nb][sb]||[])){
+          for(const fc of (notePos[nc][sc]||[])){
+            // Span: todos los frets son ≥1, span máximo 3 (cómodo para la mano)
+            const span=Math.max(fa,fb,fc)-Math.min(fa,fb,fc);
+            if(span>3) continue;
+            // Deduplicar
+            const key=[[sa,fa],[sb,fb],[sc,fc]].map(p=>p.join(':')).sort().join('|');
+            if(seen.has(key)) continue;
+            seen.add(key);
+            shapes.push([
+              {si:sa,fret:fa,note:na},
+              {si:sb,fret:fb,note:nb},
+              {si:sc,fret:fc,note:nc},
+            ]);
+          }
+        }
+      }
+    });
+  });
+  return shapes;
+}
+
+function renderTriangleLayer(){
+  const g=document.getElementById('fb-triangles');
+  g.innerHTML='';
+  if(!st.show3sTriads||!st.progression.length) return;
+
+  const susCh = st.susMode ? buildSusChords(st.scale, st.susMode) : null;
+
+  const seen=new Set();
+  st.progression.forEach(di=>{
+    if(seen.has(di)) return; seen.add(di);
+    if(st.hiddenDegrees.has(di)) return;
+    const chord=st.chords[di];
+    const col=chordColor(chord.root, chord.type);
+    const notes = susCh ? susCh[di].notes : chord.notes;
+    const shapes=buildTriadShapes(notes);
+
+    shapes.forEach(positions=>{
+      const cls=posClassify(positions.map(p=>p.fret));
+      if(cls==='hidden') return;
+      const pts=positions.map(p=>`${fretX(p.fret)},${strY(p.si)}`).join(' ');
+      const poly=el('polygon',{
+        points:pts,
+        fill:col,
+        'fill-opacity':cls==='partial'?.07:.15,
+        stroke:col,
+        'stroke-width':1.5,
+        'stroke-opacity':cls==='partial'?.30:.75,
+        'stroke-linejoin':'round',
+      });
+      poly.setAttribute('data-degree',di);
+      g.appendChild(poly);
+    });
+  });
+}
+
+// ── Motor de tríadas de 2 cuerdas ────────────────────────────────────────
+// Distribuye las 3 notas de la tríada en 2 cuerdas adyacentes (2+1).
+// Una cuerda lleva 2 notas en frets distintos, la adyacente lleva 1.
+const STRING_PAIRS=[[0,1],[1,2],[2,3],[3,4],[4,5]];
+
+// ── Posiciones clásicas del mástil ────────────────────────────────────────
+const POSITIONS=[
+  {id:'all',  label:'Todas',   min:0,  max:12},
+  {id:'open', label:'Abierta', min:0,  max:4},
+  {id:'p2',   label:'Pos 2',   min:2,  max:6},
+  {id:'p5',   label:'Pos 5',   min:4,  max:8},
+  {id:'p7',   label:'Pos 7',   min:6,  max:10},
+  {id:'p9',   label:'Pos 9',   min:8,  max:12},
+  {id:'p12',  label:'Pos 12',  min:9,  max:12},
+];
+
+function posClassify(frets){
+  // Retorna 'full' | 'partial' | 'hidden' para un shape dado el filtro activo
+  const pos=POSITIONS[st.posFilter];
+  if(pos.id==='all') return 'full';
+  const inside=frets.filter(f=>f>=pos.min&&f<=pos.max);
+  if(inside.length===frets.length) return 'full';
+  const outside=frets.filter(f=>f<pos.min||f>pos.max);
+  const adjBorder=outside.every(f=>f===pos.min-1||f===pos.max+1);
+  if(inside.length>=2&&adjBorder) return 'partial';
+  return 'hidden';
+}
+
+function fretInRange(fret){
+  const pos=POSITIONS[st.posFilter];
+  if(pos.id==='all') return true;
+  return fret>=pos.min&&fret<=pos.max;
+}
+
+function buildTwoStringTriadShapes(chordNotes){
+  const notePos={};
+  chordNotes.forEach(note=>{
+    notePos[note]={};
+    for(let si=0;si<6;si++){
+      notePos[note][si]=[];
+      for(let fret=1;fret<=12;fret++)
+        if(noteAt(OPEN_NOTES[si],fret)===note)
+          notePos[note][si].push(fret);
+    }
+  });
+
+  const shapes=[];
+  const seen=new Set();
+  const [n0,n1,n2]=chordNotes;
+  // 3 formas de elegir cuál nota va sola en una cuerda
+  const splits=[[n0,[n1,n2]],[n1,[n0,n2]],[n2,[n0,n1]]];
+
+  STRING_PAIRS.forEach(([sa,sb])=>{
+    splits.forEach(([lone,[p0,p1]])=>{
+      // Caso A: par (p0,p1) en sa, lone en sb
+      for(const fa0 of (notePos[p0][sa]||[])){
+        for(const fa1 of (notePos[p1][sa]||[])){
+          if(fa0===fa1) continue;
+          for(const fb of (notePos[lone][sb]||[])){
+            if(Math.max(fa0,fa1,fb)-Math.min(fa0,fa1,fb)>3) continue;
+            const key=[[sa,fa0],[sa,fa1],[sb,fb]].map(p=>p.join(':')).sort().join('|');
+            if(seen.has(key)) continue;
+            seen.add(key);
+            shapes.push([{si:sa,fret:fa0,note:p0},{si:sa,fret:fa1,note:p1},{si:sb,fret:fb,note:lone}]);
+          }
+        }
+      }
+      // Caso B: lone en sa, par (p0,p1) en sb
+      for(const fa of (notePos[lone][sa]||[])){
+        for(const fb0 of (notePos[p0][sb]||[])){
+          for(const fb1 of (notePos[p1][sb]||[])){
+            if(fb0===fb1) continue;
+            if(Math.max(fa,fb0,fb1)-Math.min(fa,fb0,fb1)>3) continue;
+            const key=[[sa,fa],[sb,fb0],[sb,fb1]].map(p=>p.join(':')).sort().join('|');
+            if(seen.has(key)) continue;
+            seen.add(key);
+            shapes.push([{si:sa,fret:fa,note:lone},{si:sb,fret:fb0,note:p0},{si:sb,fret:fb1,note:p1}]);
+          }
+        }
+      }
+    });
+  });
+  return shapes;
+}
+
+// Grosor de stroke por par de cuerdas (graves=grueso, agudas=fino)
+const PAIR_STROKE={'0,1':2.5,'1,2':2.2,'2,3':1.9,'3,4':1.6,'4,5':1.3};
+
+function renderTwoStringTriadLayer(){
+  const g=document.getElementById('fb-triangles-2s');
+  g.innerHTML='';
+  if(!st.show2sTriads||!st.progression.length) return;
+
+  const susCh = st.susMode ? buildSusChords(st.scale, st.susMode) : null;
+  const seen=new Set();
+  st.progression.forEach(di=>{
+    if(seen.has(di)) return; seen.add(di);
+    if(st.hiddenDegrees.has(di)) return;
+    const chord=st.chords[di];
+    const col=chordColor(chord.root,chord.type);
+    const notes = susCh ? susCh[di].notes : chord.notes;
+    const shapes=buildTwoStringTriadShapes(notes);
+
+    shapes.forEach(positions=>{
+      const cls=posClassify(positions.map(p=>p.fret));
+      if(cls==='hidden') return;
+
+      // Par de cuerdas → grosor
+      const sis=[...new Set(positions.map(p=>p.si))].sort((a,b)=>a-b);
+      const strokeW=PAIR_STROKE[sis.join(',')]||1.5;
+
+      // Power chord: par de 2 notas en la misma cuerda = raíz + quinta
+      const siCount={};
+      positions.forEach(p=>{ siCount[p.si]=(siCount[p.si]||0)+1; });
+      const twoSi=parseInt(Object.keys(siCount).find(s=>siCount[s]===2));
+      const twoNotes=positions.filter(p=>p.si===twoSi).map(p=>p.note);
+      const isPower=twoNotes.includes(chord.root)&&twoNotes.includes(chord.fifth);
+
+      const pts=positions.map(p=>`${fretX(p.fret)},${strY(p.si)}`).join(' ');
+      const poly=el('polygon',{
+        points:pts,
+        fill:col,
+        'fill-opacity':cls==='partial'?.05:.12,
+        stroke:col,
+        'stroke-width':strokeW,
+        'stroke-opacity':cls==='partial'?.25:.65,
+        'stroke-linejoin':'round',
+      });
+      if(!isPower) poly.setAttribute('stroke-dasharray','4 3');
+      poly.setAttribute('data-degree',di);
+      g.appendChild(poly);
+    });
+  });
+}
+
+// ── Estado ────────────────────────────────────────────────────────────────
+const st={
+  root:'A', isMinor:true,
+  scale:[], chords:[],
+  progression:[],
+  activePreset:null,
+  activeSabor:null,
+  hiddenDegrees: new Set(),
+  show3sTriads: true,
+  show2sTriads: false,
+  show7s: false,
+  susMode: null,
+  posFilter: 0,
+  metro:{ playing:false, bpm:80, bpc:4, idx:0, beats:0, timer:null },
+};
+
+// ── Progresiones por sabor ────────────────────────────────────────────────
+const SABOR_PRESETS={
+  minor:{
+    estable:[
+      // 2 acordes
+      {id:'m_est_1', label:'i – v',               deg:[0,4]},
+      {id:'m_est_2', label:'i – VII',              deg:[0,6]},
+      {id:'m_est_3', label:'i – VI',               deg:[0,5]},
+      // 3 acordes
+      {id:'m_est_4', label:'i – III – VII',        deg:[0,2,6]},
+      {id:'m_est_5', label:'i – iv – v',           deg:[0,3,4]},
+      {id:'m_est_6', label:'i – VI – III',         deg:[0,5,2]},
+      // 4 acordes
+      {id:'m_est_7', label:'i – VI – III – VII',   deg:[0,5,2,6]},
+      {id:'m_est_8', label:'i – VII – VI – VII',   deg:[0,6,5,6]},
+    ],
+    tenso:[
+      // 2 acordes
+      {id:'m_ten_1', label:'i – ii°',              deg:[0,1]},
+      {id:'m_ten_2', label:'i – iv',               deg:[0,3]},
+      {id:'m_ten_3', label:'i – III',               deg:[0,2]},
+      // 3 acordes
+      {id:'m_ten_4', label:'i – iv – VII',         deg:[0,3,6]},
+      {id:'m_ten_5', label:'i – ii° – v',          deg:[0,1,4]},
+      {id:'m_ten_6', label:'i – VI – ii°',         deg:[0,5,1]},
+      // 4 acordes
+      {id:'m_ten_7', label:'i – iv – VII – III',   deg:[0,3,6,2]},
+      {id:'m_ten_8', label:'i – ii° – VI – VII',   deg:[0,1,5,6]},
+    ],
+  },
+  major:{
+    estable:[
+      // 2 acordes
+      {id:'M_est_1', label:'I – V',                deg:[0,4]},
+      {id:'M_est_2', label:'I – IV',               deg:[0,3]},
+      {id:'M_est_3', label:'I – vi',               deg:[0,5]},
+      // 3 acordes
+      {id:'M_est_4', label:'I – IV – V',           deg:[0,3,4]},
+      {id:'M_est_5', label:'I – V – vi',           deg:[0,4,5]},
+      {id:'M_est_6', label:'I – iii – IV',          deg:[0,2,3]},
+      // 4 acordes
+      {id:'M_est_7', label:'I – V – vi – IV',      deg:[0,4,5,3]},
+      {id:'M_est_8', label:'I – vi – IV – V',      deg:[0,5,3,4]},
+    ],
+    tenso:[
+      // 2 acordes
+      {id:'M_ten_1', label:'I – ii',               deg:[0,1]},
+      {id:'M_ten_2', label:'I – vii°',             deg:[0,6]},
+      {id:'M_ten_3', label:'I – iii',              deg:[0,2]},
+      // 3 acordes
+      {id:'M_ten_4', label:'I – ii – V',           deg:[0,1,4]},
+      {id:'M_ten_5', label:'I – iii – IV',         deg:[0,2,3]},
+      {id:'M_ten_6', label:'I – vii° – vi',        deg:[0,6,5]},
+      // 4 acordes
+      {id:'M_ten_7', label:'I – IV – vi – V',      deg:[0,3,5,4]},
+      {id:'M_ten_8', label:'I – iii – IV – V',     deg:[0,2,3,4]},
+    ],
+  },
+};
+
+// ── Helpers SVG ───────────────────────────────────────────────────────────
+function el(tag,attrs={}){
+  const e=document.createElementNS(SVG_NS,tag);
+  Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));
+  return e;
+}
+
+// ── Inicializar mástil ────────────────────────────────────────────────────
+function initFretboard(){
+  const svg=document.getElementById('fretboard');
+  svg.innerHTML='';
+  const defs=el('defs');
+  defs.innerHTML=`
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  svg.appendChild(defs);
+
+  const bg=el('g');
+  // Cejilla
+  bg.appendChild(el('rect',{x:NUT_X-5,y:STR_TOP-8,width:5,height:STR_GAP*5+16,fill:'#5a4820'}));
+  // Trastes
+  for(let f=1;f<=12;f++){
+    const x=NUT_X+f*FRET_W;
+    bg.appendChild(el('line',{x1:x,y1:STR_TOP-6,x2:x,y2:STR_BOT+6,stroke:'#1a1a1a','stroke-width':2}));
+  }
+  // Numeración
+  for(let f=0;f<=12;f++){
+    const x=f===0?NUT_X-18:NUT_X+(f-0.5)*FRET_W;
+    const t=el('text',{x,y:14,'text-anchor':'middle','font-size':10,
+      fill:FRET_MARKS.includes(f)?'#d4a847':'#2a2a2a','font-family':'Trebuchet MS,sans-serif'});
+    t.textContent=f===0?'○':f; bg.appendChild(t);
+  }
+  // Cuerdas
+  OPEN_NOTES.forEach((_,si)=>{
+    const y=strY(si);
+    bg.appendChild(el('line',{x1:NUT_X-4,y1:y,x2:RIGHT_X,y2:y,stroke:'#3a2a10','stroke-width':STR_THICK[si]}));
+    const t=el('text',{x:22,y:y+4,'text-anchor':'middle','font-size':11,'font-style':'italic',
+      'font-weight':700,fill:'#444','font-family':'Trebuchet MS,sans-serif'});
+    t.textContent=STR_LABELS[si]; bg.appendChild(t);
+  });
+  // Marcadores de posición
+  FRET_MARKS.forEach(f=>{
+    const cx=NUT_X+(f-0.5)*FRET_W;
+    if(f===12){
+      [1,3].forEach(si=>bg.appendChild(el('circle',{cx,cy:strY(si)-STR_GAP*.5,r:4,fill:'#1e1e1e'})));
+    } else {
+      bg.appendChild(el('circle',{cx,cy:strY(2)-STR_GAP*.5,r:4,fill:'#1e1e1e'}));
+    }
+  });
+  svg.appendChild(bg);
+
+  // Capas dinámicas (orden de z: triángulos 3c → triángulos 2c → dots)
+  ['fb-triangles','fb-triangles-2s','fb-dots'].forEach(id=>{
+    const g=el('g'); g.id=id; svg.appendChild(g);
+  });
+}
+
+// ── Renderizar mástil ─────────────────────────────────────────────────────
+function renderFretboard(){
+  if(!st.scale.length) return;
+  const allPos=allPositions(st.scale);
+  const prog=st.progression;
+  const hasProg=prog.length>0;
+
+  // Pre-calcular 7mas y sus si los toggles están activos
+  const ch7s = (hasProg && st.show7s) ? buildSeventhChords(st.scale) : null;
+  const susCh = (hasProg && st.susMode) ? buildSusChords(st.scale, st.susMode) : null;
+  const seventhNoteFor = {};
+  const susNoteFor = {};
+  if(ch7s){
+    const seen7=new Set();
+    prog.forEach(di=>{ if(!seen7.has(di)){ seen7.add(di); seventhNoteFor[di]=ch7s[di].seventh; } });
+  }
+  if(susCh){
+    const seenS=new Set();
+    prog.forEach(di=>{ if(!seenS.has(di)){ seenS.add(di); susNoteFor[di]=susCh[di].susNote; } });
+  }
+
+  // Notas del acorde activo según toggles activos
+  function chordsForNote(note){
+    if(!hasProg) return [];
+    const seen=new Set();
+    const result=[];
+    prog.forEach(di=>{
+      if(seen.has(di)||st.hiddenDegrees.has(di)) return;
+      const chordNotes = susCh ? susCh[di].notes : st.chords[di].notes;
+      const inChord=chordNotes.includes(note);
+      const is7th=ch7s && seventhNoteFor[di]===note;
+      if(inChord||is7th){ seen.add(di); result.push(di); }
+    });
+    return result;
+  }
+
+  // Pre-computar posiciones que forman parte de algún shape 2c
+  const twoSPoints=new Set();
+  if(st.show2sTriads && hasProg){
+    const seen2=new Set();
+    prog.forEach(di=>{
+      if(seen2.has(di)||st.hiddenDegrees.has(di)) return; seen2.add(di);
+      const notes2=susCh?susCh[di].notes:st.chords[di].notes;
+      buildTwoStringTriadShapes(notes2).forEach(positions=>{
+        if(posClassify(positions.map(p=>p.fret))==='hidden') return;
+        positions.forEach(p=>twoSPoints.add(`${p.si},${p.fret}`));
+      });
+    });
+  }
+
+  // ── Capa 1: triángulos (renderizado separado) ─────────────────
+  renderTriangleLayer();
+
+  // ── Capa 2: puntos ───────────────────────────────────────────
+  const dotsG=document.getElementById('fb-dots');
+  dotsG.innerHTML='';
+
+  allPos.forEach(({si,fret,note,d})=>{
+    const cx=fretX(fret), cy=strY(si);
+    const matches=chordsForNote(note); // array of di
+    const isChordTone=hasProg&&matches.length>0;
+    const isRoot=d===1;
+    const isShared=isChordTone&&matches.length>1;
+    const inTwoSShape=twoSPoints.has(`${si},${fret}`);
+
+    let fill, baseR, textFill, fontSize;
+
+    if(!hasProg){
+      const tonicCol=chordColor(st.root, st.isMinor?'min':'maj');
+      fill=tonicCol;
+      baseR=isRoot?15:11;
+      textFill='#000';
+      fontSize=9;
+    } else if(isChordTone){
+      fill=chordColor(st.chords[matches[0]].root, st.chords[matches[0]].type);
+      baseR=isRoot?13:10;
+      textFill='#000';
+      fontSize=9;
+    } else {
+      fill='#2e2e2e';
+      baseR=8;
+      textFill='#555';
+      fontSize=8;
+    }
+
+    // Atenuación por filtro de posición, y por no pertenecer a shape 2c
+    const inRange=fretInRange(fret);
+    const shapeAttenuation=(st.show2sTriads && isChordTone && !inTwoSShape) ? 0.12 : 1;
+    const dotOpacity=inRange ? shapeAttenuation : 0.25*shapeAttenuation;
+
+    // Fill circle (innermost)
+    const dot=el('circle',{cx,cy,r:baseR,fill,opacity:dotOpacity});
+    if(isChordTone) dot.setAttribute('data-degree', matches[0]);
+    dotsG.appendChild(dot);
+
+    // En escala limpia: anillo exterior para tónica
+    if(!hasProg && isRoot && inRange){
+      const ring=el('circle',{cx,cy,r:baseR+4,fill:'none',
+        stroke:fill,'stroke-width':2,'stroke-opacity':0.5});
+      dotsG.appendChild(ring);
+    }
+
+    // Concentric stroke rings for shared notes (2nd, 3rd chord color outward)
+    if(isShared){
+      matches.slice(1).forEach((di,k)=>{
+        const ringR=baseR+4*(k+1);
+        const ring=el('circle',{cx,cy,r:ringR,fill:'none',
+          stroke:chordColor(st.chords[di].root, st.chords[di].type),'stroke-width':2,'stroke-opacity':(inRange?0.85:0.2)*shapeAttenuation});
+        dotsG.appendChild(ring);
+      });
+    }
+
+    // Etiqueta de nota (always on top)
+    const t=el('text',{x:cx,y:cy+4,'text-anchor':'middle',
+      'font-size':fontSize,'font-weight':800,fill:textFill,'font-family':'Trebuchet MS,sans-serif',
+      opacity:dotOpacity});
+    t.textContent=note;
+    dotsG.appendChild(t);
+
+    // Badge de grado en escala limpia
+    if(!hasProg && inRange){
+      const bx=cx+baseR, by=cy-baseR+1;
+      const degBg=el('circle',{cx:bx,cy:by,r:5,fill:'#111','fill-opacity':0.85});
+      dotsG.appendChild(degBg);
+      const degLabel=el('text',{x:bx,y:by+2.5,'text-anchor':'middle',
+        'font-size':6.5,'font-weight':900,fill:'#fff','font-family':'Trebuchet MS,sans-serif'});
+      degLabel.textContent=d;
+      dotsG.appendChild(degLabel);
+    }
+
+    // Badge "7" para notas que son la 7ma
+    if(ch7s && inRange && matches.some(di=>seventhNoteFor[di]===note)){
+      const bx=cx+baseR, by=cy-baseR+1;
+      const badgeBg=el('circle',{cx:bx,cy:by,r:5,fill:'#111','fill-opacity':0.85});
+      dotsG.appendChild(badgeBg);
+      const badge=el('text',{x:bx,y:by+2.5,'text-anchor':'middle',
+        'font-size':6.5,'font-weight':900,fill:'#fff','font-family':'Trebuchet MS,sans-serif'});
+      badge.textContent='7';
+      dotsG.appendChild(badge);
+    }
+    // Badge "s4"/"s2" para la nota sus (la que reemplaza la tercera)
+    if(susCh && inRange && matches.some(di=>susNoteFor[di]===note)){
+      const badge=el('text',{x:cx-baseR+2,y:cy-baseR+3,'text-anchor':'middle',
+        'font-size':5.5,'font-weight':900,fill:'#fff','font-family':'Trebuchet MS,sans-serif',
+        'stroke':'#000','stroke-width':.5});
+      badge.textContent=st.susMode==='sus4'?'s4':'s2';
+      dotsG.appendChild(badge);
+    }
+  });
+}
+
+// ── UI ────────────────────────────────────────────────────────────────────
+function renderPositionFilter(){
+  const row=document.getElementById('pos-filter');
+  row.innerHTML='<span class="pos-filter-label">Posición:</span>';
+  POSITIONS.forEach((pos,idx)=>{
+    const btn=document.createElement('button');
+    btn.className='pos-btn'+(st.posFilter===idx?' active-pos':'');
+    btn.textContent=pos.label;
+    btn.addEventListener('click',()=>{
+      st.posFilter=idx;
+      renderPositionFilter();
+      renderTriangleLayer();
+      renderTwoStringTriadLayer();
+      renderFretboard();
+      if(st.metro.playing) applyMetroOpacity();
+    });
+    row.appendChild(btn);
+  });
+}
+
+function renderRootGrid(){
+  const grid=document.getElementById('root-grid');
+  grid.innerHTML='';
+  ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'].forEach(note=>{
+    const btn=document.createElement('button');
+    btn.className='root-btn'+(st.root===note?' active':'');
+    btn.textContent=note;
+    btn.addEventListener('click',()=>{ st.root=note; onTonalityChange(); });
+    grid.appendChild(btn);
+  });
+  document.querySelectorAll('.type-btn').forEach(btn=>{
+    const isMajor=btn.dataset.type==='major';
+    const isActive=isMajor!==st.isMinor;
+    btn.className='type-btn'+(isActive?(st.isMinor?' active-minor':' active-major'):'');
+  });
+}
+
+function renderScaleInfo(){
+  const el2=document.getElementById('scale-info');
+  if(!st.root){ el2.style.display='none'; return; }
+  el2.style.display='block';
+  const typeName=st.isMinor?'Menor Natural':'Mayor Natural';
+  el2.innerHTML=`<strong>${st.root} ${typeName}</strong> &nbsp;·&nbsp; <span class="notes">${st.scale.join(' — ')}</span>`;
+}
+
+function renderChordPalette(){
+  const palette=document.getElementById('chord-palette');
+  const btns=document.getElementById('chord-btns');
+  if(!st.chords.length){ palette.style.display='none'; return; }
+  palette.style.display='block';
+  btns.innerHTML='';
+  const ch7s = st.show7s ? buildSeventhChords(st.scale) : null;
+  const chSus = st.susMode ? buildSusChords(st.scale, st.susMode) : null;
+  st.chords.forEach((ch,i)=>{
+    const col=chordColor(ch.root, ch.type);
+    const c7 = ch7s ? ch7s[i] : null;
+    const cSus = chSus ? chSus[i] : null;
+    const baseNotes = cSus ? cSus.notes : ch.notes;
+    let displayName;
+    if(c7 && cSus) displayName = c7.name7 + st.susMode;
+    else if(c7)    displayName = c7.name7;
+    else if(cSus)  displayName = cSus.nameSus;
+    else           displayName = ch.name;
+    const displayNotes = c7 ? [...baseNotes, c7.seventh].join(' · ') : baseNotes.join(' · ');
+    const btn=document.createElement('button');
+    btn.className='chord-btn'+(st.progression.includes(i)?' in-prog':'');
+    btn.style.cssText=`border-color:${col}44;color:${col};`;
+    btn.innerHTML=`
+      <span class="chord-btn-roman">${ch.roman}</span>
+      <span class="chord-btn-name">${displayName}</span>
+      <span class="chord-btn-notes">${displayNotes}</span>
+      <span class="chord-btn-type">${ch.typeLabel}</span>`;
+    btn.title=`${ch.roman} — ${displayName}: ${displayNotes}`;
+    btn.addEventListener('click',()=>addToProg(i));
+    btns.appendChild(btn);
+  });
+}
+
+function renderProgression(){
+  const area=document.getElementById('prog-area');
+  const slots=document.getElementById('prog-slots');
+  const metro=document.getElementById('metro-bar');
+  if(!st.chords.length){ area.style.display='none'; metro.style.display='none'; return; }
+  area.style.display='block';
+
+  // Sabores
+  const saborRow=document.getElementById('sabor-row');
+  const presetsRow=document.getElementById('presets-row');
+  saborRow.innerHTML='';
+  presetsRow.innerHTML='';
+  const modeKey=st.isMinor?'minor':'major';
+  ['estable','tenso','explorar'].forEach(sabor=>{
+    const btn=document.createElement('button');
+    btn.className='sabor-btn'+(st.activeSabor===sabor?' active':'');
+    btn.textContent=sabor.charAt(0).toUpperCase()+sabor.slice(1);
+    btn.addEventListener('click',()=>{
+      if(sabor==='explorar'){
+        generateExplorarProg();
+      } else {
+        st.activeSabor=st.activeSabor===sabor?null:sabor;
+        st.activePreset=null;
+        renderProgression();
+      }
+    });
+    saborRow.appendChild(btn);
+  });
+  // Mostrar presets del sabor activo (Estable o Tenso)
+  if(st.activeSabor && st.activeSabor!=='explorar'){
+    const list=SABOR_PRESETS[modeKey][st.activeSabor];
+    list.forEach(p=>{
+      const btn=document.createElement('button');
+      btn.className='preset-btn'+(st.activePreset===p.id?' active-preset':'');
+      btn.textContent=p.label;
+      btn.addEventListener('click',()=>{
+        st.progression=[...p.deg];
+        st.activePreset=p.id;
+        saveState();
+        refresh();
+      });
+      presetsRow.appendChild(btn);
+    });
+  }
+
+  // Slots
+  const hasProg=st.progression.length>0;
+  const slotCh7s = st.show7s ? buildSeventhChords(st.scale) : null;
+  const slotChSus = st.susMode ? buildSusChords(st.scale, st.susMode) : null;
+  if(!hasProg){
+    slots.innerHTML='<span class="prog-empty">Hacé click en un acorde arriba para agregarlo</span>';
+  } else {
+    slots.innerHTML='';
+    let dragSrcIdx=null;
+    st.progression.forEach((di,pi)=>{
+      const ch=st.chords[di];
+      const col=chordColor(ch.root, ch.type);
+      const isActive=st.metro.playing&&st.metro.idx===pi;
+      const c7=slotCh7s?slotCh7s[di]:null;
+      const cSus=slotChSus?slotChSus[di]:null;
+      let displayName;
+      if(c7&&cSus) displayName=c7.name7+st.susMode;
+      else if(c7)  displayName=c7.name7;
+      else if(cSus)displayName=cSus.nameSus;
+      else         displayName=ch.name;
+      const slot=document.createElement('button');
+      slot.className='prog-slot'+(isActive?' metro-active':'');
+      slot.style.cssText=`border-color:${col};color:${col};background:${col}18;`;
+      slot.innerHTML=`<span class="prog-slot-roman">${ch.roman}</span><span class="prog-slot-name">${displayName}</span><span class="prog-slot-remove">✕</span>`;
+      slot.title='Click para quitar · arrastrar para reordenar';
+      slot.setAttribute('draggable','true');
+      slot.dataset.pi=pi;
+      slot.addEventListener('click',()=>{
+        st.progression.splice(pi,1);
+        st.activePreset=null;
+        st.activeSabor=null;
+        if(st.metro.idx>=st.progression.length) st.metro.idx=0;
+        saveState();
+        refresh();
+      });
+      slot.addEventListener('dragstart',e=>{ dragSrcIdx=pi; e.dataTransfer.effectAllowed='move'; });
+      slot.addEventListener('dragover',e=>{ e.preventDefault(); slot.classList.add('drag-over'); });
+      slot.addEventListener('dragleave',()=>slot.classList.remove('drag-over'));
+      slot.addEventListener('drop',e=>{
+        e.preventDefault();
+        slot.classList.remove('drag-over');
+        if(dragSrcIdx===null||dragSrcIdx===pi) return;
+        const moved=st.progression.splice(dragSrcIdx,1)[0];
+        const dest=dragSrcIdx<pi ? pi-1 : pi;
+        st.progression.splice(dest,0,moved);
+        st.activePreset=null;
+        dragSrcIdx=null;
+        saveState();
+        refresh();
+      });
+      slot.addEventListener('dragend',()=>{ dragSrcIdx=null; slot.classList.remove('drag-over'); });
+      slots.appendChild(slot);
+    });
+  }
+
+  metro.style.display=hasProg?'flex':'none';
+}
+
+function renderLegend(){
+  const leg=document.getElementById('legend');
+  const lc=document.getElementById('layer-controls');
+  if(!st.progression.length){ leg.style.display='none'; lc.style.display='none'; return; }
+  leg.style.display='flex';
+  lc.style.display='flex';
+  const seen=new Set();
+  leg.innerHTML='<span class="legend-label">Leyenda:</span>';
+  st.progression.forEach(di=>{
+    if(seen.has(di)) return; seen.add(di);
+    const ch=st.chords[di];
+    const col=chordColor(ch.root, ch.type);
+    const hidden=st.hiddenDegrees.has(di);
+    const item=document.createElement('div');
+    item.className='legend-item'+(hidden?' legend-item--hidden':'');
+    item.title=hidden?'Click para mostrar':'Click para ocultar';
+    item.style.cursor='pointer';
+    item.innerHTML=`<div class="legend-dot" style="background:${hidden?'#333':col};box-shadow:${hidden?'none':'0 0 6px '+col+'77'};"></div>${ch.roman} ${ch.name}`;
+    item.addEventListener('click',()=>{
+      if(st.hiddenDegrees.has(di)) st.hiddenDegrees.delete(di);
+      else st.hiddenDegrees.add(di);
+      renderLegend();
+      renderFretboard();
+    });
+    leg.appendChild(item);
+  });
+}
+
+// ── Acciones ──────────────────────────────────────────────────────────────
+function addToProg(di){
+  if(st.progression.length>=8) return;
+  st.progression.push(di);
+  st.activePreset=null;
+  st.activeSabor=null;
+  saveState();
+  refresh();
+}
+
+function generateExplorarProg(){
+  const pool = st.isMinor ? [2,3,4,5,6] : [1,2,3,4,5];
+  const len = Math.random()<0.5 ? 2 : 3;
+  const deg = [0];
+  while(deg.length < len){
+    const candidates = pool.filter(d => d !== deg[deg.length-1]);
+    deg.push(candidates[Math.floor(Math.random()*candidates.length)]);
+  }
+  st.progression = deg;
+  st.activePreset = null;
+  st.activeSabor = 'explorar';
+  saveState();
+  refresh();
+}
+
+function refresh(){
+  renderProgression();
+  renderChordPalette();
+  renderLegend();
+  renderPositionFilter();
+  renderFretboard();
+  renderTwoStringTriadLayer();
+  if(st.metro.playing) applyMetroOpacity();
+}
+
+function onTonalityChange(){
+  st.scale=buildScale(st.root, st.isMinor);
+  st.chords=buildChords(st.scale);
+  st.progression=[];
+  st.activePreset=null;
+  st.activeSabor=null;
+  st.hiddenDegrees=new Set();
+  if(st.metro.playing) stopMetro();
+  saveState();
+  renderRootGrid();
+  renderScaleInfo();
+  renderChordPalette();
+  renderProgression();
+  renderLegend();
+  renderFretboard();
+  renderTwoStringTriadLayer();
+  if(st.metro.playing) applyMetroOpacity();
+}
+
+// ── Metrónomo ─────────────────────────────────────────────────────────────
+function startMetro(){
+  if(!st.progression.length) return;
+  st.metro.playing=true;
+  st.metro.beats=0;
+  st.metro.idx=0;
+  document.getElementById('metro-btn').classList.add('on');
+  document.getElementById('metro-btn').textContent='■ Detener';
+  scheduleTick();
+  updateMetroLabel();
+}
+
+function stopMetro(){
+  st.metro.playing=false;
+  clearTimeout(st.metro.timer);
+  document.getElementById('metro-btn').classList.remove('on');
+  document.getElementById('metro-btn').textContent='▶ Ciclar';
+  document.getElementById('metro-beat-dot').classList.remove('on');
+  document.getElementById('metro-chord-lbl').textContent='';
+  renderProgression();
+  applyMetroOpacity(); // reset all to normal
+}
+
+function scheduleTick(){
+  st.metro.timer=setTimeout(()=>{
+    if(!st.metro.playing) return;
+    tick(); scheduleTick();
+  }, 60000/st.metro.bpm);
+}
+
+function applyMetroOpacity(){
+  const activeDi=st.metro.playing ? st.progression[st.metro.idx] : null;
+  // Tríadas 3 cuerdas
+  document.querySelectorAll('#fb-triangles polygon[data-degree]').forEach(poly=>{
+    const di=parseInt(poly.getAttribute('data-degree'));
+    if(activeDi===null){
+      poly.setAttribute('fill-opacity',.15);
+      poly.setAttribute('stroke-opacity',.75);
+    } else if(di===activeDi){
+      poly.setAttribute('fill-opacity',.30);
+      poly.setAttribute('stroke-opacity',1);
+    } else {
+      poly.setAttribute('fill-opacity',.04);
+      poly.setAttribute('stroke-opacity',.20);
+    }
+  });
+  // Tríadas 2 cuerdas
+  document.querySelectorAll('#fb-triangles-2s polygon[data-degree]').forEach(poly=>{
+    const di=parseInt(poly.getAttribute('data-degree'));
+    if(activeDi===null){
+      poly.setAttribute('fill-opacity',.12);
+      poly.setAttribute('stroke-opacity',.65);
+    } else if(di===activeDi){
+      poly.setAttribute('fill-opacity',.25);
+      poly.setAttribute('stroke-opacity',1);
+    } else {
+      poly.setAttribute('fill-opacity',.03);
+      poly.setAttribute('stroke-opacity',.15);
+    }
+  });
+  // Puntos
+  document.querySelectorAll('#fb-dots circle[data-degree]').forEach(dot=>{
+    const di=parseInt(dot.getAttribute('data-degree'));
+    dot.style.opacity=(activeDi===null||di===activeDi)?'':'0.25';
+  });
+}
+
+function tick(){
+  // Flash
+  const beatDot=document.getElementById('metro-beat-dot');
+  beatDot.classList.add('on');
+  setTimeout(()=>beatDot.classList.remove('on'),80);
+
+  st.metro.beats++;
+  const bpc=parseInt(document.getElementById('metro-bpc').value)||4;
+  if(st.metro.beats>1 && (st.metro.beats-1)%bpc===0){
+    st.metro.idx=(st.metro.idx+1)%st.progression.length;
+    updateMetroLabel();
+    renderProgression(); // highlight del slot activo
+    applyMetroOpacity();
+  }
+}
+
+function updateMetroLabel(){
+  const di=st.progression[st.metro.idx];
+  if(di===undefined) return;
+  const ch=st.chords[di];
+  const col=chordColor(ch.root, ch.type);
+  const lbl=document.getElementById('metro-chord-lbl');
+  lbl.textContent=`${ch.roman} ${ch.name}`;
+  lbl.style.color=col;
+}
+
+// ── Persistencia ─────────────────────────────────────────────────────────
+const LS_KEY = 'guitar_improv_state';
+
+function saveState(){
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      root: st.root,
+      isMinor: st.isMinor,
+      progression: st.progression,
+      activePreset: st.activePreset,
+      show3sTriads: st.show3sTriads,
+      show2sTriads: st.show2sTriads,
+      show7s: st.show7s,
+      susMode: st.susMode,
+    }));
+  } catch(e){}
+}
+
+function loadState(){
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return false;
+    const s = JSON.parse(raw);
+    if(s.root && CHROMATIC.includes(s.root)) st.root = s.root;
+    if(typeof s.isMinor === 'boolean') st.isMinor = s.isMinor;
+    if(Array.isArray(s.progression)) st.progression = s.progression;
+    if(s.activePreset !== undefined) st.activePreset = s.activePreset;
+    if(typeof s.show3sTriads === 'boolean') st.show3sTriads = s.show3sTriads;
+    if(typeof s.show2sTriads === 'boolean') st.show2sTriads = s.show2sTriads;
+    if(typeof s.show7s === 'boolean') st.show7s = s.show7s;
+    if(s.susMode === null || s.susMode === 'sus2' || s.susMode === 'sus4') st.susMode = s.susMode;
+    return true;
+  } catch(e){ return false; }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+function init(){
+  // Tipo de escala
+  document.querySelectorAll('.type-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      st.isMinor=btn.dataset.type==='minor';
+      onTonalityChange();
+    });
+  });
+
+  // Limpiar progresión
+  document.getElementById('btn-clear').addEventListener('click',()=>{
+    st.progression=[];
+    st.activePreset=null;
+    st.activeSabor=null;
+    if(st.metro.playing) stopMetro();
+    saveState();
+    refresh();
+  });
+
+  // Toggle tríadas 3 cuerdas
+  document.getElementById('toggle-3s').addEventListener('click',()=>{
+    st.show3sTriads=!st.show3sTriads;
+    document.getElementById('toggle-3s').classList.toggle('active',st.show3sTriads);
+    renderTriangleLayer();
+    if(st.metro.playing) applyMetroOpacity();
+  });
+
+  // Toggle tríadas 2 cuerdas
+  document.getElementById('toggle-2s').addEventListener('click',()=>{
+    st.show2sTriads=!st.show2sTriads;
+    document.getElementById('toggle-2s').classList.toggle('active',st.show2sTriads);
+    renderTwoStringTriadLayer();
+    if(st.metro.playing) applyMetroOpacity();
+  });
+
+  // Toggle 7mas
+  document.getElementById('toggle-7s').addEventListener('click',()=>{
+    st.show7s=!st.show7s;
+    document.getElementById('toggle-7s').classList.toggle('active',st.show7s);
+    renderProgression();
+    renderChordPalette();
+    renderFretboard();
+    renderTwoStringTriadLayer();
+    if(st.metro.playing) applyMetroOpacity();
+  });
+
+  // Toggle Sus2 / Sus4 (mutuamente excluyentes)
+  document.getElementById('toggle-sus2').addEventListener('click',()=>{
+    st.susMode = st.susMode==='sus2' ? null : 'sus2';
+    document.getElementById('toggle-sus2').classList.toggle('active',st.susMode==='sus2');
+    document.getElementById('toggle-sus4').classList.toggle('active',false);
+    renderProgression();
+    renderChordPalette();
+    renderFretboard();
+    renderTwoStringTriadLayer();
+    if(st.metro.playing) applyMetroOpacity();
+  });
+  document.getElementById('toggle-sus4').addEventListener('click',()=>{
+    st.susMode = st.susMode==='sus4' ? null : 'sus4';
+    document.getElementById('toggle-sus4').classList.toggle('active',st.susMode==='sus4');
+    document.getElementById('toggle-sus2').classList.toggle('active',false);
+    renderProgression();
+    renderChordPalette();
+    renderFretboard();
+    renderTwoStringTriadLayer();
+    if(st.metro.playing) applyMetroOpacity();
+  });
+
+  // Atajos de teclado
+  document.addEventListener('keydown',e=>{
+    if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+    if(e.code==='Digit3'||e.code==='Numpad3'){
+      st.show3sTriads=!st.show3sTriads;
+      document.getElementById('toggle-3s').classList.toggle('active',st.show3sTriads);
+      renderTriangleLayer();
+      if(st.metro.playing) applyMetroOpacity();
+    }
+    if(e.code==='Digit2'||e.code==='Numpad2'){
+      st.show2sTriads=!st.show2sTriads;
+      document.getElementById('toggle-2s').classList.toggle('active',st.show2sTriads);
+      renderTwoStringTriadLayer();
+      if(st.metro.playing) applyMetroOpacity();
+    }
+    if(e.code==='Digit7'||e.code==='Numpad7'){
+      st.show7s=!st.show7s;
+      document.getElementById('toggle-7s').classList.toggle('active',st.show7s);
+      renderProgression();
+      renderChordPalette();
+      renderFretboard();
+      renderTwoStringTriadLayer();
+      if(st.metro.playing) applyMetroOpacity();
+    }
+    if(e.code==='KeyS'){
+      st.susMode = st.susMode==='sus2' ? null : 'sus2';
+      document.getElementById('toggle-sus2').classList.toggle('active',st.susMode==='sus2');
+      document.getElementById('toggle-sus4').classList.toggle('active',false);
+      renderProgression();
+      renderChordPalette();
+      renderFretboard();
+      renderTwoStringTriadLayer();
+      if(st.metro.playing) applyMetroOpacity();
+    }
+    if(e.code==='KeyD'){
+      st.susMode = st.susMode==='sus4' ? null : 'sus4';
+      document.getElementById('toggle-sus4').classList.toggle('active',st.susMode==='sus4');
+      document.getElementById('toggle-sus2').classList.toggle('active',false);
+      renderProgression();
+      renderChordPalette();
+      renderFretboard();
+      renderTwoStringTriadLayer();
+      if(st.metro.playing) applyMetroOpacity();
+    }
+    if(e.code==='Escape'){
+      st.posFilter=0;
+      renderPositionFilter();
+      renderTriangleLayer();
+      renderTwoStringTriadLayer();
+      renderFretboard();
+      if(st.metro.playing) applyMetroOpacity();
+    }
+    if(e.code==='ArrowLeft'){
+      e.preventDefault();
+      st.posFilter=Math.max(0,st.posFilter-1);
+      renderPositionFilter();
+      renderTriangleLayer();
+      renderTwoStringTriadLayer();
+      renderFretboard();
+      if(st.metro.playing) applyMetroOpacity();
+    }
+    if(e.code==='ArrowRight'){
+      e.preventDefault();
+      st.posFilter=Math.min(POSITIONS.length-1,st.posFilter+1);
+      renderPositionFilter();
+      renderTriangleLayer();
+      renderTwoStringTriadLayer();
+      renderFretboard();
+      if(st.metro.playing) applyMetroOpacity();
+    }
+  });
+
+  // Metrónomo
+  document.getElementById('metro-btn').addEventListener('click',()=>{
+    st.metro.playing ? stopMetro() : startMetro();
+  });
+  document.getElementById('metro-down').addEventListener('click',()=>{
+    st.metro.bpm=Math.max(40,st.metro.bpm-5);
+    document.getElementById('metro-bpm-val').textContent=st.metro.bpm;
+    if(st.metro.playing){ stopMetro(); startMetro(); }
+  });
+  document.getElementById('metro-up').addEventListener('click',()=>{
+    st.metro.bpm=Math.min(200,st.metro.bpm+5);
+    document.getElementById('metro-bpm-val').textContent=st.metro.bpm;
+    if(st.metro.playing){ stopMetro(); startMetro(); }
+  });
+
+  initFretboard();
+
+  // Restaurar estado guardado o usar default
+  const hadSaved = loadState();
+  st.scale = buildScale(st.root, st.isMinor);
+  st.chords = buildChords(st.scale);
+  if(!hadSaved){
+    const def = SABOR_PRESETS.minor.estable[2]; // i–VI–III–VII
+    st.progression = [...def.deg];
+    st.activePreset = def.id;
+  }
+  // Sincronizar botones de toggle con estado restaurado
+  document.getElementById('toggle-3s').classList.toggle('active', st.show3sTriads);
+  document.getElementById('toggle-2s').classList.toggle('active', st.show2sTriads);
+  document.getElementById('toggle-7s').classList.toggle('active', st.show7s);
+  document.getElementById('toggle-sus2').classList.toggle('active', st.susMode==='sus2');
+  document.getElementById('toggle-sus4').classList.toggle('active', st.susMode==='sus4');
+  renderRootGrid();
+  renderScaleInfo();
+  renderChordPalette();
+  renderProgression();
+  renderLegend();
+  renderPositionFilter();
+  renderFretboard();
+  renderTwoStringTriadLayer();
+}
+
+init();
+</script>
+</body>
+</html>

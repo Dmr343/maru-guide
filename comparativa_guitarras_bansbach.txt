@@ -1,0 +1,163 @@
+COMPARATIVA DE GUITARRAS — BANSBACH COSTA RICA
+================================================
+Perfil: rock progresivo, atmósferico, blues, jazz-hop
+Artistas referencia: Opeth, Alice in Chains, Pink Floyd,
+Omar Rodríguez-López, Nujabes, Khruangbin
+================================================
+
+
+1. EPIPHONE LES PAUL STUDIO IBG — $385
+---------------------------------------
+Colección: Inspired by Gibson
+Cuerpo: Caoba con alivio de peso ultra moderno
+Cuello: Caoba
+Pastillas: 2x Alnico Classic PRO Humbucker
+Coil-split: SÍ (push/pull en volumen)
+Clavijeros: Grover (los mejores en este rango)
+Potenciómetros: CTS (calidad real)
+Colores: Alpine White, Ebony, Wine Red, Smokehouse Burst
+
+PROS:
+- Tono oscuro y denso natural (Opeth, AIC, ORL)
+- Coil-split activa modo limpio para solos Gilmour
+- Grover + CTS = electrónica profesional
+- Cuerpo aliviado: menos peso que LP tradicional
+- La guitarra más bonita estéticamente del grupo
+
+CONTRAS:
+- Sin el "quack" específico de Strat (pos. 2 y 4)
+- Más orientada al lado oscuro/pesado
+
+IDEAL PARA: improvisar riffs densos y solos melódicos
+VEREDICTO: La más completa para este perfil musical
+
+
+2. YAMAHA PACIFICA 112J — $368
+--------------------------------
+Cuerpo: Aliso (alder) — buena madera
+Cuello: Arce con diapasón de palisandro
+Pastillas: HSS (1 humbucker + 2 single coils)
+Coil-tap: SÍ (push/pull en volumen)
+Switch: 5 posiciones
+Vibrato: Estilo vintage
+
+PROS:
+- La más versátil del grupo (5 posiciones)
+- Cubre desde tono oscuro hasta limpio aéreo
+- Excelente calidad/precio (Yamaha es confiable)
+- Más ligera que una LP
+- Buena para recrear riffs de muchos estilos
+
+CONTRAS:
+- No tiene el carácter denso natural del LP
+- Estéticamente más genérica (Strat-style)
+- El humbucker de puente es menos potente que LP
+
+IDEAL PARA: máxima versatilidad y exploración
+VEREDICTO: La más segura, no decepciona en nada
+
+
+3. TAGIMA TW-61 — $265–296
+----------------------------
+Cuerpo: Álamo
+Cuello: Arce
+Diapasón: Madera técnica, 22 trastes
+Pastillas: 2x P-90 (Tagima)
+Controles: Switch 3 vías + varitone + vol + tono
+Puente: Trémolo cromado 2 pivotes
+Tuerca: 43mm
+
+* Los P-90 NO son humbuckers: son single coil
+  anchos con más cuerpo y midrange. Carácter
+  único — "growl" propio, muy atmosférico.
+
+* El varitone switch da opciones de tono extra
+  (similar a Gibson ES-345 vintage)
+
+PROS:
+- Precio más accesible del grupo
+- Personalidad sonora única (P-90)
+- Perfecta para Khruangbin, Nujabes, Floyd, ORL limpio
+- Offset body: cómoda y visualmente diferente
+
+CONTRAS:
+- NO cubre el lado pesado Opeth/AIC
+- P-90 tiene algo de ruido de fondo
+- Tagima tiene menos soporte técnico local
+
+IDEAL PARA: improvisación atmosférica y melódica
+VEREDICTO: Buena si el presupuesto es ajustado
+            y el lado oscuro no es prioridad
+
+
+================================================
+TABLA RESUMEN
+================================================
+
+                  LP Studio  Pacifica  TW-61
+                  $385       $368      $296
+-------------------------------------------------
+Opeth/AIC/ORL      +++        ++        -
+Pink Floyd/        ++         +++       +++
+Khruangbin
+Nujabes/jazz       +          ++        +++
+Versatilidad       +++        ++++      ++
+Tono oscuro        ++++       ++        +
+Tono limpio        ++ (split) +++       +++
+Calidad construc.  ++++       ++++      +++
+Clavijeros         Grover     Yamaha    Chrome
+Coil-split/tap     SÍ         SÍ        NO
+-------------------------------------------------
+
+
+================================================
+PARA TOCAR CON AUDÍFONOS (sin amplificador)
+================================================
+
+Opción recomendada: VOX amPlug 2
+- Se conecta directo al jack de la guitarra
+- Audífonos al amPlug
+- Sin cables extra, sin amplificador
+- Precio aprox: $45–65
+- Modelos: AC30, Classic Rock, Metal, Blues
+
+Alternativa: Fender Mustang Micro (~$80–100)
+- Bluetooth para audífonos inalámbricos
+- Más modelos de amp incluidos
+
+
+================================================
+DECISIÓN FINAL RECOMENDADA
+================================================
+
+SI te imaginás improvisando solos oscuros
+y melódicos y el estilo LP te enamora:
+  → EPIPHONE LP STUDIO IBG ($385)
+  + VOX amPlug 2 (~$55)
+  TOTAL: ~$440
+
+SI querés la mayor versatilidad posible
+y no tenés preferencia de forma:
+  → YAMAHA PACIFICA 112J ($368)
+  + VOX amPlug 2 (~$55)
+  TOTAL: ~$423
+
+SI el presupuesto es ajustado ahora:
+  → TAGIMA TW-61 ($296)
+  + VOX amPlug 2 (~$55)
+  TOTAL: ~$351
+
+================================================
+CHECKLIST ANTES DE COMPRAR (tienda física)
+================================================
+
+[ ] Cuello recto visto de lado (no torcido en S)
+[ ] Acción en traste 12: no más de 3mm
+[ ] Girar todos los potenciómetros sin ruido
+[ ] Probar coil-split/tap — debe cambiar el tono
+[ ] Afinar y tocar 5 min — debe sostener afinación
+[ ] Revisar bordes de trastes (no deben pinchar)
+
+================================================
+Generado: abril 2026 | Tienda: Bansbach, San José
+================================================

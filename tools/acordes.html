@@ -39,7 +39,7 @@
     .chord-btn .chord-sub{font-size:9px;display:block;font-weight:400;opacity:.7;margin-top:1px;}
 
     /* Chord diagram */
-    .chord-display{max-width:480px;margin:0 auto 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
+    .chord-display{max-width:720px;margin:0 auto 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
     .chord-name{text-align:center;font-size:20px;font-weight:700;color:var(--accent);margin-bottom:4px;}
     .chord-type{text-align:center;font-size:11px;color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;}
     .chord-diagram-wrap{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;justify-content:center;}
@@ -47,6 +47,39 @@
     .chord-tips{flex:1;min-width:160px;}
     .chord-tip{font-size:12px;color:var(--text-mid);margin-bottom:8px;line-height:1.5;}
     .chord-tip strong{color:var(--text);}
+
+    /* Fretboard in chord display */
+    .chord-fretboard-wrap{overflow-x:auto;padding:12px 0 4px;margin-top:12px;border-top:1px solid var(--border);}
+    .chord-fretboard-inner{min-width:640px;max-width:900px;margin:0 auto;}
+    .chord-notes-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 10px;font-size:12px;color:var(--text-mid);}
+    .chord-note-badge{padding:2px 8px;border-radius:12px;font-weight:700;font-size:11px;color:#fff;}
+    .chord-formula{font-size:11px;color:var(--text-dim);letter-spacing:.08em;margin-left:6px;}
+
+    /* Family labels */
+    .family-label{font-size:13px;color:var(--accent);margin:16px 0 4px;font-weight:700;letter-spacing:.04em;}
+    .family-sub{font-size:10px;color:var(--text-dim);font-weight:400;display:block;margin-top:3px;letter-spacing:.04em;}
+
+    /* Compatible scales panel */
+    .compat-scales{margin-top:14px;padding:10px 14px;background:#0a1218;border:1px solid #1a2a38;border-radius:8px;}
+    .compat-title{font-size:10px;letter-spacing:.2em;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;}
+    .compat-scale{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;margin:3px;border:1px solid #2a2a2a;color:#555;cursor:default;}
+    .compat-scale.known{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+
+    /* Improvisar mode */
+    .impro-section{max-width:720px;margin:0 auto;}
+    .impro-intro{font-size:12px;color:var(--text-mid);line-height:1.6;margin-bottom:16px;padding:12px 14px;background:var(--surface);border-radius:8px;border-left:3px solid var(--accent);}
+    .impro-scales-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+    .impro-scale-btn{padding:8px 16px;border-radius:20px;border:1px solid #333;background:#1a1a1a;color:#666;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
+    .impro-scale-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+    .impro-hint{font-size:12px;color:var(--text-mid);line-height:1.6;margin-bottom:12px;padding:8px 12px;border-radius:6px;border:1px solid #1e2e1e;background:#0a120a;}
+    .impro-chord-grid{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+    .impro-chord-btn{padding:10px 14px;border-radius:8px;border:2px solid #2a2a2a;background:#1a1a1a;color:#666;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;text-align:center;min-width:56px;}
+    .impro-chord-btn:hover{border-color:#444;color:#aaa;}
+    .impro-chord-btn.active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
+    .impro-chord-btn .impro-deg{font-size:9px;display:block;font-weight:400;opacity:.7;margin-top:1px;}
+    .impro-display{max-width:none;}
+    .impro-fretboard-wrap{overflow-x:auto;padding:8px 0 4px;}
+    .impro-fretboard-inner{min-width:640px;max-width:900px;margin:0 auto;}
 
     /* Progression builder */
     .prog-section{max-width:720px;margin:0 auto;}
@@ -136,6 +169,7 @@
 
 <div class="tabs">
   <button class="tab active" data-mode="shapes">📋 Formas</button>
+  <button class="tab" data-mode="impro">🎸 Improvisar</button>
   <button class="tab" data-mode="prog">🎵 Progresiones</button>
   <button class="tab" data-mode="drill">🔄 Cambios</button>
 </div>
@@ -143,18 +177,38 @@
 <!-- SHAPES MODE -->
 <div id="mode-shapes">
   <div class="chord-section">
-    <div class="category-label">Acordes abiertos esenciales</div>
-    <div class="chord-grid" id="open-grid"></div>
-    <div class="category-label">Acordes suspendidos (sus)</div>
-    <div class="chord-grid" id="sus-grid"></div>
-    <div class="category-label">Barres — Raíz en 5ª cuerda (C como ejemplo)</div>
-    <div class="chord-grid" id="barre5-grid"></div>
-    <div class="category-label">Acordes de 7ª — Raíz en 5ª cuerda</div>
-    <div class="chord-grid" id="seventh-grid"></div>
-    <div class="category-label">Barres — Raíz en 6ª cuerda (F como ejemplo)</div>
-    <div class="chord-grid" id="barre6-grid"></div>
+    <div class="family-label">Familia Am / Do mayor
+      <span class="family-sub">Am pentatónica (A C D E G) → cada nota puede ser raíz de un acorde. Así nacen estas tríadas.</span>
+    </div>
+    <div class="chord-grid" id="am-family-grid"></div>
+    <div class="family-label">Familia Sol mayor
+      <span class="family-sub">G A B C D E F# → 6 tríadas diatónicas: I ii iii IV V vi (G Am Bm C D Em)</span>
+    </div>
+    <div class="chord-grid" id="g-family-grid"></div>
+    <div class="category-label">Formas movibles (barres)</div>
+    <div class="chord-grid" id="barre-grid"></div>
+    <div class="category-label">Colores extras — sus y 7ás</div>
+    <div class="chord-grid" id="color-grid"></div>
   </div>
   <div class="chord-display" id="chord-display" style="display:none;"></div>
+</div>
+
+<!-- IMPROVISAR MODE -->
+<div id="mode-impro" style="display:none;">
+  <div class="impro-section">
+    <div class="impro-intro">Elegí una escala que estés practicando. Abajo aparecen los acordes que "vienen" de esa escala — podés improvisar con ella encima de cualquier progresión armada con esos acordes.</div>
+    <div class="impro-scales-row" id="impro-scales-row"></div>
+    <div class="impro-hint" id="impro-hint"></div>
+    <div class="section-label">Acordes de esta escala — hacé click para ver en el diapasón</div>
+    <div class="impro-chord-grid" id="impro-chord-grid"></div>
+    <div class="impro-display" id="impro-display">
+      <div class="impro-fretboard-wrap">
+        <div class="impro-fretboard-inner">
+          <svg id="impro-fretboard" viewBox="0 0 920 220" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- PROG MODE -->
@@ -237,30 +291,34 @@
 // ─── Chord Data ───────────────────────────────────────────────────────
 // strings: [e,B,G,D,A,E] from high to low  (x=muted, 0=open, number=fret)
 const CHORDS = {
-  // Open
-  'Em':  {name:'Em',  type:'Menor abierto',   strings:[0,0,0,2,2,0], fingers:'234', tips:['El más fácil. Base de muchas canciones de rock.','Usá el barre en el traste 7 para Bm.']},
-  'Am':  {name:'Am',  type:'Menor abierto',   strings:[0,1,2,2,0,'x'], fingers:'231', tips:['Muy usado en blues y folk.','Con barre en traste 5 es Dm.']},
-  'G':   {name:'G',   type:'Mayor abierto',   strings:[3,0,0,0,2,3], fingers:'2004', tips:['Dos versiones: 4 dedos (más sonora) o 2 dedos (más rápido de cambiar).','Barre en traste 3 es Cm.']},
-  'C':   {name:'C',   type:'Mayor abierto',   strings:[0,1,0,2,3,'x'], fingers:'032', tips:['El cambio C→G es uno de los más comunes en pop.','No toques la 6ª cuerda.']},
-  'D':   {name:'D',   type:'Mayor abierto',   strings:[2,3,2,0,'x','x'], fingers:'132', tips:['Solo cuerdas 1-4.','Barre en traste 2 con forma C = Dm.']},
+  // Open — Familia Am / A menor natural y harmónica
+  'E':   {name:'E',   type:'Mayor abierto',   strings:[0,0,1,2,2,0], fingers:'023', root:'E', notes:['E','G#','B'], quality:'major', intervals:['1','3','5'], tips:['El V de Am armónica. Da el sonido flamenco/español.','E → Am es la resolución más dramática de la escala menor. Indispensable.']},
+  'Em':  {name:'Em',  type:'Menor abierto',   strings:[0,0,0,2,2,0], fingers:'234', root:'E', notes:['E','G','B'], quality:'minor', intervals:['1','b3','5'], tips:['El más fácil. Base de muchas canciones de rock.','Tríada: E(raíz) + G(b3) + B(5). Viene de G mayor y Am pentatónica.']},
+  'Am':  {name:'Am',  type:'Menor abierto',   strings:[0,1,2,2,0,'x'], fingers:'231', root:'A', notes:['A','C','E'], quality:'minor', intervals:['1','b3','5'], tips:['Muy usado en blues y folk.','Tríada: A(raíz) + C(b3) + E(5). La raíz de la pentatónica menor.']},
+  'C':   {name:'C',   type:'Mayor abierto',   strings:[0,1,0,2,3,'x'], fingers:'032', root:'C', notes:['C','E','G'], quality:'major', intervals:['1','3','5'], tips:['El cambio C→G es uno de los más comunes en pop.','Tríada: C(raíz) + E(3) + G(5). III de Am pentatónica.']},
+  'Dm':  {name:'Dm',  type:'Menor abierto',   strings:[1,3,2,0,'x','x'], fingers:'231', root:'D', notes:['D','F','A'], quality:'minor', intervals:['1','b3','5'], tips:['iv de Am. Solo cuerdas 1-4.','Tríada: D(raíz) + F(b3) + A(5). Completá la familia Am.']},
+  'G':   {name:'G',   type:'Mayor abierto',   strings:[3,0,0,0,2,3], fingers:'2004', root:'G', notes:['G','B','D'], quality:'major', intervals:['1','3','5'], tips:['Dos versiones: 4 dedos (más sonora) o 2 dedos (más rápido de cambiar).','Tríada: G(raíz) + B(3) + D(5). VII de Am / I de G mayor.']},
+  // Open — Familia G mayor
+  'D':   {name:'D',   type:'Mayor abierto',   strings:[2,3,2,0,'x','x'], fingers:'132', root:'D', notes:['D','F#','A'], quality:'major', intervals:['1','3','5'], tips:['Solo cuerdas 1-4.','Tríada: D(raíz) + F#(3) + A(5). V de G mayor.']},
+  'Bm_b6':{name:'Bm (cejilla)',type:'Barre menor 6ª',barre:2,strings:[2,3,4,4,2,'x'],fingers:'134111', root:'B', notes:['B','D','F#'], quality:'minor', intervals:['1','b3','5'], tips:['iii de G mayor (la forma Am desplazada 2 trastes).','Barre en traste 2 con la forma abierta de Am.']},
   // Sus
-  'Dsus2':{name:'Dsus2',type:'Suspendido',strings:[0,3,2,0,'x','x'],fingers:'013',tips:['Quitás el 3er dedo del D mayor. Sonido abierto, flotante.','Usalo para crear movimiento: D → Dsus2 → D']},
-  'Dsus4':{name:'Dsus4',type:'Suspendido',strings:[3,3,2,0,'x','x'],fingers:'134',tips:['Tensión que resuelve en D mayor.','Muy usado en rock: The Who, The Police.']},
-  'Asus2':{name:'Asus2',type:'Suspendido',strings:[0,0,2,2,0,'x'],fingers:'023',tips:['Parecido a Am pero sin la nota menor. Neutral, abierto.']},
-  'Asus4':{name:'Asus4',type:'Suspendido',strings:[0,3,2,2,0,'x'],fingers:'034',tips:['Resuelve en A mayor o Am.']},
-  'Gsus2':{name:'Gsus2',type:'Suspendido',strings:[3,3,0,0,2,3],fingers:'4400',tips:['Très abierto en guitarra acústica. Gran sonido ambient.']},
+  'Dsus2':{name:'Dsus2',type:'Suspendido',strings:[0,3,2,0,'x','x'],fingers:'013', root:'D', notes:['D','E','A'], quality:'sus2', intervals:['1','2','5'], tips:['Quitás el 3er dedo del D mayor. Sonido abierto, flotante.','Usalo para crear movimiento: D → Dsus2 → D']},
+  'Dsus4':{name:'Dsus4',type:'Suspendido',strings:[3,3,2,0,'x','x'],fingers:'134', root:'D', notes:['D','G','A'], quality:'sus4', intervals:['1','4','5'], tips:['Tensión que resuelve en D mayor.','Muy usado en rock: The Who, The Police.']},
+  'Asus2':{name:'Asus2',type:'Suspendido',strings:[0,0,2,2,0,'x'],fingers:'023', root:'A', notes:['A','B','E'], quality:'sus2', intervals:['1','2','5'], tips:['Parecido a Am pero sin la nota menor. Neutral, abierto.']},
+  'Asus4':{name:'Asus4',type:'Suspendido',strings:[0,3,2,2,0,'x'],fingers:'034', root:'A', notes:['A','D','E'], quality:'sus4', intervals:['1','4','5'], tips:['Resuelve en A mayor o Am.']},
+  'Gsus2':{name:'Gsus2',type:'Suspendido',strings:[3,3,0,0,2,3],fingers:'4400', root:'G', notes:['G','B','D'], quality:'sus2', intervals:['1','2','5'], tips:['Très abierto en guitarra acústica. Gran sonido ambient.']},
   // Barre 5th string
-  'C_b5': {name:'C (cejilla)',type:'Barre 5ª cuerda',barre:3,strings:['x',3,5,5,5,3],fingers:'134411',tips:['Traste 3 en cuerda 5 = nota C.','Movelo al traste 5 para Dm, traste 7 para Em, etc.','Tip Maru: índice de lado, no plano.']},
-  'Cm_b5':{name:'Cm (cejilla)',type:'Barre menor 5ª',barre:3,strings:['x',3,5,5,4,3],fingers:'134211',tips:['Misma forma pero el 3er dedo toca un traste antes.','Movelo = cualquier acorde menor.']},
-  'C7_b5':{name:'C7 (cejilla)',type:'Dominante 7ª',barre:3,strings:['x',3,5,3,5,3],fingers:'131211',tips:['El acorde de blues por excelencia.','Suena a blues en cualquier traste.']},
+  'C_b5': {name:'C (cejilla)',type:'Barre 5ª cuerda',barre:3,strings:['x',3,5,5,5,3],fingers:'134411', root:'C', notes:['C','E','G'], quality:'major', intervals:['1','3','5'], tips:['Traste 3 en cuerda 5 = nota C.','Movelo al traste 5 para Dm, traste 7 para Em, etc.','Tip Maru: índice de lado, no plano.']},
+  'Cm_b5':{name:'Cm (cejilla)',type:'Barre menor 5ª',barre:3,strings:['x',3,5,5,4,3],fingers:'134211', root:'C', notes:['C','D#','G'], quality:'minor', intervals:['1','b3','5'], tips:['Misma forma pero el 3er dedo toca un traste antes.','Movelo = cualquier acorde menor.']},
+  'C7_b5':{name:'C7 (cejilla)',type:'Dominante 7ª',barre:3,strings:['x',3,5,3,5,3],fingers:'131211', root:'C', notes:['C','E','G','A#'], quality:'dom7', intervals:['1','3','5','b7'], tips:['El acorde de blues por excelencia.','Suena a blues en cualquier traste.']},
   // Barre 6th string
-  'F_b6': {name:'F (cejilla)',type:'Barre 6ª cuerda',barre:1,strings:[1,1,2,3,3,1],fingers:'134211',tips:['La forma E mayor desplazada. Traste 1 = F, traste 3 = G, traste 5 = A.','El barre más importante: un patrón = 12 acordes mayores.','Tip: el índice de costado, presión del antebrazo.']},
-  'Fm_b6':{name:'Fm (cejilla)',type:'Barre menor 6ª',barre:1,strings:[1,1,1,3,3,1],fingers:'134111',tips:['Igual que F mayor pero levantás el 2do dedo.','Traste 0 = Em abierto — esa es tu referencia.','Movelo = cualquier acorde menor.']},
-  'F7_b6':{name:'F7 (cejilla)',type:'Dom 7ª · 6ª cuerda',barre:1,strings:[1,1,2,1,3,1],fingers:'132111',tips:['El sonido blues dominante en forma de 6ª cuerda.','Pink Floyd, blues eléctrico. En acústica suena oscuro.']},
+  'F_b6': {name:'F (cejilla)',type:'Barre 6ª cuerda',barre:1,strings:[1,1,2,3,3,1],fingers:'134211', root:'F', notes:['F','A','C'], quality:'major', intervals:['1','3','5'], tips:['La forma E mayor desplazada. Traste 1 = F, traste 3 = G, traste 5 = A.','El barre más importante: un patrón = 12 acordes mayores.','Tip: el índice de costado, presión del antebrazo.']},
+  'Fm_b6':{name:'Fm (cejilla)',type:'Barre menor 6ª',barre:1,strings:[1,1,1,3,3,1],fingers:'134111', root:'F', notes:['F','G#','C'], quality:'minor', intervals:['1','b3','5'], tips:['Igual que F mayor pero levantás el 2do dedo.','Traste 0 = Em abierto — esa es tu referencia.','Movelo = cualquier acorde menor.']},
+  'F7_b6':{name:'F7 (cejilla)',type:'Dom 7ª · 6ª cuerda',barre:1,strings:[1,1,2,1,3,1],fingers:'132111', root:'F', notes:['F','A','C','D#'], quality:'dom7', intervals:['1','3','5','b7'], tips:['El sonido blues dominante en forma de 6ª cuerda.','Pink Floyd, blues eléctrico. En acústica suena oscuro.']},
   // 7th chords
-  'Cmaj7':{name:'Cmaj7',type:'Mayor 7ª',strings:['x',3,5,4,5,3],fingers:'131211',tips:['Sonido jazz elegante.','Mará: más sofisticado que el acorde mayor.']},
-  'Cm7':  {name:'Cm7', type:'Menor 7ª',strings:['x',3,5,3,4,3],fingers:'131111',tips:['Sonido soul y R&B.','Barre completo en traste 3, levantás el índice una cuerda.']},
-  'Cm7b5':{name:'Cm7♭5',type:'Semidisminuido',strings:['x',3,4,3,4,3],fingers:'121111',tips:['Tenso, cinematográfico.','Muy usado en jazz y bandas sonoras.']},
+  'Cmaj7':{name:'Cmaj7',type:'Mayor 7ª',strings:['x',3,5,4,5,3],fingers:'131211', root:'C', notes:['C','E','G','B'], quality:'maj7', intervals:['1','3','5','7'], tips:['Sonido jazz elegante.','Maru: más sofisticado que el acorde mayor.']},
+  'Cm7':  {name:'Cm7', type:'Menor 7ª',strings:['x',3,5,3,4,3],fingers:'131111', root:'C', notes:['C','D#','G','A#'], quality:'min7', intervals:['1','b3','5','b7'], tips:['Sonido soul y R&B.','Barre completo en traste 3, levantás el índice una cuerda.']},
+  'Cm7b5':{name:'Cm7♭5',type:'Semidisminuido',strings:['x',3,4,3,4,3],fingers:'121111', root:'C', notes:['C','D#','F#','A#'], quality:'min7b5', intervals:['1','b3','b5','b7'], tips:['Tenso, cinematográfico.','Muy usado en jazz y bandas sonoras.']},
 };
 
 // Diatonic chords per key
@@ -272,6 +330,182 @@ const MINOR_DEGREES_QUALITY = ['menor','disminuido','mayor','menor','menor','may
 const MINOR_DEGREES_SYMBOL  = ['i','ii°','III','iv','v','VI','VII'];
 const CHROMATIC = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const KEYS = ['C','D','E','F','G','A','B'];
+
+// ─── Fretboard infrastructure (shared with escalas) ───────────────────
+const OPEN_NOTES_FB = ['E','A','D','G','B','E'];
+const STRING_LABELS_FB = ['E','A','D','G','B','e'];
+const FRET_MARKERS_FB = [3,5,7,9,12];
+const STRING_THICK_FB = [3.2,2.6,2.0,1.5,1.0,0.6];
+const FB_W=920,FB_H=220,FB_NUT=48,FB_RIGHT=FB_W-16;
+const FB_FRET_W=(FB_RIGHT-FB_NUT)/12;
+const FB_STR_TOP=28,FB_STR_BOT=FB_H-28;
+const FB_STR_GAP=(FB_STR_BOT-FB_STR_TOP)/5;
+
+function fbNoteAt(open,fret){ return CHROMATIC[(CHROMATIC.indexOf(open)+fret)%12]; }
+function fbStringY(si){ return FB_STR_BOT-si*FB_STR_GAP; }
+
+function fbMakeDot(cx,cy,r,fill){
+  const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  c.setAttribute('cx',cx);c.setAttribute('cy',cy);c.setAttribute('r',r);c.setAttribute('fill',fill);return c;
+}
+
+function fbInitBoard(svgId, numFrets){
+  numFrets = numFrets || 12;
+  const localFretW = (FB_RIGHT - FB_NUT) / numFrets;
+  const svg=document.getElementById(svgId); if(!svg)return; svg.innerHTML='';
+  svg.dataset.localFretW = localFretW;
+  svg.dataset.numFrets = numFrets;
+  const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+  defs.innerHTML='<filter id="fbglow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>';
+  svg.appendChild(defs);
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+  const nut=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  nut.setAttribute('x',FB_NUT-5);nut.setAttribute('y',FB_STR_TOP-8);
+  nut.setAttribute('width',5);nut.setAttribute('height',FB_STR_GAP*5+16);
+  nut.setAttribute('fill','#5a4820');g.appendChild(nut);
+  for(let f=1;f<=numFrets;f++){
+    const x=FB_NUT+f*localFretW;
+    const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',x);l.setAttribute('y1',FB_STR_TOP-6);l.setAttribute('x2',x);l.setAttribute('y2',FB_STR_BOT+6);
+    l.setAttribute('stroke','#1a1a1a');l.setAttribute('stroke-width','2');g.appendChild(l);
+  }
+  for(let f=0;f<=numFrets;f++){
+    const x=f===0?FB_NUT-18:FB_NUT+(f-0.5)*localFretW;
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',x);t.setAttribute('y',14);t.setAttribute('text-anchor','middle');t.setAttribute('font-size','10');
+    t.setAttribute('fill',FRET_MARKERS_FB.includes(f)?'#d4a847':'#2a2a2a');t.setAttribute('font-family','Trebuchet MS,sans-serif');
+    t.textContent=f===0?'○':f;g.appendChild(t);
+  }
+  OPEN_NOTES_FB.forEach((_,si)=>{
+    const y=fbStringY(si);
+    const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',FB_NUT-4);l.setAttribute('y1',y);l.setAttribute('x2',FB_RIGHT);l.setAttribute('y2',y);
+    l.setAttribute('stroke','#3a2a10');l.setAttribute('stroke-width',STRING_THICK_FB[si]);g.appendChild(l);
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',22);t.setAttribute('y',y+4);t.setAttribute('text-anchor','middle');t.setAttribute('font-size','11');
+    t.setAttribute('font-style','italic');t.setAttribute('font-weight','700');t.setAttribute('fill','#444');t.setAttribute('font-family','Trebuchet MS,sans-serif');
+    t.textContent=STRING_LABELS_FB[si];g.appendChild(t);
+  });
+  FRET_MARKERS_FB.forEach(f=>{
+    if(f>numFrets)return;
+    if(f===12){
+      [1,3].forEach(si=>{const c=fbMakeDot(FB_NUT+(f-0.5)*localFretW,fbStringY(si)-FB_STR_GAP*.5,4,'#1e1e1e');g.appendChild(c);});
+    }else{
+      g.appendChild(fbMakeDot(FB_NUT+(f-0.5)*localFretW,fbStringY(2)-FB_STR_GAP*.5,4,'#1e1e1e'));
+    }
+  });
+  svg.appendChild(g);
+  const dotsG=document.createElementNS('http://www.w3.org/2000/svg','g');
+  dotsG.setAttribute('id',svgId+'-dots');svg.appendChild(dotsG);
+}
+
+// Convert chord strings[] to fretboard positions {si, fret, d}
+function chordToFbPositions(chord){
+  // strings: [e,B,G,D,A,E] high→low (index 0=high e = si 5)
+  const stringsArr=chord.strings;
+  const positions=[];
+  const openMap=[4,4,3,2,1,0]; // OPEN_NOTES_FB index for each strings[] index
+  // strings[0]=e(si=5), strings[1]=B(si=4), strings[2]=G(si=3), strings[3]=D(si=2), strings[4]=A(si=1), strings[5]=E(si=0)
+  const siMap=[5,4,3,2,1,0];
+  stringsArr.forEach((fret,idx)=>{
+    if(fret==='x'||fret===null)return;
+    const si=siMap[idx];
+    const openNote=OPEN_NOTES_FB[si];
+    const noteName=fbNoteAt(openNote,fret);
+    const degree=chord.notes?chord.notes.indexOf(noteName)+1:1;
+    positions.push({si,fret,d:degree>0?degree:1,note:noteName});
+  });
+  return positions;
+}
+
+function fbRenderChordDots(svgId,chord,color){
+  const svg=document.getElementById(svgId); if(!svg)return;
+  const localFretW=parseFloat(svg.dataset.localFretW)||FB_FRET_W;
+  function localFretX(fret){ return fret===0?FB_NUT-4:FB_NUT+(fret-0.5)*localFretW; }
+  let dotsG=document.getElementById(svgId+'-dots');
+  if(!dotsG){dotsG=document.createElementNS('http://www.w3.org/2000/svg','g');dotsG.setAttribute('id',svgId+'-dots');svg.appendChild(dotsG);}
+  dotsG.innerHTML='';
+  const positions=chordToFbPositions(chord);
+  const col=color||'#3498db';
+  positions.forEach(p=>{
+    const cx=localFretX(p.fret),cy=fbStringY(p.si);
+    const isRoot=p.d===1;
+    const r=isRoot?14:11;
+    const dotCol=isRoot?col:col+'aa';
+    const c=fbMakeDot(cx,cy,r,dotCol);
+    if(isRoot)c.setAttribute('filter','url(#fbglow)');
+    dotsG.appendChild(c);
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',cx);t.setAttribute('y',cy+4);t.setAttribute('text-anchor','middle');t.setAttribute('font-size','9');
+    t.setAttribute('font-weight','800');t.setAttribute('fill',isRoot?'#fff':'#000');t.setAttribute('font-family','Trebuchet MS,sans-serif');
+    t.textContent=p.note;dotsG.appendChild(t);
+  });
+}
+
+// ─── Compatible scales ─────────────────────────────────────────────────
+const SCALE_FORMULAS = {
+  pminor: {steps:[3,2,2,3,2], label:'pentatónica menor'},
+  pmajor: {steps:[2,2,3,2,3], label:'pentatónica mayor'},
+  minor:  {steps:[2,1,2,2,1,2,2], label:'menor natural'},
+  major:  {steps:[2,2,1,2,2,2,1], label:'mayor'},
+};
+
+const KNOWN_SCALES = ['A pminor','G pmajor','G pminor','G major'];
+
+function buildScaleNotesFromFormula(root, steps){
+  const notes=[root];
+  let idx=CHROMATIC.indexOf(root);
+  steps.forEach(s=>{ idx=(idx+s)%12; notes.push(CHROMATIC[idx]); });
+  return notes.slice(0,-1); // remove duplicate root at end
+}
+
+function findCompatibleScales(chordNotes){
+  if(!chordNotes||!chordNotes.length)return[];
+  const results=[];
+  CHROMATIC.forEach(root=>{
+    Object.entries(SCALE_FORMULAS).forEach(([key,f])=>{
+      const scaleNotes=buildScaleNotesFromFormula(root,f.steps);
+      if(chordNotes.every(n=>scaleNotes.includes(n))){
+        const label=root+' '+f.label;
+        const isKnown=KNOWN_SCALES.includes(label);
+        results.push({label,root,key,isKnown});
+      }
+    });
+  });
+  return results;
+}
+
+// ─── Improvisar mode data ──────────────────────────────────────────────
+const IMPRO_SCALES = [
+  {
+    id:'pminor_A',
+    label:'Am pentatónica',
+    hint:'Sonido rock, blues, folk. La primera que aprendiste. Funciona perfectamente sobre todos estos acordes.',
+    notes:['A','C','D','E','G'],
+    chords:[{id:'Am',deg:'i'},{id:'Em',deg:'v'},{id:'C',deg:'III'},{id:'G',deg:'VII'},{id:'Dm',deg:'iv'},{id:'F_b6',deg:'VI'},{id:'E',deg:'V♮'}],
+  },
+  {
+    id:'pmajor_G',
+    label:'G mayor penta',
+    hint:'Sonido brillante y positivo. Subconjunto de G mayor — funciona bien sobre I, IV, V.',
+    notes:['G','A','B','D','E'],
+    chords:[{id:'G',deg:'I'},{id:'D',deg:'V'},{id:'Em',deg:'vi'},{id:'C',deg:'IV'}],
+  },
+  {
+    id:'major_G',
+    label:'G mayor',
+    hint:'La escala completa de G mayor. Te da acceso a las 6 tríadas diatónicas.',
+    notes:['G','A','B','C','D','E','F#'],
+    chords:[{id:'G',deg:'I'},{id:'Am',deg:'ii'},{id:'Bm_b6',deg:'iii'},{id:'C',deg:'IV'},{id:'D',deg:'V'},{id:'Em',deg:'vi'}],
+  },
+  {
+    id:'pminor_G',
+    label:'Gm pentatónica',
+    hint:'Sonido oscuro y pesado. Desplazá la forma de Am pentatónica 2 trastes arriba.',
+    notes:['G','A#','C','D','F'],
+    chords:[{id:'Dm',deg:'v'},{id:'C',deg:'IV'},{id:'Cm_b5',deg:'iv'},{id:'F_b6',deg:'VII'}],
+  },
+];
 
 // Progression presets
 const PRESETS = [
@@ -309,6 +543,9 @@ const state = {
   currentSlot: 0,
   currentBeat: 0,
   beatsPerChord: 4,
+  // Improvisar
+  improScale: 'pminor_A',
+  improChord: null,
   // Drill
   drillPlaying: false,
   drillBpm: 70,
@@ -448,8 +685,8 @@ function buildChordSVG(chord) {
   for (let s = 0; s < 6; s++) {
     svg += `<line x1="${LEFT+s*CELL_W}" y1="${TOP}" x2="${LEFT+s*CELL_W}" y2="${TOP+4*CELL_H}" stroke="#3a2a10" stroke-width="${[0.6,1.0,1.5,2.0,2.6,3.2][5-s]}"/>`;
   }
-  // String labels
-  const labels=['e','B','G','D','A','E'];
+  // String labels — E A D G B e (low→high, left→right = standard orientation)
+  const labels=['E','A','D','G','B','e'];
   for(let s=0;s<6;s++){
     svg+=`<text x="${LEFT+s*CELL_W}" y="${TOP-10}" text-anchor="middle" font-size="9" fill="#666" font-family="Trebuchet MS">${labels[s]}</text>`;
   }
@@ -458,9 +695,9 @@ function buildChordSVG(chord) {
     const by=TOP+(chord.barre-offset-1)*CELL_H+CELL_H/2;
     svg+=`<rect x="${LEFT-2}" y="${by-7}" width="${CELL_W*5+4}" height="14" rx="7" fill="#3498db" opacity="0.85"/>`;
   }
-  // Dots
+  // Dots — strings[0]=high e → rightmost (s=5), strings[5]=low E → leftmost (s=0)
   strings.forEach((fret,si)=>{
-    const sx=LEFT+si*CELL_W;
+    const sx=LEFT+(5-si)*CELL_W;  // flip: si=0(e)→right, si=5(E)→left
     if(fret==='x'){
       svg+=`<text x="${sx}" y="${TOP-22}" text-anchor="middle" font-size="12" fill="#666" font-family="Trebuchet MS">✕</text>`;
     } else if(fret===0){
@@ -481,34 +718,68 @@ function renderChordDisplay() {
   const chord = CHORDS[state.selectedChord];
   if(!chord){display.style.display='none';return;}
   display.style.display='block';
+
+  // Notes row HTML
+  const noteColor = chord.quality&&chord.quality.includes('minor')?'#3498db':chord.quality==='major'?'#27ae60':'#d4a847';
+  const notesHTML = (chord.notes||[]).map((n,i)=>{
+    const iv=(chord.intervals||[])[i]||'';
+    return `<span class="chord-note-badge" style="background:${noteColor}88;border:1px solid ${noteColor};">${n}<sup style="font-size:8px;opacity:.8;">${iv}</sup></span>`;
+  }).join('');
+
+  // Compatible scales
+  const compat = findCompatibleScales(chord.notes||[]);
+  const compatHTML = compat.length ? `
+    <div class="compat-scales">
+      <div class="compat-title">Escalas compatibles para improvisar</div>
+      ${compat.slice(0,10).map(s=>`<span class="compat-scale${s.isKnown?' known':''}">${s.label}${s.isKnown?' ★':''}</span>`).join('')}
+    </div>` : '';
+
   display.innerHTML=`
     <div class="chord-name">${chord.name}</div>
     <div class="chord-type">${chord.type}</div>
+    <div class="chord-notes-row">${notesHTML}<span class="chord-formula">${(chord.intervals||[]).join(' – ')}</span></div>
     <div class="chord-diagram-wrap">
       ${buildChordSVG(chord)}
       <div class="chord-tips">
         ${(chord.tips||[]).map(t=>`<div class="chord-tip">💡 ${t}</div>`).join('')}
       </div>
     </div>
+    <div class="chord-fretboard-wrap">
+      <div class="chord-fretboard-inner">
+        <svg id="chord-fretboard" viewBox="0 0 920 220" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </div>
+    ${compatHTML}
   `;
+
+  // Render fretboard after DOM update
+  requestAnimationFrame(()=>{
+    const fbPos = chordToFbPositions(chord);
+    const usedFrets = fbPos.filter(p=>p.fret>0).map(p=>p.fret);
+    const maxFret = usedFrets.length ? Math.max(...usedFrets) : 12;
+    const numFrets = maxFret <= 4 ? 5 : maxFret <= 7 ? 8 : 12;
+    fbInitBoard('chord-fretboard', numFrets);
+    fbRenderChordDots('chord-fretboard', chord, noteColor);
+  });
 }
 
 // ─── Build chord buttons ──────────────────────────────────────────────
 function buildChordButtons() {
   const groups = {
-    'open-grid':   ['Em','Am','G','C','D'],
-    'sus-grid':    ['Dsus2','Dsus4','Asus2','Asus4','Gsus2'],
-    'barre5-grid': ['C_b5','Cm_b5','C7_b5'],
-    'seventh-grid':['Cmaj7','Cm7','Cm7b5'],
-    'barre6-grid': ['F_b6','Fm_b6','F7_b6'],
+    'am-family-grid': ['Am','Em','C','G','Dm','F_b6','E'],
+    'g-family-grid':  ['G','Am','Bm_b6','C','D','Em'],
+    'barre-grid':     ['F_b6','Fm_b6','C_b5','Cm_b5'],
+    'color-grid':     ['Dsus2','Dsus4','Asus2','Asus4','Gsus2','C7_b5','F7_b6','Cmaj7','Cm7','Cm7b5'],
   };
   Object.entries(groups).forEach(([gridId, chordIds]) => {
     const grid = document.getElementById(gridId);
     if(!grid)return;
     grid.innerHTML = chordIds.map(id => {
       const c = CHORDS[id];
+      if(!c)return'';
       const active = state.selectedChord === id;
-      return `<button class="chord-btn ${active?'active':''}" data-chord="${id}">${c.name}</button>`;
+      const iv = c.intervals ? `<span class="chord-sub">${c.intervals.join('-')}</span>` : '';
+      return `<button class="chord-btn ${active?'active':''}" data-chord="${id}">${c.name}${iv}</button>`;
     }).join('');
     grid.querySelectorAll('.chord-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -691,6 +962,56 @@ function initDrill() {
   });
 }
 
+// ─── Improvisar mode ──────────────────────────────────────────────────
+function initImprovisar() {
+  const scalesRow = document.getElementById('impro-scales-row');
+  scalesRow.innerHTML = IMPRO_SCALES.map(s =>
+    `<button class="impro-scale-btn ${state.improScale===s.id?'active':''}" data-scale="${s.id}">${s.label}</button>`
+  ).join('');
+  scalesRow.querySelectorAll('.impro-scale-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.improScale = btn.dataset.scale;
+      state.improChord = null;
+      initImprovisar();
+    });
+  });
+
+  const scale = IMPRO_SCALES.find(s=>s.id===state.improScale)||IMPRO_SCALES[0];
+  document.getElementById('impro-hint').textContent = scale.hint;
+
+  const chordGrid = document.getElementById('impro-chord-grid');
+  chordGrid.innerHTML = scale.chords.map(entry => {
+    const c = CHORDS[entry.id];
+    if(!c)return'';
+    const active = state.improChord === entry.id;
+    return `<button class="impro-chord-btn ${active?'active':''}" data-chord="${entry.id}">
+      <span class="impro-deg">${entry.deg}</span>${c.name}
+    </button>`;
+  }).join('');
+  chordGrid.querySelectorAll('.impro-chord-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.improChord = state.improChord === btn.dataset.chord ? null : btn.dataset.chord;
+      renderImproFretboard();
+      initImprovisar();
+    });
+  });
+
+  renderImproFretboard();
+}
+
+function renderImproFretboard() {
+  if(!state.improChord){fbInitBoard('impro-fretboard',12);return;}
+  const chord = CHORDS[state.improChord];
+  if(!chord){fbInitBoard('impro-fretboard',12);return;}
+  const fbPos = chordToFbPositions(chord);
+  const usedFrets = fbPos.filter(p=>p.fret>0).map(p=>p.fret);
+  const maxFret = usedFrets.length ? Math.max(...usedFrets) : 12;
+  const numFrets = maxFret <= 4 ? 5 : maxFret <= 7 ? 8 : 12;
+  const col = chord.quality&&chord.quality.includes('minor')?'#3498db':chord.quality==='major'?'#27ae60':'#d4a847';
+  fbInitBoard('impro-fretboard', numFrets);
+  fbRenderChordDots('impro-fretboard', chord, col);
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────
 buildChordButtons();
 renderChordDisplay();
@@ -700,6 +1021,7 @@ buildPresets();
 renderProgSlots();
 renderBeats();
 initDrill();
+initImprovisar();
 
 // Tabs
 document.querySelectorAll('.tab').forEach(tab => {
@@ -708,8 +1030,10 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById('mode-shapes').style.display = state.mode==='shapes'?'':'none';
+    document.getElementById('mode-impro').style.display  = state.mode==='impro'?'':'none';
     document.getElementById('mode-prog').style.display   = state.mode==='prog'?'':'none';
     document.getElementById('mode-drill').style.display  = state.mode==='drill'?'':'none';
+    if(state.mode==='impro'){ renderImproFretboard(); }
     if(state.playing && state.mode!=='prog') stopPlaying();
     if(state.drillPlaying && state.mode!=='drill') stopDrill();
   });
