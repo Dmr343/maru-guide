@@ -13,19 +13,33 @@
     }
     *{box-sizing:border-box;margin:0;padding:0;}
     html{zoom:1.4;}
-    body{background:var(--bg);color:var(--text);font-family:var(--font);padding:16px 12px 40px;min-height:100vh;}
+    body{background:var(--bg);color:var(--text);font-family:var(--font);padding:8px 12px 40px;min-height:100vh;}
 
     .back{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--text-dim);
-      font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;transition:color .15s;}
+      font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;transition:color .15s;}
     .back:hover{color:var(--accent);}
 
-    .header{text-align:center;margin-bottom:20px;}
-    .header-label{font-size:10px;letter-spacing:.3em;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px;}
-    .header h1{font-size:clamp(16px,4vw,24px);font-weight:300;color:var(--accent);letter-spacing:.08em;}
+    .header{text-align:center;margin-bottom:8px;}
+    .header h1{font-size:clamp(13px,3vw,17px);font-weight:300;color:var(--accent);letter-spacing:.08em;}
 
     /* ── Sección genérica ── */
-    .section{max-width:720px;margin:0 auto 14px;}
-    .section-label{font-size:10px;letter-spacing:.2em;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;}
+    .section{max-width:720px;margin:0 auto 8px;}
+    .section-label{font-size:10px;letter-spacing:.2em;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;}
+
+    /* ── Chord picker (acordes fuera de escala) ── */
+    .extra-chord-picker{max-width:720px;margin:0 auto 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+    .extra-chord-picker > summary{padding:8px 14px;cursor:pointer;list-style:none;font-size:10px;letter-spacing:.2em;color:var(--gold);text-transform:uppercase;user-select:none;}
+    .extra-chord-picker > summary::-webkit-details-marker{display:none;}
+    .extra-chord-picker > summary::before{content:'▸';display:inline-block;margin-right:7px;font-size:9px;transition:transform .15s;color:var(--gold);}
+    .extra-chord-picker[open] > summary::before{transform:rotate(90deg);}
+    .extra-picker-body{padding:4px 14px 12px;}
+    .extra-picker-hint{font-size:10px;color:var(--text-dim);margin-bottom:8px;letter-spacing:.02em;}
+    .picker-label{font-size:9px;letter-spacing:.2em;color:var(--text-dim);text-transform:uppercase;margin:6px 0 4px;}
+    .extra-picker-roots,.extra-picker-quals{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px;}
+    .ep-btn{padding:5px 10px;border-radius:6px;border:2px solid #2a2a2a;background:#1a1a1a;color:#888;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;min-width:36px;text-align:center;font-family:var(--font);}
+    .ep-btn:hover{border-color:#555;color:#ccc;}
+    .ep-btn.active{border-color:var(--gold);color:var(--gold);background:#d4a84722;}
+    .ep-qual{padding:5px 14px;border-radius:14px;}
 
     /* ── Selector de tonalidad ── */
     .root-grid{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;}
@@ -195,7 +209,6 @@
 <a href="index.html" class="back">← Hub</a>
 
 <div class="header">
-  <div class="header-label">Guitarra — Improvisación</div>
   <h1>Improvisar sobre la escala</h1>
 </div>
 
@@ -217,6 +230,18 @@
   <div class="section-label">Acordes diatónicos — hacé click para agregar a la progresión</div>
   <div class="chord-btns" id="chord-btns"></div>
 </div>
+
+<!-- Agregar cualquier acorde fuera de la escala -->
+<details class="extra-chord-picker" id="extra-chord-picker" style="display:none;">
+  <summary>➕ Agregar acorde fuera de la escala</summary>
+  <div class="extra-picker-body">
+    <div class="extra-picker-hint">Elegí raíz y calidad para sumar un acorde cromático a la progresión</div>
+    <div class="picker-label">Raíz</div>
+    <div class="extra-picker-roots" id="extra-picker-roots"></div>
+    <div class="picker-label">Calidad</div>
+    <div class="extra-picker-quals" id="extra-picker-quals"></div>
+  </div>
+</details>
 
 <!-- Progresión -->
 <div class="prog-area" id="prog-area">
@@ -832,7 +857,10 @@ function renderFretboard(){
 
     // Fill circle (innermost)
     const dot=el('circle',{cx,cy,r:baseR,fill,opacity:dotOpacity});
-    if(isChordTone) dot.setAttribute('data-degree', matches[0]);
+    if(isChordTone){
+      dot.setAttribute('data-degree', matches[0]);
+      dot.setAttribute('data-matches', matches.join(','));
+    }
     dotsG.appendChild(dot);
 
     // En escala limpia: anillo exterior para tónica
@@ -842,14 +870,15 @@ function renderFretboard(){
       dotsG.appendChild(ring);
     }
 
-    // Concentric stroke rings for shared notes (2nd, 3rd chord color outward)
-    if(isShared){
-      matches.slice(1).forEach((di,k)=>{
-        const ringR=baseR+4*(k+1);
-        const ring=el('circle',{cx,cy,r:ringR,fill:'none',
-          stroke:chordColor(st.chords[di].root, st.chords[di].type),'stroke-width':2,'stroke-opacity':(inRange?0.85:0.2)*shapeAttenuation});
+    // Aro concéntrico para marcar la tónica (raíz) del acorde
+    if(hasProg && isChordTone){
+      const rootOfDi = matches.find(di => st.chords[di] && note === st.chords[di].root);
+      if(rootOfDi !== undefined){
+        const ring=el('circle',{cx,cy,r:baseR+4,fill:'none',
+          stroke:fill,'stroke-width':2,'stroke-opacity':(inRange?0.85:0.2)*shapeAttenuation});
+        ring.setAttribute('data-root-ring', rootOfDi);
         dotsG.appendChild(ring);
-      });
+      }
     }
 
     // Etiqueta de nota (always on top)
@@ -939,8 +968,10 @@ function renderScaleInfo(){
 function renderChordPalette(){
   const palette=document.getElementById('chord-palette');
   const btns=document.getElementById('chord-btns');
-  if(!st.chords.length){ palette.style.display='none'; return; }
+  const extraPicker=document.getElementById('extra-chord-picker');
+  if(!st.chords.length){ palette.style.display='none'; if(extraPicker) extraPicker.style.display='none'; return; }
   palette.style.display='block';
+  if(extraPicker) extraPicker.style.display='';
   btns.innerHTML='';
   const ch7s = st.show7s ? buildSeventhChords(st.scale) : null;
   const chSus = st.susMode ? buildSusChords(st.scale, st.susMode) : null;
@@ -1214,10 +1245,29 @@ function applyMetroOpacity(){
       poly.setAttribute('stroke-opacity',.15);
     }
   });
-  // Puntos
+  // Puntos: cuando el metrónomo toca un acorde, las notas de ese acorde se
+  // repintan con el color del acorde activo (círculos llenos), y las notas
+  // que no pertenecen al acorde activo quedan atenuadas.
   document.querySelectorAll('#fb-dots circle[data-degree]').forEach(dot=>{
-    const di=parseInt(dot.getAttribute('data-degree'));
-    dot.style.opacity=(activeDi===null||di===activeDi)?'':'0.25';
+    const matchesStr=dot.getAttribute('data-matches')||dot.getAttribute('data-degree');
+    const dotMatches=matchesStr.split(',').map(Number);
+    if(activeDi===null){
+      dot.style.opacity='';
+      const primary=dotMatches[0];
+      if(!isNaN(primary) && st.chords[primary]){
+        dot.setAttribute('fill', chordColor(st.chords[primary].root, st.chords[primary].type));
+      }
+    } else if(dotMatches.includes(activeDi)){
+      dot.style.opacity='';
+      dot.setAttribute('fill', chordColor(st.chords[activeDi].root, st.chords[activeDi].type));
+    } else {
+      dot.style.opacity='0.25';
+    }
+  });
+  // Aros de tónica: solo mostrar el del acorde activo (cuando metro corre)
+  document.querySelectorAll('#fb-dots circle[data-root-ring]').forEach(ring=>{
+    const di=parseInt(ring.getAttribute('data-root-ring'));
+    ring.style.display=(activeDi===null||di===activeDi)?'':'none';
   });
 }
 
@@ -1280,6 +1330,62 @@ function loadState(){
     if(s.susMode === null || s.susMode === 'sus2' || s.susMode === 'sus4') st.susMode = s.susMode;
     return true;
   } catch(e){ return false; }
+}
+
+// ── Chord picker (acordes fuera de escala) ────────────────────────────────
+const CHROMATIC_IMPRO = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const EXTRA_QUALITIES = [
+  {id:'major', label:'Mayor',  semitones:[0,4,7]},
+  {id:'minor', label:'Menor',  semitones:[0,3,7]},
+  {id:'dom7',  label:'7',      semitones:[0,4,7,10]},
+  {id:'maj7',  label:'maj7',   semitones:[0,4,7,11]},
+  {id:'min7',  label:'m7',     semitones:[0,3,7,10]},
+];
+const EXTRA_QUALITY_SUFFIX = {major:'',minor:'m',dom7:'7',maj7:'maj7',min7:'m7'};
+const EXTRA_QUALITY_LABEL  = {major:'Mayor',minor:'Menor',dom7:'Dom 7ª',maj7:'Mayor 7ª',min7:'Menor 7ª'};
+
+function makeExtraChord(root, quality){
+  const q = EXTRA_QUALITIES.find(x=>x.id===quality) || EXTRA_QUALITIES[0];
+  const ri = CHROMATIC_IMPRO.indexOf(root);
+  const notes = q.semitones.map(s=>CHROMATIC_IMPRO[(ri+s)%12]);
+  return { root, type:quality, name:root+(EXTRA_QUALITY_SUFFIX[quality]||''),
+           notes, roman:'✦', typeLabel:EXTRA_QUALITY_LABEL[quality]||quality };
+}
+
+function setupExtraPicker(){
+  const rootsRow = document.getElementById('extra-picker-roots');
+  const qualsRow = document.getElementById('extra-picker-quals');
+  if(!rootsRow || !qualsRow) return;
+  const ps = { root: null };
+
+  rootsRow.innerHTML = '';
+  CHROMATIC_IMPRO.forEach(note=>{
+    const btn = document.createElement('button');
+    btn.className = 'ep-btn';
+    btn.textContent = note;
+    btn.addEventListener('click',()=>{
+      ps.root = note;
+      rootsRow.querySelectorAll('.ep-btn').forEach(b=>b.classList.toggle('active', b.textContent===note));
+    });
+    rootsRow.appendChild(btn);
+  });
+
+  qualsRow.innerHTML = '';
+  EXTRA_QUALITIES.forEach(q=>{
+    const btn = document.createElement('button');
+    btn.className = 'ep-btn ep-qual';
+    btn.textContent = q.label;
+    btn.addEventListener('click',()=>{
+      if(!ps.root || st.progression.length>=8) return;
+      const chord = makeExtraChord(ps.root, q.id);
+      let di = st.chords.findIndex(c=>c.root===chord.root&&c.type===chord.type);
+      if(di===-1){ di=st.chords.length; st.chords.push(chord); }
+      addToProg(di);
+      btn.classList.add('active');
+      setTimeout(()=>btn.classList.remove('active'), 250);
+    });
+    qualsRow.appendChild(btn);
+  });
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────
@@ -1455,6 +1561,7 @@ function init(){
   document.getElementById('toggle-7s').classList.toggle('active', st.show7s);
   document.getElementById('toggle-sus2').classList.toggle('active', st.susMode==='sus2');
   document.getElementById('toggle-sus4').classList.toggle('active', st.susMode==='sus4');
+  setupExtraPicker();
   renderRootGrid();
   renderScaleInfo();
   renderChordPalette();
