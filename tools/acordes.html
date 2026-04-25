@@ -54,10 +54,36 @@
     .m1-mapa-tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid #444;border-radius:6px;padding:8px 12px;font-size:10px;color:var(--text-mid);max-width:280px;line-height:1.5;white-space:normal;z-index:10;pointer-events:none;}
     .m1-mapa:hover .m1-mapa-tip{display:block;}
 
-    /* ─── Placeholders ─── */
-    .placeholder{max-width:640px;margin:48px auto;text-align:center;color:var(--text-dim);font-size:13px;line-height:1.8;border:1px dashed var(--border);border-radius:var(--radius);padding:36px 24px;}
-    .placeholder strong{color:var(--text-mid);display:block;font-size:16px;margin-bottom:10px;letter-spacing:.04em;}
-    .placeholder small{font-size:11px;opacity:.6;}
+    /* ─── Modo 3/4 sliders & metro ─── */
+    .range-row{display:flex;align-items:center;gap:10px;justify-content:center;}
+    .range-input{width:200px;accent-color:var(--accent);}
+    .range-val{font-size:11px;color:var(--text-mid);min-width:24px;font-weight:700;text-align:center;}
+    .legend{display:flex;gap:14px;justify-content:center;font-size:10px;letter-spacing:.1em;color:var(--text-dim);text-transform:uppercase;margin:6px 0;flex-wrap:wrap;}
+    .legend-item{display:inline-flex;align-items:center;gap:5px;}
+    .legend-dot{width:10px;height:10px;border-radius:50%;}
+
+    /* ─── Modo 4 chord slots ─── */
+    .slots-row{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;margin:10px auto;min-height:40px;max-width:760px;}
+    .slot{display:inline-flex;align-items:center;gap:6px;padding:6px 10px 6px 14px;border-radius:18px;background:var(--surface2);border:1px solid var(--border);font-size:13px;font-weight:700;color:var(--text);cursor:pointer;transition:all .12s;}
+    .slot:hover{border-color:#444;}
+    .slot.active{border-color:var(--gold);color:var(--gold);background:#2a1a0a;box-shadow:0 0 8px rgba(212,168,71,.3);}
+    .slot-x{font-size:10px;color:var(--text-dim);background:none;border:none;cursor:pointer;padding:0 4px;border-radius:50%;line-height:1;}
+    .slot-x:hover{color:#e74c3c;}
+    .slots-empty{font-size:11px;color:var(--text-dim);font-style:italic;padding:10px;}
+
+    .picker-card{max-width:760px;margin:6px auto;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);}
+    .picker-card .ctrl-row{margin-bottom:6px;}
+    .picker-card .ctrl-row:last-child{margin-bottom:0;}
+    .add-btn{background:#1a2a1a;border-color:#2ecc71;color:#2ecc71;}
+    .add-btn:hover:not(:disabled){background:#234a23;color:#fff;}
+    .add-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+    .metro-row{display:flex;align-items:center;gap:14px;justify-content:center;margin:10px 0;flex-wrap:wrap;}
+    .metro-btn.play{background:#1a3a1a;border-color:#2ecc71;color:#2ecc71;padding:7px 22px;}
+    .metro-btn.play.on{background:#3a1a1a;border-color:#e74c3c;color:#e74c3c;}
+    .bpm-input{width:60px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:6px;font-family:var(--font);font-size:13px;text-align:center;}
+
+    .empty-tip{text-align:center;color:var(--text-dim);font-size:11px;font-style:italic;margin:14px 0;}
 
     footer{text-align:center;margin-top:32px;font-size:10px;color:#333;letter-spacing:.08em;}
     footer a{color:var(--accent);text-decoration:none;opacity:.5;}
@@ -134,21 +160,120 @@
   </div>
 </div>
 
-<!-- ── Modos 3–4 (placeholders) ── -->
+<!-- ── Modo 3 ── -->
 <div id="pane-zona" class="mode-pane">
-  <div class="placeholder">
-    <strong>Modo 3 — Zona de improvisación</strong>
-    Chord tones coloreados por función (R dorado · 3ra naranja · 5ta azul · 7ma verde).<br>
-    Overlay de escala alrededor para improvisar sobre un acorde estático.<br>
-    <small>Próximamente</small>
+  <div class="ctrl-wrap">
+    <div class="ctrl-row">
+      <div class="ctrl-group">
+        <span class="ctrl-label">Raíz</span>
+        <div class="ctrl-btns" id="m3-root"></div>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-label">Calidad</span>
+        <div class="ctrl-btns" id="m3-qual"></div>
+      </div>
+    </div>
+    <div class="ctrl-row">
+      <div class="ctrl-group">
+        <span class="ctrl-label">Forma</span>
+        <div class="ctrl-btns" id="m3-shapes"></div>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-label">Escala</span>
+        <div class="ctrl-btns" id="m3-scales"></div>
+      </div>
+    </div>
+    <div class="range-row">
+      <span class="ctrl-label">Zona</span>
+      <input type="range" id="m3-fmin" class="range-input" min="0" max="15" value="3">
+      <span class="range-val" id="m3-fmin-val">3</span>
+      <span style="color:var(--text-dim);font-size:11px;">a</span>
+      <input type="range" id="m3-fmax" class="range-input" min="0" max="15" value="8">
+      <span class="range-val" id="m3-fmax-val">8</span>
+    </div>
+    <div class="ctrl-name" id="m3-chord-name">G</div>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-dot" style="background:#d4a847"></span>R</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#e67e22"></span>3ra</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#3498db"></span>5ta</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#2ecc71"></span>7ma</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#888;opacity:.5"></span>escala</span>
+    </div>
+    <div class="fb-wrap">
+      <svg id="m3-svg" viewBox="0 0 920 220" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
   </div>
 </div>
+
+<!-- ── Modo 4 ── -->
 <div id="pane-prog" class="mode-pane">
-  <div class="placeholder">
-    <strong>Modo 4 — Progresión con cambios</strong>
-    Metrónomo que cicla acordes en una zona fija del mástil.<br>
-    Importar progresión de Improvisar · modo auto / manual.<br>
-    <small>Próximamente</small>
+  <div class="ctrl-wrap">
+    <div class="slots-row" id="m4-slots"></div>
+
+    <div class="picker-card">
+      <div class="ctrl-row">
+        <div class="ctrl-group">
+          <span class="ctrl-label">Raíz</span>
+          <div class="ctrl-btns" id="m4-pick-root"></div>
+        </div>
+      </div>
+      <div class="ctrl-row">
+        <div class="ctrl-group">
+          <span class="ctrl-label">Calidad</span>
+          <div class="ctrl-btns" id="m4-pick-qual"></div>
+        </div>
+        <div class="ctrl-group">
+          <button class="btn add-btn" id="m4-add" disabled>+ Agregar</button>
+          <button class="btn" id="m4-load">Cargar de Improvisar</button>
+          <button class="btn" id="m4-clear">Borrar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="ctrl-row">
+      <div class="ctrl-group">
+        <span class="ctrl-label">Forma</span>
+        <div class="ctrl-btns" id="m4-shapes"></div>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-label">Escala</span>
+        <div class="ctrl-btns" id="m4-scales"></div>
+      </div>
+    </div>
+    <div class="range-row">
+      <span class="ctrl-label">Zona</span>
+      <input type="range" id="m4-fmin" class="range-input" min="0" max="15" value="3">
+      <span class="range-val" id="m4-fmin-val">3</span>
+      <span style="color:var(--text-dim);font-size:11px;">a</span>
+      <input type="range" id="m4-fmax" class="range-input" min="0" max="15" value="8">
+      <span class="range-val" id="m4-fmax-val">8</span>
+    </div>
+    <div class="metro-row">
+      <button class="btn metro-btn play" id="m4-play">▶ Play</button>
+      <div class="ctrl-group">
+        <span class="ctrl-label">BPM</span>
+        <input type="number" class="bpm-input" id="m4-bpm" min="40" max="220" value="80">
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-label">Compases</span>
+        <div class="ctrl-btns" id="m4-beats"></div>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-label">Modo</span>
+        <div class="ctrl-btns" id="m4-metro-mode"></div>
+      </div>
+    </div>
+    <div class="ctrl-name" id="m4-chord-name">—</div>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-dot" style="background:#d4a847"></span>R</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#e67e22"></span>3ra</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#3498db"></span>5ta</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#2ecc71"></span>7ma</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#888;opacity:.5"></span>escala</span>
+    </div>
+    <div class="fb-wrap">
+      <svg id="m4-svg" viewBox="0 0 920 220" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
   </div>
 </div>
 
@@ -159,9 +284,17 @@
 </footer>
 
 <script type="module">
-import { loadCAGED, saveCAGED } from './shared/storage.js';
-import { buildChord, chordName, CAGED_COLORS, CHROMATIC, QUALITY_LABELS } from './shared/theory.js';
-import { fbInitBoard, fbNoteAt, fbDrawBarre, fbGetFretW, fbGetDotsGroup, fretX, stringY, OPEN_NOTES } from './shared/fretboard.js';
+import { loadCAGED, saveCAGED, loadImprovState } from './shared/storage.js';
+import {
+  buildChord, buildScale, chordName,
+  intervalToFunction, fretsForCagedShape,
+  CAGED_COLORS, FUNC_COLORS, CHROMATIC, QUALITY_LABELS,
+} from './shared/theory.js';
+import {
+  fbInitBoard, fbNoteAt, fbDrawBarre, fbGetFretW, fbGetDotsGroup,
+  fretX, stringY, OPEN_NOTES, FB_NUT, FB_STR_TOP, FB_STR_BOT,
+} from './shared/fretboard.js';
+import { Metronome } from './shared/metronome.js';
 
 const MODES     = ['forma','mapa','zona','prog'];
 const SHAPES    = ['C','A','G','E','D'];
@@ -169,28 +302,62 @@ const QUALITIES = ['major','minor','dom7','maj7','min7'];
 const Q_LABEL   = { major:'Mayor', minor:'m', dom7:'7', maj7:'maj7', min7:'m7' };
 const SVG_NS    = 'http://www.w3.org/2000/svg';
 
+const SCALES = [
+  { id:'pent_major', label:'Pent May' },
+  { id:'pent_minor', label:'Pent Men' },
+  { id:'major',      label:'Diat May' },
+  { id:'minor',      label:'Diat Men' },
+  { id:'mixolydian', label:'Mixol' },
+  { id:'dorian',     label:'Dórico' },
+];
+const SCALE_IDS = SCALES.map(s => s.id);
+
+const DEFAULT_SCALE_BY_QUALITY = {
+  major: 'pent_major',
+  minor: 'pent_minor',
+  dom7:  'mixolydian',
+  maj7:  'major',
+  min7:  'minor',
+};
+
 const DEFAULT_STATE = {
-  mode:'mapa', root:'G', quality:'major', shape:'E', barre:3, bpm:80,
-  scale:null, fretRange:null,
+  mode:'mapa', root:'G', quality:'major', shape:'E', barre:3,
   shapeToggles:{ C:true, A:true, G:true, E:true, D:true },
   soloTonicas:false,
-  modo4:{ progression:[], metroMode:'auto', beatsPerChord:4 },
+  m3:{ shape:'E', scale:null, scaleAuto:true, fretRange:[3,8] },
+  m4:{
+    progression:[], chordIdx:0,
+    shape:'E', scale:null, scaleAuto:true, fretRange:[3,8],
+    bpm:80, beatsPerChord:4, metroMode:'auto',
+    pick:{ root:null, quality:'major' },
+  },
 };
 
 const saved = loadCAGED() || {};
-const st = Object.assign({}, DEFAULT_STATE, {
-  mode:         MODES.includes(saved.mode)       ? saved.mode     : DEFAULT_STATE.mode,
-  root:         saved.root                        || DEFAULT_STATE.root,
-  quality:      QUALITIES.includes(saved.quality) ? saved.quality  : DEFAULT_STATE.quality,
-  shape:        SHAPES.includes(saved.shape)      ? saved.shape    : DEFAULT_STATE.shape,
-  barre:        (saved.barre != null)             ? saved.barre    : DEFAULT_STATE.barre,
-  bpm:          saved.bpm                         || DEFAULT_STATE.bpm,
-  scale:        saved.scale !== undefined          ? saved.scale    : DEFAULT_STATE.scale,
-  fretRange:    saved.fretRange                   || DEFAULT_STATE.fretRange,
+const st = {
+  mode:         MODES.includes(saved.mode)        ? saved.mode    : DEFAULT_STATE.mode,
+  root:         saved.root                         || DEFAULT_STATE.root,
+  quality:      QUALITIES.includes(saved.quality)  ? saved.quality : DEFAULT_STATE.quality,
+  shape:        SHAPES.includes(saved.shape)       ? saved.shape   : DEFAULT_STATE.shape,
+  barre:        (saved.barre != null)              ? saved.barre   : DEFAULT_STATE.barre,
   shapeToggles: Object.assign({}, DEFAULT_STATE.shapeToggles, saved.shapeToggles || {}),
-  soloTonicas:  saved.soloTonicas                 || false,
-  modo4:        Object.assign({}, DEFAULT_STATE.modo4, saved.modo4 || {}),
-});
+  soloTonicas:  saved.soloTonicas                  || false,
+  m3:           Object.assign({}, DEFAULT_STATE.m3, saved.m3 || {}),
+  m4:           Object.assign({}, DEFAULT_STATE.m4, saved.m4 || {}),
+};
+// Re-validate nested
+if (!SHAPES.includes(st.m3.shape)) st.m3.shape = 'E';
+if (st.m3.scale && !SCALE_IDS.includes(st.m3.scale)) st.m3.scale = null;
+if (!Array.isArray(st.m3.fretRange) || st.m3.fretRange.length !== 2) st.m3.fretRange = [3,8];
+if (!SHAPES.includes(st.m4.shape)) st.m4.shape = 'E';
+if (st.m4.scale && !SCALE_IDS.includes(st.m4.scale)) st.m4.scale = null;
+if (!Array.isArray(st.m4.fretRange) || st.m4.fretRange.length !== 2) st.m4.fretRange = [3,8];
+if (!Array.isArray(st.m4.progression)) st.m4.progression = [];
+if (!st.m4.pick || typeof st.m4.pick !== 'object') st.m4.pick = { root:null, quality:'major' };
+if (!QUALITIES.includes(st.m4.pick.quality)) st.m4.pick.quality = 'major';
+if (st.m4.metroMode !== 'auto' && st.m4.metroMode !== 'manual') st.m4.metroMode = 'auto';
+if (![2,4,8].includes(st.m4.beatsPerChord)) st.m4.beatsPerChord = 4;
+if (typeof st.m4.bpm !== 'number' || st.m4.bpm < 40 || st.m4.bpm > 220) st.m4.bpm = 80;
 
 // ─── Shape definitions ────────────────────────────────────────────────────
 const SHAPE_DEFS = {
@@ -415,9 +582,450 @@ document.getElementById('m2-solo').addEventListener('click', () => {
   saveCAGED(st); renderModo2();
 });
 
+// ─── Modo 3 / Modo 4 shared helpers ───────────────────────────────────────
+function effectiveScale(quality, mState) {
+  if (!mState.scaleAuto && mState.scale) return mState.scale;
+  return DEFAULT_SCALE_BY_QUALITY[quality] || 'major';
+}
+
+function drawScaleDot(container, si, fret, label, fretW) {
+  const cx = fretX(fret, fretW), cy = stringY(si);
+  const c = document.createElementNS(SVG_NS, 'circle');
+  sa(c, { cx, cy, r:7, fill:'#888', 'fill-opacity':0.18, stroke:'#888', 'stroke-opacity':0.55, 'stroke-width':1 });
+  container.appendChild(c);
+  const t = document.createElementNS(SVG_NS, 'text');
+  sa(t, { x:cx, y:cy+3, 'text-anchor':'middle', 'font-size':8, fill:'#aaa',
+    'font-family':'Trebuchet MS,sans-serif', 'fill-opacity':0.7 });
+  t.textContent = label;
+  container.appendChild(t);
+}
+
+function drawZoneHighlight(svg, fretRange) {
+  const [fMin, fMax] = fretRange;
+  const fretW = fbGetFretW(svg);
+  const xLeft  = fMin === 0 ? FB_NUT - 8 : FB_NUT + (fMin - 1) * fretW;
+  const xRight = FB_NUT + fMax * fretW;
+  const rect = document.createElementNS(SVG_NS, 'rect');
+  sa(rect, {
+    x:xLeft, y:FB_STR_TOP - 8, width:xRight - xLeft, height:FB_STR_BOT - FB_STR_TOP + 16,
+    fill:'#3498db', 'fill-opacity':0.05, stroke:'#3498db', 'stroke-opacity':0.18, 'stroke-width':1, rx:4,
+  });
+  const dotsG = svg.querySelector('g[data-dots]');
+  svg.insertBefore(rect, dotsG);
+}
+
+function renderZoneAndOverlay(svg, fretRange, chord, scaleId) {
+  const [fMin, fMax] = fretRange;
+  const fretW = fbGetFretW(svg);
+  const dotsG = fbGetDotsGroup(svg);
+  const scaleNotes = buildScale(chord.root, scaleId);
+  const inChord = new Map();
+  chord.notes.forEach((n, i) => inChord.set(n, intervalToFunction(chord.intervals[i])));
+
+  // Pass 1: scale overlay (so chord dots layer on top)
+  for (let si = 0; si < 6; si++) {
+    for (let f = fMin; f <= fMax; f++) {
+      const note = fbNoteAt(OPEN_NOTES[si], f);
+      if (inChord.has(note)) continue;
+      if (scaleNotes.includes(note)) drawScaleDot(dotsG, si, f, note, fretW);
+    }
+  }
+  // Pass 2: chord tones colored by function
+  for (let si = 0; si < 6; si++) {
+    for (let f = fMin; f <= fMax; f++) {
+      const note = fbNoteAt(OPEN_NOTES[si], f);
+      const func = inChord.get(note);
+      if (!func) continue;
+      const color = FUNC_COLORS[func] || '#888';
+      drawDot(dotsG, si, f, note, color, func === 'R', fretW);
+    }
+  }
+}
+
+function clampRange(arr) {
+  let [a, b] = arr;
+  a = Math.max(0, Math.min(15, a|0));
+  b = Math.max(0, Math.min(15, b|0));
+  if (a > b) { const t = a; a = b; b = t; }
+  return [a, b];
+}
+
+// ─── Modo 3 ───────────────────────────────────────────────────────────────
+function renderModo3() {
+  const { root, quality } = st;
+  const m = st.m3;
+  m.fretRange = clampRange(m.fretRange);
+  const chord     = buildChord(root, quality);
+  const scaleId   = effectiveScale(quality, m);
+
+  document.getElementById('m3-chord-name').textContent = chordName(root, quality);
+  document.querySelectorAll('#m3-root .btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.note === root));
+  document.querySelectorAll('#m3-qual .btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.q === quality));
+  document.querySelectorAll('#m3-shapes .btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.shape === m.shape));
+  document.querySelectorAll('#m3-scales .btn').forEach(b => {
+    const isAuto    = b.dataset.scale === 'auto';
+    const isCurrent = isAuto ? m.scaleAuto : (!m.scaleAuto && b.dataset.scale === m.scale);
+    b.classList.toggle('active', !!isCurrent);
+  });
+  document.getElementById('m3-fmin').value     = m.fretRange[0];
+  document.getElementById('m3-fmax').value     = m.fretRange[1];
+  document.getElementById('m3-fmin-val').textContent = m.fretRange[0];
+  document.getElementById('m3-fmax-val').textContent = m.fretRange[1];
+
+  const svg = document.getElementById('m3-svg');
+  fbInitBoard(svg, 15);
+  drawZoneHighlight(svg, m.fretRange);
+  renderZoneAndOverlay(svg, m.fretRange, chord, scaleId);
+}
+
+// Modo 3 controls
+CHROMATIC.forEach(note => {
+  const b = document.createElement('button');
+  b.className = 'btn'; b.dataset.note = note; b.textContent = note;
+  b.addEventListener('click', () => {
+    st.root = note;
+    st.m3.fretRange = fretsForCagedShape(st.m3.shape, note);
+    saveCAGED(st); renderModo3();
+  });
+  document.getElementById('m3-root').appendChild(b);
+});
+
+QUALITIES.forEach(q => {
+  const b = document.createElement('button');
+  b.className = 'btn'; b.dataset.q = q; b.textContent = Q_LABEL[q];
+  b.addEventListener('click', () => { st.quality = q; saveCAGED(st); renderModo3(); });
+  document.getElementById('m3-qual').appendChild(b);
+});
+
+SHAPES.forEach(s => {
+  const b = document.createElement('button');
+  b.className = 'btn'; b.dataset.shape = s; b.textContent = s;
+  b.style.setProperty('--c', CAGED_COLORS[s]);
+  b.addEventListener('click', () => {
+    st.m3.shape = s;
+    st.m3.fretRange = fretsForCagedShape(s, st.root);
+    saveCAGED(st); renderModo3();
+  });
+  document.getElementById('m3-shapes').appendChild(b);
+});
+
+// Scale selector: includes "Auto" button at the start
+{
+  const row = document.getElementById('m3-scales');
+  const ab = document.createElement('button');
+  ab.className = 'btn'; ab.dataset.scale = 'auto'; ab.textContent = 'Auto';
+  ab.addEventListener('click', () => {
+    st.m3.scaleAuto = true; saveCAGED(st); renderModo3();
+  });
+  row.appendChild(ab);
+  SCALES.forEach(s => {
+    const b = document.createElement('button');
+    b.className = 'btn'; b.dataset.scale = s.id; b.textContent = s.label;
+    b.addEventListener('click', () => {
+      st.m3.scaleAuto = false; st.m3.scale = s.id;
+      saveCAGED(st); renderModo3();
+    });
+    row.appendChild(b);
+  });
+}
+
+document.getElementById('m3-fmin').addEventListener('input', e => {
+  let v = +e.target.value;
+  if (v > st.m3.fretRange[1]) st.m3.fretRange[1] = v;
+  st.m3.fretRange[0] = v;
+  saveCAGED(st); renderModo3();
+});
+document.getElementById('m3-fmax').addEventListener('input', e => {
+  let v = +e.target.value;
+  if (v < st.m3.fretRange[0]) st.m3.fretRange[0] = v;
+  st.m3.fretRange[1] = v;
+  saveCAGED(st); renderModo3();
+});
+
+// ─── Modo 4 ───────────────────────────────────────────────────────────────
+let m4Metro = null;
+
+function m4ActiveChord() {
+  const m = st.m4;
+  if (!m.progression.length) return null;
+  const idx = ((m.chordIdx % m.progression.length) + m.progression.length) % m.progression.length;
+  return m.progression[idx];
+}
+
+function renderModo4() {
+  const m = st.m4;
+  m.fretRange = clampRange(m.fretRange);
+  if (m.chordIdx >= m.progression.length) m.chordIdx = 0;
+  if (m.chordIdx < 0) m.chordIdx = m.progression.length ? m.progression.length - 1 : 0;
+
+  // Update slot list
+  const slots = document.getElementById('m4-slots');
+  slots.innerHTML = '';
+  if (!m.progression.length) {
+    const empty = document.createElement('div');
+    empty.className = 'slots-empty';
+    empty.textContent = 'Sin acordes — agrega manual o cargá de Improvisar';
+    slots.appendChild(empty);
+  } else {
+    m.progression.forEach((c, i) => {
+      const slot = document.createElement('div');
+      slot.className = 'slot' + (i === m.chordIdx ? ' active' : '');
+      const lab = document.createElement('span');
+      lab.textContent = chordName(c.root, c.quality);
+      slot.appendChild(lab);
+      const x = document.createElement('button');
+      x.className = 'slot-x'; x.textContent = '×'; x.title = 'Eliminar';
+      x.addEventListener('click', e => {
+        e.stopPropagation();
+        m.progression.splice(i, 1);
+        if (m.chordIdx >= m.progression.length) m.chordIdx = 0;
+        saveCAGED(st); renderModo4();
+      });
+      slot.addEventListener('click', () => {
+        m.chordIdx = i; saveCAGED(st); renderModo4();
+      });
+      slot.appendChild(x);
+      slots.appendChild(slot);
+    });
+  }
+
+  // Picker buttons
+  document.querySelectorAll('#m4-pick-root .btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.note === m.pick.root));
+  document.querySelectorAll('#m4-pick-qual .btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.q === m.pick.quality));
+  document.getElementById('m4-add').disabled = !m.pick.root;
+
+  // Shape / scale / range / beats / metro / bpm
+  document.querySelectorAll('#m4-shapes .btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.shape === m.shape));
+  document.querySelectorAll('#m4-scales .btn').forEach(b => {
+    const isAuto    = b.dataset.scale === 'auto';
+    const isCurrent = isAuto ? m.scaleAuto : (!m.scaleAuto && b.dataset.scale === m.scale);
+    b.classList.toggle('active', !!isCurrent);
+  });
+  document.getElementById('m4-fmin').value     = m.fretRange[0];
+  document.getElementById('m4-fmax').value     = m.fretRange[1];
+  document.getElementById('m4-fmin-val').textContent = m.fretRange[0];
+  document.getElementById('m4-fmax-val').textContent = m.fretRange[1];
+  document.getElementById('m4-bpm').value       = m.bpm;
+  document.querySelectorAll('#m4-beats .btn').forEach(b =>
+    b.classList.toggle('active', +b.dataset.n === m.beatsPerChord));
+  document.querySelectorAll('#m4-metro-mode .btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.mm === m.metroMode));
+
+  // Render board
+  const svg = document.getElementById('m4-svg');
+  fbInitBoard(svg, 15);
+  drawZoneHighlight(svg, m.fretRange);
+  const active = m4ActiveChord();
+  if (active) {
+    const chord   = buildChord(active.root, active.quality);
+    const scaleId = effectiveScale(active.quality, m);
+    document.getElementById('m4-chord-name').textContent = chordName(active.root, active.quality);
+    renderZoneAndOverlay(svg, m.fretRange, chord, scaleId);
+  } else {
+    document.getElementById('m4-chord-name').textContent = '—';
+  }
+}
+
+// Modo 4 — picker rows
+CHROMATIC.forEach(note => {
+  const b = document.createElement('button');
+  b.className = 'btn'; b.dataset.note = note; b.textContent = note;
+  b.addEventListener('click', () => {
+    st.m4.pick.root = note; saveCAGED(st); renderModo4();
+  });
+  document.getElementById('m4-pick-root').appendChild(b);
+});
+QUALITIES.forEach(q => {
+  const b = document.createElement('button');
+  b.className = 'btn'; b.dataset.q = q; b.textContent = Q_LABEL[q];
+  b.addEventListener('click', () => {
+    st.m4.pick.quality = q; saveCAGED(st); renderModo4();
+  });
+  document.getElementById('m4-pick-qual').appendChild(b);
+});
+
+document.getElementById('m4-add').addEventListener('click', () => {
+  const { root, quality } = st.m4.pick;
+  if (!root) return;
+  st.m4.progression.push({ root, quality });
+  saveCAGED(st); renderModo4();
+});
+
+document.getElementById('m4-clear').addEventListener('click', () => {
+  if (!st.m4.progression.length) return;
+  if (!confirm('Borrar toda la progresión?')) return;
+  m4StopMetro();
+  st.m4.progression = [];
+  st.m4.chordIdx    = 0;
+  saveCAGED(st); renderModo4();
+});
+
+document.getElementById('m4-load').addEventListener('click', () => {
+  const s = loadImprovState();
+  if (!s || !Array.isArray(s.progression) || !s.progression.length) {
+    alert('No hay progresión guardada en Improvisar.');
+    return;
+  }
+  // Build diatonic chords from improvisar state (root + isMinor)
+  const root  = s.root || 'C';
+  const minor = !!s.isMinor;
+  const STEPS = minor ? [2,1,2,2,1,2,2] : [2,2,1,2,2,2,1];
+  let cur = CHROMATIC.indexOf(root);
+  const scaleNotes = [root];
+  STEPS.slice(0,6).forEach(step => { cur = (cur + step) % 12; scaleNotes.push(CHROMATIC[cur]); });
+  const chords = scaleNotes.map((rt, i) => {
+    const third = scaleNotes[(i+2)%7];
+    const fifth = scaleNotes[(i+4)%7];
+    const ri = CHROMATIC.indexOf(rt);
+    const ti = (CHROMATIC.indexOf(third) - ri + 12) % 12;
+    const fi = (CHROMATIC.indexOf(fifth) - ri + 12) % 12;
+    let quality;
+    if      (ti===4 && fi===7) quality = 'major';
+    else if (ti===3 && fi===7) quality = 'minor';
+    else                       quality = null; // dim/aug — out of CAGED v1 scope
+    return quality ? { root:rt, quality } : null;
+  });
+  const imported = s.progression.map(di => chords[di]).filter(Boolean);
+  if (!imported.length) {
+    alert('La progresión no tiene acordes compatibles (CAGED v1 soporta mayor/menor/7/maj7/m7).');
+    return;
+  }
+  m4StopMetro();
+  st.m4.progression = imported;
+  st.m4.chordIdx    = 0;
+  saveCAGED(st); renderModo4();
+});
+
+// Shape selector
+SHAPES.forEach(s => {
+  const b = document.createElement('button');
+  b.className = 'btn'; b.dataset.shape = s; b.textContent = s;
+  b.style.setProperty('--c', CAGED_COLORS[s]);
+  b.addEventListener('click', () => {
+    st.m4.shape = s;
+    const active = m4ActiveChord();
+    if (active) st.m4.fretRange = fretsForCagedShape(s, active.root);
+    saveCAGED(st); renderModo4();
+  });
+  document.getElementById('m4-shapes').appendChild(b);
+});
+
+// Scale selector
+{
+  const row = document.getElementById('m4-scales');
+  const ab = document.createElement('button');
+  ab.className = 'btn'; ab.dataset.scale = 'auto'; ab.textContent = 'Auto';
+  ab.addEventListener('click', () => {
+    st.m4.scaleAuto = true; saveCAGED(st); renderModo4();
+  });
+  row.appendChild(ab);
+  SCALES.forEach(s => {
+    const b = document.createElement('button');
+    b.className = 'btn'; b.dataset.scale = s.id; b.textContent = s.label;
+    b.addEventListener('click', () => {
+      st.m4.scaleAuto = false; st.m4.scale = s.id;
+      saveCAGED(st); renderModo4();
+    });
+    row.appendChild(b);
+  });
+}
+
+document.getElementById('m4-fmin').addEventListener('input', e => {
+  const v = +e.target.value;
+  if (v > st.m4.fretRange[1]) st.m4.fretRange[1] = v;
+  st.m4.fretRange[0] = v;
+  saveCAGED(st); renderModo4();
+});
+document.getElementById('m4-fmax').addEventListener('input', e => {
+  const v = +e.target.value;
+  if (v < st.m4.fretRange[0]) st.m4.fretRange[0] = v;
+  st.m4.fretRange[1] = v;
+  saveCAGED(st); renderModo4();
+});
+
+// BPM input
+document.getElementById('m4-bpm').addEventListener('change', e => {
+  let v = +e.target.value;
+  if (isNaN(v)) v = 80;
+  v = Math.max(40, Math.min(220, v));
+  st.m4.bpm = v;
+  e.target.value = v;
+  if (m4Metro) m4Metro.setBPM(v);
+  saveCAGED(st);
+});
+
+// Beats per chord
+[2, 4, 8].forEach(n => {
+  const b = document.createElement('button');
+  b.className = 'btn'; b.dataset.n = n; b.textContent = n;
+  b.addEventListener('click', () => {
+    st.m4.beatsPerChord = n;
+    if (m4Metro) m4Metro.setBeatsPerChord(n);
+    saveCAGED(st); renderModo4();
+  });
+  document.getElementById('m4-beats').appendChild(b);
+});
+
+// Metro mode (auto/manual)
+[{id:'auto',label:'Auto'},{id:'manual',label:'Manual'}].forEach(m => {
+  const b = document.createElement('button');
+  b.className = 'btn'; b.dataset.mm = m.id; b.textContent = m.label;
+  b.addEventListener('click', () => {
+    st.m4.metroMode = m.id; saveCAGED(st); renderModo4();
+  });
+  document.getElementById('m4-metro-mode').appendChild(b);
+});
+
+// Play/Stop
+function m4StartMetro() {
+  if (!st.m4.progression.length) return;
+  if (m4Metro && m4Metro.playing) return;
+  m4Metro = new Metronome({
+    bpm: st.m4.bpm,
+    beatsPerChord: st.m4.beatsPerChord,
+    onChordChange: idx => {
+      if (st.m4.metroMode !== 'auto') return;
+      if (!st.m4.progression.length) return;
+      st.m4.chordIdx = idx % st.m4.progression.length;
+      saveCAGED(st);
+      renderModo4();
+    },
+  });
+  m4Metro.start();
+  const btn = document.getElementById('m4-play');
+  btn.classList.add('on');
+  btn.textContent = '■ Stop';
+}
+function m4StopMetro() {
+  if (m4Metro) m4Metro.stop();
+  const btn = document.getElementById('m4-play');
+  btn.classList.remove('on');
+  btn.textContent = '▶ Play';
+}
+function m4ToggleMetro() {
+  if (m4Metro && m4Metro.playing) m4StopMetro();
+  else                            m4StartMetro();
+}
+document.getElementById('m4-play').addEventListener('click', m4ToggleMetro);
+
+function m4StepChord(delta) {
+  if (!st.m4.progression.length) return;
+  const len = st.m4.progression.length;
+  st.m4.chordIdx = ((st.m4.chordIdx + delta) % len + len) % len;
+  saveCAGED(st); renderModo4();
+}
+
 // ─── Mode switching ────────────────────────────────────────────────────────
 function switchMode(mode) {
   if (!MODES.includes(mode)) return;
+  // Stop metro when leaving Modo 4
+  if (st.mode === 'prog' && mode !== 'prog') m4StopMetro();
   st.mode = mode;
   document.querySelectorAll('.tab').forEach(t =>
     t.classList.toggle('active', t.dataset.mode === mode));
@@ -425,6 +1033,8 @@ function switchMode(mode) {
     p.classList.toggle('active', p.id === 'pane-' + mode));
   if (mode === 'forma') renderModo1();
   if (mode === 'mapa')  renderModo2();
+  if (mode === 'zona')  renderModo3();
+  if (mode === 'prog')  renderModo4();
   saveCAGED(st);
 }
 
@@ -436,6 +1046,19 @@ document.addEventListener('keydown', e => {
   const modeKey = { '1':'forma','2':'mapa','3':'zona','4':'prog' }[e.key];
   if (modeKey) { e.preventDefault(); switchMode(modeKey); return; }
 
+  if (e.key === 'Escape') { e.preventDefault(); m4StopMetro(); return; }
+
+  // BPM shortcut works in any mode (affects metro)
+  if (e.shiftKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+    e.preventDefault();
+    const delta = e.key === 'ArrowUp' ? +5 : -5;
+    st.m4.bpm = Math.max(40, Math.min(220, st.m4.bpm + delta));
+    if (m4Metro) m4Metro.setBPM(st.m4.bpm);
+    saveCAGED(st);
+    if (st.mode === 'prog') renderModo4();
+    return;
+  }
+
   if (st.mode === 'forma') {
     if (e.key === 'ArrowLeft')  { e.preventDefault(); moveBarre(-1); return; }
     if (e.key === 'ArrowRight') { e.preventDefault(); moveBarre(+1); return; }
@@ -444,6 +1067,48 @@ document.addEventListener('keydown', e => {
       e.preventDefault();
       st.shape = sk; st.barre = defaultBarre(sk, st.root);
       saveCAGED(st); renderModo1();
+    }
+    return;
+  }
+
+  if (st.mode === 'mapa') {
+    const sk = e.key.toUpperCase();
+    if (SHAPES.includes(sk)) {
+      e.preventDefault();
+      st.shapeToggles[sk] = !st.shapeToggles[sk];
+      saveCAGED(st); renderModo2();
+    }
+    return;
+  }
+
+  if (st.mode === 'zona') {
+    const sk = e.key.toUpperCase();
+    if (SHAPES.includes(sk)) {
+      e.preventDefault();
+      st.m3.shape = sk;
+      st.m3.fretRange = fretsForCagedShape(sk, st.root);
+      saveCAGED(st); renderModo3();
+    }
+    return;
+  }
+
+  if (st.mode === 'prog') {
+    if (e.key === ' ') { e.preventDefault(); m4ToggleMetro(); return; }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); m4StepChord(-1); return; }
+    if (e.key === 'ArrowRight') { e.preventDefault(); m4StepChord(+1); return; }
+    if (e.key === 'm' || e.key === 'M') {
+      e.preventDefault();
+      st.m4.metroMode = st.m4.metroMode === 'auto' ? 'manual' : 'auto';
+      saveCAGED(st); renderModo4();
+      return;
+    }
+    const sk = e.key.toUpperCase();
+    if (SHAPES.includes(sk)) {
+      e.preventDefault();
+      st.m4.shape = sk;
+      const active = m4ActiveChord();
+      if (active) st.m4.fretRange = fretsForCagedShape(sk, active.root);
+      saveCAGED(st); renderModo4();
     }
   }
 });
