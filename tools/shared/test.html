@@ -32,13 +32,17 @@
 
   <!-- Order matters: theory.js → fretboard.js (depends on theory) → tests -->
   <script src="./theory.js"></script>
+  <script src="./theory-modes.js"></script>
   <script src="./fretboard.js"></script>
   <script src="./storage.js"></script>
   <script src="./metronome.js"></script>
+  <script src="./positions.js"></script>
   <script src="./test-runner.js"></script>
   <script src="./theory.test.js"></script>
+  <script src="./theory-modes.test.js"></script>
   <script src="./fretboard.test.js"></script>
   <script src="./namespace.test.js"></script>
+  <script src="./positions.test.js"></script>
   <script>
     window.GuitarShared.testRunner.run('test-results');
   </script>
