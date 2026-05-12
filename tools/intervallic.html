@@ -45,6 +45,10 @@
     .progression-bar{display:flex;gap:6px;background:var(--surface2);padding:8px;border-radius:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;min-height:48px}
     .prog-chord{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:60px;position:relative;cursor:pointer}
     .prog-chord.active{border-color:var(--gold);background:#1d1810;box-shadow:0 0 10px rgba(212,168,71,.3)}
+    .prog-chord.beat{transform:scale(1.06);transition:transform .09s ease-out}
+    .prog-chord.downbeat{background:#3a2e0a;box-shadow:0 0 18px rgba(212,168,71,.7);transition:background .14s ease-out, box-shadow .14s ease-out}
+    .btn.playing{background:#e74c3c;color:#fff;border-color:#e74c3c;animation:pulse 1s ease-in-out infinite}
+    @keyframes pulse{50%{opacity:.7}}
     .prog-chord .pc-name{font-weight:700;color:var(--gold)}
     .prog-chord .pc-bars{font-size:9px;color:var(--text-dim)}
     .prog-chord .pc-del{position:absolute;top:1px;right:4px;font-size:11px;color:var(--text-dim);cursor:pointer}

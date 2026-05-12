@@ -315,8 +315,8 @@
     const isChordTone = info.kind === 'chordTones';
     const isApproach = info.kind === 'approach';
     const isAll = info.kind === 'allNotes';
-    const r = isChordTone ? 12 : isApproach ? 10 : 9;
-    const alpha = isApproach ? 0.40 : (isAll ? 0.5 : 1.0);
+    const r = isChordTone ? 12 : isApproach ? 7 : 9;
+    const alpha = isApproach ? 0.55 : (isAll ? 0.5 : 1.0);
 
     if (info.interval === '1' && isChordTone) {
       const halo = document.createElementNS(SVG_NS, 'circle');
@@ -326,32 +326,43 @@
       halo.setAttribute('stroke-opacity', 0.8 * alpha);
       dots.appendChild(halo);
     }
-    // Approach (próximo acorde): borde dashed sutil para distinguir.
-    if (isApproach) {
-      const halo = document.createElementNS(SVG_NS, 'circle');
-      halo.setAttribute('cx', cx); halo.setAttribute('cy', cy);
-      halo.setAttribute('r', r + 2); halo.setAttribute('fill', 'none');
-      halo.setAttribute('stroke', color); halo.setAttribute('stroke-width', 1);
-      halo.setAttribute('stroke-opacity', 0.6);
-      halo.setAttribute('stroke-dasharray', '2,2');
-      dots.appendChild(halo);
-    }
-    const c = document.createElementNS(SVG_NS, 'circle');
-    c.setAttribute('cx', cx); c.setAttribute('cy', cy);
-    c.setAttribute('r', r); c.setAttribute('fill', color);
-    c.setAttribute('fill-opacity', alpha);
-    dots.appendChild(c);
 
-    const label = document.createElementNS(SVG_NS, 'text');
-    label.setAttribute('x', cx); label.setAttribute('y', cy + 3);
-    label.setAttribute('text-anchor', 'middle');
-    label.setAttribute('font-size', isApproach || isAll ? 7 : 9);
-    label.setAttribute('font-weight', 800);
-    label.setAttribute('fill', '#000');
-    label.setAttribute('fill-opacity', alpha);
-    label.setAttribute('font-family', 'Trebuchet MS,sans-serif');
-    label.textContent = info.interval;
-    dots.appendChild(label);
+    if (isApproach) {
+      // Ghost: anillo dashed sin fill, label pequeño en el color del intervalo.
+      const ring = document.createElementNS(SVG_NS, 'circle');
+      ring.setAttribute('cx', cx); ring.setAttribute('cy', cy);
+      ring.setAttribute('r', r); ring.setAttribute('fill', 'none');
+      ring.setAttribute('stroke', color); ring.setAttribute('stroke-width', 1.3);
+      ring.setAttribute('stroke-opacity', alpha);
+      ring.setAttribute('stroke-dasharray', '2.2,1.8');
+      dots.appendChild(ring);
+      const label = document.createElementNS(SVG_NS, 'text');
+      label.setAttribute('x', cx); label.setAttribute('y', cy + 2.5);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('font-size', 6.5);
+      label.setAttribute('font-weight', 700);
+      label.setAttribute('fill', color);
+      label.setAttribute('fill-opacity', alpha + 0.2);
+      label.setAttribute('font-family', 'Trebuchet MS,sans-serif');
+      label.textContent = info.interval;
+      dots.appendChild(label);
+    } else {
+      const c = document.createElementNS(SVG_NS, 'circle');
+      c.setAttribute('cx', cx); c.setAttribute('cy', cy);
+      c.setAttribute('r', r); c.setAttribute('fill', color);
+      c.setAttribute('fill-opacity', alpha);
+      dots.appendChild(c);
+      const label = document.createElementNS(SVG_NS, 'text');
+      label.setAttribute('x', cx); label.setAttribute('y', cy + 3);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('font-size', isAll ? 7 : 9);
+      label.setAttribute('font-weight', 800);
+      label.setAttribute('fill', '#000');
+      label.setAttribute('fill-opacity', alpha);
+      label.setAttribute('font-family', 'Trebuchet MS,sans-serif');
+      label.textContent = info.interval;
+      dots.appendChild(label);
+    }
 
     if (state.showNoteNames) {
       const txtW = note.length === 2 ? 16 : 11;
@@ -407,8 +418,20 @@
       const ch = TH.buildChord(c.root, c.quality);
       const div = document.createElement('div');
       div.className = 'prog-chord' + (i === state.activeIdx ? ' active' : '');
-      div.innerHTML = `<div class="pc-name">${chordName(ch)}</div>
-        <div class="pc-bars">${c.bars}c</div>`;
+      div.innerHTML = `<div class="pc-name">${chordName(ch)}</div>`;
+      const barsBtn = document.createElement('div');
+      barsBtn.className = 'pc-bars';
+      barsBtn.textContent = c.bars + ' compás' + (c.bars === 1 ? '' : 'es');
+      barsBtn.title = 'Click para cambiar duración (1/2/4/8 compases)';
+      barsBtn.style.cursor = 'pointer';
+      barsBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const seq = [1, 2, 4, 8];
+        const idx = seq.indexOf(c.bars);
+        state.progression[i].bars = seq[(idx + 1) % seq.length];
+        saveState(); render();
+      });
+      div.appendChild(barsBtn);
       div.addEventListener('click', () => setActiveChord(i));
       const del = document.createElement('div');
       del.className = 'pc-del'; del.textContent = '×';
@@ -607,37 +630,80 @@
     render();
   }
 
+  // beats acumulados en el acorde activo (para respetar el `bars` de cada uno).
+  let _chordBeatCount = 0;
+  const BEATS_PER_COMPAS = 4; // hardcodeado 4/4
+
   function play() {
     if (metro && metro.playing) return;
     if (!state.progression.length) return;
     _prevChord = null;
+    _chordBeatCount = 0;
+    setPlayingUI(true);
     metro = new G.metronome.Metronome({
       bpm: state.bpm,
-      beatsPerChord: state.beatsPerChord,
-      onBeat: () => {},
-      onChordChange: () => {
-        _prevChord = activeChord();
-        const nextIdx = (state.activeIdx + 1) % state.progression.length;
-        state.activeIdx = nextIdx;
-        const cur = activeChord();
-        if (W.IntervallicAudio && cur) {
-          W.IntervallicAudio.playPositions(makePseudoVoicing(cur), { duration: (60 / state.bpm) * state.beatsPerChord * 0.9 });
+      beatsPerChord: 99999, // controlamos el cambio manualmente
+      onBeat: (beat) => {
+        _chordBeatCount++;
+        pulseActiveChord(beat);
+        const cur = state.progression[state.activeIdx];
+        const targetBeats = (cur ? cur.bars : 1) * BEATS_PER_COMPAS;
+        if (_chordBeatCount >= targetBeats) {
+          _chordBeatCount = 0;
+          _prevChord = activeChord();
+          state.activeIdx = (state.activeIdx + 1) % state.progression.length;
+          playCurrentChord();
+          render();
         }
-        render();
       },
     });
     metro.start();
-    // Reproducir primer acorde inmediatamente
-    const cur = activeChord();
-    if (W.IntervallicAudio && cur) {
-      W.IntervallicAudio.playPositions(makePseudoVoicing(cur), { duration: (60 / state.bpm) * state.beatsPerChord * 0.9 });
-    }
+    playCurrentChord();
     render();
+  }
+
+  function playCurrentChord() {
+    const cur = activeChord();
+    if (!cur || !W.IntervallicAudio) return;
+    const beats = (state.progression[state.activeIdx].bars || 1) * BEATS_PER_COMPAS;
+    W.IntervallicAudio.playPositions(makePseudoVoicing(cur), {
+      duration: (60 / state.bpm) * beats * 0.9,
+    });
+  }
+
+  function pulseActiveChord(beat) {
+    const bar = $('atlas-bar');
+    if (!bar) return;
+    const cells = bar.querySelectorAll('.prog-chord');
+    const target = cells[state.activeIdx];
+    if (!target) return;
+    target.classList.add('beat');
+    setTimeout(() => target.classList.remove('beat'), 90);
+    // El primer beat de cada compás es un "downbeat" más fuerte
+    const isDownbeat = (_chordBeatCount - 1) % BEATS_PER_COMPAS === 0;
+    if (isDownbeat) {
+      target.classList.add('downbeat');
+      setTimeout(() => target.classList.remove('downbeat'), 140);
+    }
+  }
+
+  function setPlayingUI(playing) {
+    const btn = $('atlas-play');
+    if (!btn) return;
+    if (playing) {
+      btn.textContent = '● Tocando';
+      btn.classList.add('playing');
+    } else {
+      btn.textContent = '▶ Play';
+      btn.classList.remove('playing');
+    }
   }
 
   function stop() {
     if (metro) { metro.stop(); metro = null; }
     _prevChord = null;
+    _chordBeatCount = 0;
+    setPlayingUI(false);
     render();
   }
 
