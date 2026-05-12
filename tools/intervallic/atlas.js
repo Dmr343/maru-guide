@@ -383,11 +383,27 @@
     dots.appendChild(label);
 
     if (state.showNoteNames) {
+      const txtW = note.length === 2 ? 16 : 11;
+      const pillY = cy + r + 4;
+      const pill = document.createElementNS(SVG_NS, 'rect');
+      pill.setAttribute('x', cx - txtW / 2);
+      pill.setAttribute('y', pillY);
+      pill.setAttribute('width', txtW);
+      pill.setAttribute('height', 11);
+      pill.setAttribute('rx', 5);
+      pill.setAttribute('fill', '#0e0e0e');
+      pill.setAttribute('stroke', color);
+      pill.setAttribute('stroke-width', 1);
+      pill.setAttribute('stroke-opacity', 0.8 * alpha);
+      pill.setAttribute('fill-opacity', 0.95);
+      dots.appendChild(pill);
       const noteLbl = document.createElementNS(SVG_NS, 'text');
-      noteLbl.setAttribute('x', cx); noteLbl.setAttribute('y', cy + r + 9);
+      noteLbl.setAttribute('x', cx);
+      noteLbl.setAttribute('y', pillY + 8.5);
       noteLbl.setAttribute('text-anchor', 'middle');
-      noteLbl.setAttribute('font-size', 7);
-      noteLbl.setAttribute('fill', '#aaa');
+      noteLbl.setAttribute('font-size', 8.5);
+      noteLbl.setAttribute('font-weight', 700);
+      noteLbl.setAttribute('fill', color);
       noteLbl.setAttribute('font-family', 'Trebuchet MS,sans-serif');
       noteLbl.textContent = note;
       dots.appendChild(noteLbl);
@@ -420,8 +436,10 @@
       del.addEventListener('click', e => {
         e.stopPropagation();
         state.progression.splice(i, 1);
-        if (state.progression.length === 0) state.progression.push({ root:'C', quality:'maj7', bars: 4 });
-        state.activeIdx = Math.max(0, Math.min(state.activeIdx, state.progression.length - 1));
+        state.activeIdx = state.progression.length
+          ? Math.max(0, Math.min(state.activeIdx, state.progression.length - 1))
+          : 0;
+        _prevChord = null;
         saveState(); render();
       });
       div.appendChild(del);
