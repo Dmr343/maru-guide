@@ -21,16 +21,15 @@
     'b7': '#2ecc71', '7':  '#2ecc71',
   };
   const CHORD_TONE_INTERVALS = new Set(['1','b3','3','b5','5','b7','7']);
-  const GUIDE_TONE_INTERVALS = new Set(['b3','3','b7','7']);
 
   // Capas y prioridad de pintado (mayor número = se pinta encima).
+  // approach = chord tones del PRÓXIMO acorde (sutil, hint visual de lo que viene).
   const LAYER_PRIORITY = {
-    allNotes: 1,
-    approach: 2,
-    scale:    3,
-    tensions: 4,
-    guideTones: 5,
-    chordTones: 6,
+    allNotes:   1,
+    scale:      2,
+    tensions:   3,
+    approach:   4,
+    chordTones: 5,
   };
 
   // Tensiones por calidad (offsets en semitonos desde la raíz).
@@ -78,8 +77,8 @@
     progression: [{ root: 'C', quality: 'maj7', bars: 4 }],
     activeIdx: 0,
     layers: {
-      chordTones: true, guideTones: false, scale: false,
-      tensions: false, approach: false, allNotes: false,
+      chordTones: true, scale: false, tensions: false,
+      approach: false, allNotes: false,
     },
     filter: { direction: 'all', stringRange: [1, 6], fretRange: [0, 22], focusString: 3, focusFret: 5 },
     showNoteNames: false,
@@ -107,30 +106,37 @@
 
   // ──────────────── Cálculo de intervalos a renderizar ────────────────
 
-  // Para el acorde activo, devuelve un map {pitchClass → intervalName} de
-  // todo lo que las capas activas quieren mostrar, con prioridad.
-  function computeRenderMap(chord, layers) {
+  // Para el acorde activo, devuelve un map {pitchClass → {interval, kind, ...}}.
+  // nextChord (opcional): cuando layers.approach está activo, los chord tones
+  // del próximo acorde se pintan sutilmente con su intervalo relativo a la
+  // raíz del próximo (label tipo "1@A" para indicar contexto futuro).
+  function computeRenderMap(chord, layers, nextChord) {
     if (!chord) return new Map();
     const ri = TH.CHROMATIC.indexOf(chord.root);
-    const map = new Map(); // pc → { interval, priority, kind }
+    const map = new Map();
 
-    function consider(pcIndex, interval, kind) {
+    function consider(pcIndex, interval, kind, extra) {
       const pc = TH.CHROMATIC[((ri + pcIndex) % 12 + 12) % 12];
       const priority = LAYER_PRIORITY[kind] || 0;
       const cur = map.get(pc);
       if (!cur || priority > cur.priority) {
-        map.set(pc, { interval, priority, kind });
+        map.set(pc, Object.assign({ interval, priority, kind }, extra || {}));
+      }
+    }
+    function considerPc(pc, interval, kind, extra) {
+      const priority = LAYER_PRIORITY[kind] || 0;
+      const cur = map.get(pc);
+      if (!cur || priority > cur.priority) {
+        map.set(pc, Object.assign({ interval, priority, kind }, extra || {}));
       }
     }
 
-    // allNotes: las 12 notas con su intervalo
     if (layers.allNotes) {
       for (let s = 0; s < 12; s++) {
         consider(s, TH.INTERVAL_NAMES[s], 'allNotes');
       }
     }
 
-    // scale
     if (layers.scale) {
       const mode = SCALE_BY_QUALITY[chord.quality] || 'major';
       const scaleNotes = TH.buildModeScale
@@ -142,7 +148,6 @@
       });
     }
 
-    // tensions
     if (layers.tensions) {
       const ts = TENSIONS_BY_QUALITY[chord.quality] || [];
       ts.forEach(t => {
@@ -151,30 +156,17 @@
       });
     }
 
-    // guideTones (3 y 7)
-    if (layers.guideTones) {
-      chord.intervals.forEach(intv => {
-        if (GUIDE_TONE_INTERVALS.has(intv)) {
-          const sem = intervalToSemi(intv);
-          consider(sem, intv, 'guideTones');
-        }
+    // approach: chord tones del próximo acorde, con intervalo relativo a su raíz.
+    if (layers.approach && nextChord) {
+      nextChord.notes.forEach((note, idx) => {
+        considerPc(note, nextChord.intervals[idx], 'approach', { nextRoot: nextChord.root });
       });
     }
 
-    // chordTones
     if (layers.chordTones) {
       chord.intervals.forEach(intv => {
         const sem = intervalToSemi(intv);
         consider(sem, intv, 'chordTones');
-      });
-    }
-
-    // approach: ±1 semitono de cada chord tone
-    if (layers.approach) {
-      chord.intervals.forEach(intv => {
-        const sem = intervalToSemi(intv);
-        consider((sem + 1) % 12, '→' + intv, 'approach');
-        consider((sem + 11) % 12, '→' + intv, 'approach');
       });
     }
 
@@ -276,7 +268,7 @@
     const chord = activeChord();
     if (!chord) { drawInfo(); drawBar(); return; }
 
-    const renderMap = computeRenderMap(chord, state.layers);
+    const renderMap = computeRenderMap(chord, state.layers, nextChord());
 
     // Filtros
     const stringSet = state.filter.stringSet || [1,2,3,4,5,6];
@@ -309,44 +301,6 @@
       cellPositions.push(c);
     });
 
-    // Voice leading: si guideTones activo y existe prev chord con guide tones
-    // compartidos, dibujar línea entre la nota actual y la previa en la misma pc.
-    if (state.layers.guideTones && _prevChord) {
-      const prevMap = computeRenderMap(_prevChord, { guideTones: true });
-      const sharedPcs = new Set();
-      prevMap.forEach((_, pc) => { if (renderMap.has(pc) && renderMap.get(pc).kind === 'guideTones') sharedPcs.add(pc); });
-      sharedPcs.forEach(pc => {
-        const cur = cellPositions.find(c => c.note === pc && c.info.kind === 'guideTones');
-        // posición previa estimada: misma pc, en el mástil, cerca del cur
-        if (!cur) return;
-        const candidates = [];
-        for (let s = 1; s <= 6; s++) {
-          const open = FB.OPEN_NOTES[6 - s];
-          for (let f = 0; f <= NUM_FRETS; f++) {
-            if (FB.fbNoteAt(open, f) === pc) candidates.push({ string: s, fret: f });
-          }
-        }
-        let best = null, bestD = 999;
-        candidates.forEach(c => {
-          const dx = Math.abs(c.string - cur.string) + Math.abs(c.fret - cur.fret) * 0.4;
-          if (dx < bestD) { bestD = dx; best = c; }
-        });
-        if (!best) return;
-        const x1 = xFor(best.fret);
-        const y1 = FB.stringY(6 - best.string);
-        const x2 = xFor(cur.fret);
-        const y2 = FB.stringY(6 - cur.string);
-        const path = document.createElementNS(SVG_NS, 'path');
-        path.setAttribute('d', `M${x1},${y1} Q${(x1+x2)/2},${(y1+y2)/2 - 14} ${x2},${y2}`);
-        path.setAttribute('stroke', '#d4a847');
-        path.setAttribute('stroke-width', 1.5);
-        path.setAttribute('stroke-opacity', 0.6);
-        path.setAttribute('stroke-dasharray', '3,2');
-        path.setAttribute('fill', 'none');
-        dots.insertBefore(path, dots.firstChild);
-      });
-    }
-
     drawInfo();
     drawBar();
   }
@@ -359,11 +313,10 @@
     const cy = FB.stringY(si);
     const color = INTERVAL_COLORS_FULL[info.interval.replace(/^→/, '')] || '#888';
     const isChordTone = info.kind === 'chordTones';
-    const isGuide = info.kind === 'guideTones';
     const isApproach = info.kind === 'approach';
     const isAll = info.kind === 'allNotes';
-    const r = isChordTone ? 12 : isGuide ? 13 : 9;
-    const alpha = isApproach ? 0.45 : (isAll ? 0.5 : 1.0);
+    const r = isChordTone ? 12 : isApproach ? 10 : 9;
+    const alpha = isApproach ? 0.40 : (isAll ? 0.5 : 1.0);
 
     if (info.interval === '1' && isChordTone) {
       const halo = document.createElementNS(SVG_NS, 'circle');
@@ -373,12 +326,14 @@
       halo.setAttribute('stroke-opacity', 0.8 * alpha);
       dots.appendChild(halo);
     }
-    if (isGuide) {
+    // Approach (próximo acorde): borde dashed sutil para distinguir.
+    if (isApproach) {
       const halo = document.createElementNS(SVG_NS, 'circle');
       halo.setAttribute('cx', cx); halo.setAttribute('cy', cy);
-      halo.setAttribute('r', r + 3); halo.setAttribute('fill', 'none');
-      halo.setAttribute('stroke', '#fff'); halo.setAttribute('stroke-width', 1.5);
-      halo.setAttribute('stroke-opacity', 0.7);
+      halo.setAttribute('r', r + 2); halo.setAttribute('fill', 'none');
+      halo.setAttribute('stroke', color); halo.setAttribute('stroke-width', 1);
+      halo.setAttribute('stroke-opacity', 0.6);
+      halo.setAttribute('stroke-dasharray', '2,2');
       dots.appendChild(halo);
     }
     const c = document.createElementNS(SVG_NS, 'circle');
@@ -433,6 +388,14 @@
   function activeChord() {
     const c = state.progression[state.activeIdx];
     if (!c) return null;
+    return TH.buildChord(c.root, c.quality);
+  }
+
+  function nextChord() {
+    if (!state.progression.length) return null;
+    const i = (state.activeIdx + 1) % state.progression.length;
+    if (i === state.activeIdx) return null; // un solo acorde, no hay "siguiente"
+    const c = state.progression[i];
     return TH.buildChord(c.root, c.quality);
   }
 
@@ -518,7 +481,6 @@
 
     // Capas
     bindLayer('atlas-l-chord', 'chordTones');
-    bindLayer('atlas-l-guide', 'guideTones');
     bindLayer('atlas-l-scale', 'scale');
     bindLayer('atlas-l-tensions', 'tensions');
     bindLayer('atlas-l-approach', 'approach');
@@ -531,7 +493,6 @@
     // reflejar estado actual de layers en checkboxes
     Object.entries({
       'atlas-l-chord': 'chordTones',
-      'atlas-l-guide': 'guideTones',
       'atlas-l-scale': 'scale',
       'atlas-l-tensions': 'tensions',
       'atlas-l-approach': 'approach',

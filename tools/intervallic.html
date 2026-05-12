@@ -11,6 +11,7 @@
       --radius:10px; --font:'Trebuchet MS','Segoe UI',sans-serif;
     }
     *{box-sizing:border-box;margin:0;padding:0}
+    html{zoom:1.4}
     body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;padding:18px}
     a.back{color:var(--text-dim);font-size:11px;text-decoration:none;letter-spacing:.1em;text-transform:uppercase}
     a.back:hover{color:var(--gold)}
@@ -85,10 +86,9 @@
 
       <div class="layer-toggles">
         <label class="layer-toggle"><input type="checkbox" id="atlas-l-chord" checked> Chord tones</label>
-        <label class="layer-toggle"><input type="checkbox" id="atlas-l-guide"> Guide tones (3/7)</label>
         <label class="layer-toggle"><input type="checkbox" id="atlas-l-scale"> Escala asociada</label>
         <label class="layer-toggle"><input type="checkbox" id="atlas-l-tensions"> Tensiones</label>
-        <label class="layer-toggle"><input type="checkbox" id="atlas-l-approach"> Aproximación</label>
+        <label class="layer-toggle"><input type="checkbox" id="atlas-l-approach"> Próximo acorde</label>
         <label class="layer-toggle"><input type="checkbox" id="atlas-l-all"> Todas las 12</label>
         <label class="layer-toggle"><input type="checkbox" id="atlas-show-names"> Nombres de nota</label>
       </div>

@@ -26,17 +26,6 @@
     });
   });
 
-  T.describe('computeRenderMap — guide tones', () => {
-    T.it('Cmaj7: guideTones → solo E y B', () => {
-      const m = A._computeRenderMap(chord('C','maj7'), { guideTones: true });
-      T.assertArrayEq(pcsOf(m), ['B','E']);
-    });
-    T.it('Am7: guideTones → C (b3) y G (b7)', () => {
-      const m = A._computeRenderMap(chord('A','min7'), { guideTones: true });
-      T.assertArrayEq(pcsOf(m), ['C','G']);
-    });
-  });
-
   T.describe('computeRenderMap — prioridad de capas', () => {
     T.it('chordTones gana sobre scale para la misma pc', () => {
       const m = A._computeRenderMap(chord('C','maj7'), { chordTones: true, scale: true });
@@ -44,18 +33,18 @@
       T.assertEq(e.kind, 'chordTones');
       T.assertEq(e.interval, '3');
     });
-    T.it('guideTones gana sobre tensions', () => {
-      const m = A._computeRenderMap(chord('C','maj7'), { guideTones: true, tensions: true });
-      // E es 3ª (guide). No es una tensión de maj7, así que solo viene de guide.
-      const e = m.get('E');
-      T.assertEq(e.kind, 'guideTones');
-    });
     T.it('chordTones gana sobre allNotes', () => {
       const m = A._computeRenderMap(chord('C','major'), { chordTones: true, allNotes: true });
       T.assertEq(m.get('C').kind, 'chordTones');
       T.assertEq(m.get('E').kind, 'chordTones');
-      // pero pc no-chord-tone es de allNotes
       T.assertEq(m.get('D').kind, 'allNotes');
+    });
+    T.it('approach NO sobrescribe chord tones del acorde actual', () => {
+      // Si Cmaj7 → Am7 y A está en Am7, pero C (root actual) no está en Am7,
+      // entonces C debe ser chordTone, A debe ser approach.
+      const m = A._computeRenderMap(chord('C','maj7'), { chordTones: true, approach: true }, chord('A','min7'));
+      T.assertEq(m.get('C').kind, 'chordTones');
+      T.assertEq(m.get('A').kind, 'approach');
     });
   });
 
@@ -92,24 +81,35 @@
     });
   });
 
-  T.describe('computeRenderMap — approach', () => {
-    T.it('aproximaciones ±1 semitono de cada chord tone', () => {
-      const m = A._computeRenderMap(chord('C','major'), { approach: true });
-      // C tiene chord tones [C, E, G] → approach pcs:
-      // C±1 = B, C#; E±1 = D#, F; G±1 = F#, G#
-      T.assert(m.has('B'));
-      T.assert(m.has('C#'));
-      T.assert(m.has('D#'));
-      T.assert(m.has('F'));
-      T.assert(m.has('F#'));
-      T.assert(m.has('G#'));
+  T.describe('computeRenderMap — approach (próximo acorde)', () => {
+    T.it('sin nextChord → no se pinta approach', () => {
+      const m = A._computeRenderMap(chord('C','maj7'), { approach: true });
+      // sin chord tones, nada se pinta
+      T.assertEq(m.size, 0);
     });
-    T.it('chordTones gana sobre approach en colisiones', () => {
-      const m = A._computeRenderMap(chord('C','major'), { chordTones: true, approach: true });
+    T.it('Cmaj7 → Am7: pinta las pc de Am7 con intervalos relativos a A', () => {
+      const m = A._computeRenderMap(chord('C','maj7'), { approach: true }, chord('A','min7'));
+      T.assertArrayEq(pcsOf(m), ['A','C','E','G']);
+      T.assertEq(m.get('A').interval, '1');
+      T.assertEq(m.get('C').interval, 'b3');
+      T.assertEq(m.get('E').interval, '5');
+      T.assertEq(m.get('G').interval, 'b7');
+    });
+    T.it('approach lleva nextRoot en el extra', () => {
+      const m = A._computeRenderMap(chord('C','maj7'), { approach: true }, chord('A','min7'));
+      T.assertEq(m.get('A').nextRoot, 'A');
+    });
+    T.it('chordTones del actual ganan sobre approach', () => {
+      // Cmaj7 → Am7: C es chord tone de Cmaj7 (1) y también es b3 del próximo (Am7).
+      // Debe priorizar chordTone.
+      const m = A._computeRenderMap(chord('C','maj7'), { chordTones: true, approach: true }, chord('A','min7'));
       T.assertEq(m.get('C').kind, 'chordTones');
+      T.assertEq(m.get('C').interval, '1');
       T.assertEq(m.get('E').kind, 'chordTones');
       T.assertEq(m.get('G').kind, 'chordTones');
-      T.assertEq(m.get('B').kind, 'approach');
+      T.assertEq(m.get('B').kind, 'chordTones');
+      // A no está en Cmaj7 → es approach
+      T.assertEq(m.get('A').kind, 'approach');
     });
   });
 
