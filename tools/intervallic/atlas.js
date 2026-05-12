@@ -228,7 +228,23 @@
   // ──────────────── Render ────────────────
 
   let svg, fretW;
+  let _fretStart = 0;
   let metro = null;
+
+  // Posición x de un fret absoluto en el mástil (considera fretStart actual).
+  function xFor(absoluteFret) {
+    return FB.fretX(absoluteFret - _fretStart, fretW);
+  }
+
+  function reinitBoard() {
+    if (!svg) return;
+    const [fMin, fMax] = state.filter.fretRange;
+    _fretStart = Math.max(0, Math.min(22, fMin));
+    const span = Math.max(1, Math.min(22, fMax - fMin));
+    FB.fbInitBoard(svg, span, _fretStart);
+    fretW = FB.fbGetFretW(svg);
+    buildClickGrid();
+  }
 
   // Pseudo-voicing: una nota por chord tone, en strings 5..1, frets 0-12.
   // Usado solo para audio en cambios de acorde, no para didáctica.
@@ -316,9 +332,9 @@
           if (dx < bestD) { bestD = dx; best = c; }
         });
         if (!best) return;
-        const x1 = FB.fretX(best.fret, fretW);
+        const x1 = xFor(best.fret);
         const y1 = FB.stringY(6 - best.string);
-        const x2 = FB.fretX(cur.fret, fretW);
+        const x2 = xFor(cur.fret);
         const y2 = FB.stringY(6 - cur.string);
         const path = document.createElementNS(SVG_NS, 'path');
         path.setAttribute('d', `M${x1},${y1} Q${(x1+x2)/2},${(y1+y2)/2 - 14} ${x2},${y2}`);
@@ -339,7 +355,7 @@
 
   function drawCell(dots, string, fret, note, info) {
     const si = 6 - string;
-    const cx = FB.fretX(fret, fretW);
+    const cx = xFor(fret);
     const cy = FB.stringY(si);
     const color = INTERVAL_COLORS_FULL[info.interval.replace(/^→/, '')] || '#888';
     const isChordTone = info.kind === 'chordTones';
@@ -498,11 +514,7 @@
   function init() {
     loadState();
     svg = $('atlas-fretboard');
-    if (svg) {
-      FB.fbInitBoard(svg, NUM_FRETS);
-      fretW = FB.fbGetFretW(svg);
-      buildClickGrid();
-    }
+    if (svg) reinitBoard();
 
     // Capas
     bindLayer('atlas-l-chord', 'chordTones');
@@ -543,10 +555,13 @@
     if (prev) prev.addEventListener('click', () => setActiveChord((state.activeIdx - 1 + state.progression.length) % state.progression.length));
     const nxt = $('atlas-next');
     if (nxt) nxt.addEventListener('click', () => setActiveChord((state.activeIdx + 1) % state.progression.length));
+    const clearProg = $('atlas-clear-prog');
+    if (clearProg) clearProg.addEventListener('click', clearProgression);
     document.addEventListener('keydown', e => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
       if (e.key === 'ArrowLeft')  { prev && prev.click(); e.preventDefault(); }
       if (e.key === 'ArrowRight') { nxt && nxt.click(); e.preventDefault(); }
+      if (e.key === 'Escape')     { clearProgression(); e.preventDefault(); }
     });
 
     // Transporte
@@ -585,10 +600,18 @@
     // Filtros: fret range
     const fMin = $('atlas-fret-min'), fMax = $('atlas-fret-max');
     if (fMin) { fMin.value = state.filter.fretRange[0];
-      fMin.addEventListener('change', e => { state.filter.fretRange[0] = Math.max(0, Math.min(22, Number(e.target.value) || 0)); saveState(); render(); });
+      fMin.addEventListener('change', e => {
+        const v = Math.max(0, Math.min(22, Number(e.target.value) || 0));
+        state.filter.fretRange[0] = Math.min(v, state.filter.fretRange[1]);
+        saveState(); reinitBoard(); render();
+      });
     }
     if (fMax) { fMax.value = state.filter.fretRange[1];
-      fMax.addEventListener('change', e => { state.filter.fretRange[1] = Math.max(0, Math.min(22, Number(e.target.value) || 22)); saveState(); render(); });
+      fMax.addEventListener('change', e => {
+        const v = Math.max(0, Math.min(22, Number(e.target.value) || 22));
+        state.filter.fretRange[1] = Math.max(v, state.filter.fretRange[0]);
+        saveState(); reinitBoard(); render();
+      });
     }
     // Cuerdas (custom set, no rango contiguo)
     state.filter.stringSet = state.filter.stringSet || [1,2,3,4,5,6];
@@ -610,7 +633,7 @@
       const fmax = $('atlas-fret-max'); if (fmax) fmax.value = 22;
       for (let s = 1; s <= 6; s++) { const cb = $('atlas-s-' + s); if (cb) cb.checked = true; }
       const dir = $('atlas-direction'); if (dir) dir.value = 'all';
-      saveState(); render();
+      saveState(); reinitBoard(); render();
     });
 
     // Form: reflejar acorde activo en los selects de "agregar"
@@ -657,16 +680,26 @@
     render();
   }
 
+  function clearProgression() {
+    stop();
+    state.progression = [];
+    state.activeIdx = 0;
+    _prevChord = null;
+    saveState();
+    render();
+  }
+
   function buildClickGrid() {
     let g = svg.querySelector('g[data-clickgrid]');
     if (g) g.remove();
     g = document.createElementNS(SVG_NS, 'g');
     g.dataset.clickgrid = '1';
+    const [fMin, fMax] = state.filter.fretRange;
     for (let s = 1; s <= 6; s++) {
       const si = 6 - s;
       const y = FB.stringY(si);
-      for (let f = 0; f <= NUM_FRETS; f++) {
-        const cx = FB.fretX(f, fretW);
+      for (let f = fMin; f <= fMax; f++) {
+        const cx = xFor(f);
         const r = document.createElementNS(SVG_NS, 'rect');
         const w = fretW * 0.9, h = FB.FB_STR_GAP * 0.8;
         r.setAttribute('x', cx - w/2); r.setAttribute('y', y - h/2);

@@ -53,19 +53,25 @@
     return dotsG;
   }
 
-  function fbInitBoard(svgEl, numFrets) {
+  function fbInitBoard(svgEl, numFrets, fretStart) {
     numFrets = numFrets || 12;
+    fretStart = fretStart || 0;
     const fretW = (FB_RIGHT - FB_NUT) / numFrets;
     svgEl.innerHTML = '';
     svgEl.dataset.fretW = fretW;
     svgEl.dataset.numFrets = numFrets;
+    svgEl.dataset.fretStart = fretStart;
 
     const defs = el('defs');
     defs.innerHTML = '<filter id="fbglow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>';
     svgEl.appendChild(defs);
 
     const g = el('g');
-    g.appendChild(el('rect', { x: FB_NUT - 5, y: FB_STR_TOP - 8, width: 5, height: FB_STR_GAP * 5 + 16, fill: '#5a4820' }));
+    if (fretStart === 0) {
+      g.appendChild(el('rect', { x: FB_NUT - 5, y: FB_STR_TOP - 8, width: 5, height: FB_STR_GAP * 5 + 16, fill: '#5a4820' }));
+    } else {
+      g.appendChild(el('line', { x1: FB_NUT, y1: FB_STR_TOP - 6, x2: FB_NUT, y2: FB_STR_BOT + 6, stroke: '#1a1a1a', 'stroke-width': 2 }));
+    }
 
     for (let f = 1; f <= numFrets; f++) {
       const x = FB_NUT + f * fretW;
@@ -73,13 +79,14 @@
     }
 
     for (let f = 0; f <= numFrets; f++) {
+      const actualF = fretStart + f;
       const x = f === 0 ? FB_NUT - 18 : FB_NUT + (f - 0.5) * fretW;
       const t = el('text', {
         x, y: 14, 'text-anchor': 'middle', 'font-size': 10,
-        fill: FRET_MARKERS.includes(f) ? '#d4a847' : '#2a2a2a',
+        fill: FRET_MARKERS.includes(actualF) || FRET_MARKERS_EXTRA.includes(actualF) ? '#d4a847' : '#2a2a2a',
         'font-family': 'Trebuchet MS,sans-serif',
       });
-      t.textContent = f === 0 ? '○' : f;
+      t.textContent = (fretStart === 0 && f === 0) ? '○' : actualF;
       g.appendChild(t);
     }
 
@@ -92,13 +99,14 @@
     });
 
     [...FRET_MARKERS, ...FRET_MARKERS_EXTRA].forEach(f => {
-      if (f > numFrets) return;
+      const localF = f - fretStart;
+      if (localF < 1 || localF > numFrets) return;
       if (FRET_MARKERS_DOUBLE.includes(f)) {
         [1, 3].forEach(si => {
-          g.appendChild(el('circle', { cx: FB_NUT + (f - 0.5) * fretW, cy: stringY(si) - FB_STR_GAP * 0.5, r: 4, fill: '#1e1e1e' }));
+          g.appendChild(el('circle', { cx: FB_NUT + (localF - 0.5) * fretW, cy: stringY(si) - FB_STR_GAP * 0.5, r: 4, fill: '#1e1e1e' }));
         });
       } else {
-        g.appendChild(el('circle', { cx: FB_NUT + (f - 0.5) * fretW, cy: stringY(2) - FB_STR_GAP * 0.5, r: 4, fill: '#1e1e1e' }));
+        g.appendChild(el('circle', { cx: FB_NUT + (localF - 0.5) * fretW, cy: stringY(2) - FB_STR_GAP * 0.5, r: 4, fill: '#1e1e1e' }));
       }
     });
 
