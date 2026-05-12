@@ -21,7 +21,8 @@
     .panel-layout{display:grid;grid-template-columns:1fr 320px;gap:14px}
     @media(max-width:1100px){.panel-layout{grid-template-columns:1fr}}
 
-    .fretboard-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;overflow-x:auto}
+    .fretboard-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;overflow-x:auto;min-width:0}
+    #atlas-fretboard{display:block;width:100%;height:auto;max-width:1600px}
     .side-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;min-height:300px}
     .side-panel h3{font-size:11px;letter-spacing:.15em;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px}
 
@@ -110,7 +111,7 @@
         <button class="btn" id="atlas-reset" style="margin-left:auto">Reset filtros</button>
       </div>
 
-      <svg id="atlas-fretboard" width="920" height="220"></svg>
+      <svg id="atlas-fretboard" viewBox="0 0 920 220" preserveAspectRatio="xMidYMid meet"></svg>
       <div class="legend" id="atlas-legend"></div>
     </div>
 
