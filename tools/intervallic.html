@@ -93,6 +93,23 @@
         <label class="layer-toggle"><input type="checkbox" id="atlas-show-names"> Nombres de nota</label>
       </div>
 
+      <div class="row" style="background:var(--surface2);padding:8px 12px;border-radius:8px;margin-bottom:10px">
+        <label>Trastes
+          <input type="number" id="atlas-fret-min" value="0" min="0" max="22" style="width:48px">
+          <span>–</span>
+          <input type="number" id="atlas-fret-max" value="22" min="0" max="22" style="width:48px">
+        </label>
+        <label>Cuerdas
+          <input type="checkbox" id="atlas-s-1" data-string="1" checked>1
+          <input type="checkbox" id="atlas-s-2" data-string="2" checked>2
+          <input type="checkbox" id="atlas-s-3" data-string="3" checked>3
+          <input type="checkbox" id="atlas-s-4" data-string="4" checked>4
+          <input type="checkbox" id="atlas-s-5" data-string="5" checked>5
+          <input type="checkbox" id="atlas-s-6" data-string="6" checked>6
+        </label>
+        <button class="btn" id="atlas-reset" style="margin-left:auto">Reset filtros</button>
+      </div>
+
       <svg id="atlas-fretboard" width="920" height="220"></svg>
       <div class="legend" id="atlas-legend"></div>
     </div>

@@ -158,4 +158,40 @@
     });
   });
 
+  T.describe('applyDirection', () => {
+    const cells = [];
+    for (let s = 1; s <= 6; s++) for (let f = 0; f <= 12; f++) cells.push({ string: s, fret: f, note: 'X', info: { interval: '1', kind: 'chordTones' } });
+
+    T.it('all → no filtra', () => {
+      T.assertEq(A._applyDirection(cells, { direction: 'all' }).length, cells.length);
+    });
+    T.it('horizontal → solo focusString', () => {
+      const r = A._applyDirection(cells, { direction: 'horizontal', focusString: 3 });
+      T.assert(r.every(c => c.string === 3));
+    });
+    T.it('vertical → focusFret ± 1', () => {
+      const r = A._applyDirection(cells, { direction: 'vertical', focusFret: 5 });
+      T.assert(r.every(c => Math.abs(c.fret - 5) <= 1));
+    });
+    T.it('diagonal → max 2 por cuerda', () => {
+      const r = A._applyDirection(cells, { direction: 'diagonal', focusFret: 5 });
+      const byString = {};
+      r.forEach(c => byString[c.string] = (byString[c.string] || 0) + 1);
+      Object.values(byString).forEach(n => T.assert(n <= 2, 'cuerda con ' + n + ' notas'));
+    });
+  });
+
+  T.describe('makePseudoVoicing', () => {
+    T.it('produce una posición por chord note', () => {
+      const c = TH.buildChord('C','maj7');
+      const v = A._makePseudoVoicing(c);
+      T.assertEq(v.length, c.notes.length);
+    });
+    T.it('strings dentro de 1-5', () => {
+      const c = TH.buildChord('A','min7');
+      const v = A._makePseudoVoicing(c);
+      v.forEach(p => T.assert(p.string >= 1 && p.string <= 5));
+    });
+  });
+
 })(window.GuitarShared, window);

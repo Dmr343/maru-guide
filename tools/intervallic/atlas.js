@@ -81,7 +81,7 @@
       chordTones: true, guideTones: false, scale: false,
       tensions: false, approach: false, allNotes: false,
     },
-    filter: { direction: 'all', stringRange: [1, 6], fretRange: [0, 22] },
+    filter: { direction: 'all', stringRange: [1, 6], fretRange: [0, 22], focusString: 3, focusFret: 5 },
     showNoteNames: false,
     parentKey: 'C',
     parentMode: 'major',
@@ -181,6 +181,43 @@
     return map;
   }
 
+  // Aplica el modo direccional a la lista de candidatos. Pure function.
+  function applyDirection(candidates, filter) {
+    const dir = filter.direction || 'all';
+    if (dir === 'all') return candidates;
+    if (dir === 'horizontal') {
+      const focus = filter.focusString != null ? filter.focusString : 3;
+      return candidates.filter(c => c.string === focus);
+    }
+    if (dir === 'vertical') {
+      const focus = filter.focusFret != null ? filter.focusFret : 5;
+      // Mostrar el traste ± 1 para mantener legibilidad
+      return candidates.filter(c => Math.abs(c.fret - focus) <= 1);
+    }
+    if (dir === 'diagonal') {
+      // 2 notas por cuerda máximo, ascendiendo: tomar las 2 con menor fret por cuerda
+      const byString = {};
+      candidates.forEach(c => { (byString[c.string] = byString[c.string] || []).push(c); });
+      const out = [];
+      // Para crear diagonal ascendente: cuerda 6 → frets más bajos, cuerda 1 → más altos
+      Object.keys(byString).forEach(s => {
+        byString[s].sort((a, b) => a.fret - b.fret);
+        const sNum = Number(s);
+        // ventana para esta cuerda: base + (6 - sNum) * 2 trastes aprox
+        const base = filter.focusFret != null ? filter.focusFret : 5;
+        const target = base + (6 - sNum) * 2;
+        const closest = byString[s]
+          .map(c => ({ c, d: Math.abs(c.fret - target) }))
+          .sort((a, b) => a.d - b.d)
+          .slice(0, 2)
+          .map(x => x.c);
+        out.push(...closest);
+      });
+      return out;
+    }
+    return candidates;
+  }
+
   function intervalToSemi(name) {
     const i = TH.INTERVAL_NAMES.indexOf(name);
     if (i >= 0) return i;
@@ -191,6 +228,30 @@
   // ──────────────── Render ────────────────
 
   let svg, fretW;
+  let metro = null;
+
+  // Pseudo-voicing: una nota por chord tone, en strings 5..1, frets 0-12.
+  // Usado solo para audio en cambios de acorde, no para didáctica.
+  function makePseudoVoicing(chord) {
+    const out = [];
+    const usedStrings = new Set();
+    chord.notes.forEach((note, idx) => {
+      // intentar string 5-idx, 4, 3, 2, 1
+      const preferred = [5 - idx, 4, 3, 2, 1].filter(s => s >= 1 && s <= 5);
+      for (const s of preferred) {
+        if (usedStrings.has(s)) continue;
+        const open = FB.OPEN_NOTES[6 - s];
+        const oi = TH.CHROMATIC.indexOf(open);
+        const ti = TH.CHROMATIC.indexOf(note);
+        let fret = (ti - oi + 12) % 12;
+        if (fret < 0) fret += 12;
+        out.push({ string: s, fret });
+        usedStrings.add(s);
+        break;
+      }
+    });
+    return out;
+  }
 
   function render() {
     if (!svg) return;
@@ -202,26 +263,79 @@
     const renderMap = computeRenderMap(chord, state.layers);
 
     // Filtros
-    const [sMin, sMax] = state.filter.stringRange;
+    const stringSet = state.filter.stringSet || [1,2,3,4,5,6];
     const [fMin, fMax] = state.filter.fretRange;
 
     // Para "horizontal" o "vertical", el spec habla de iluminar al clickear.
     // En Fase 1 ignoramos eso — Fase 5 lo agregará. Por ahora pintamos todo.
 
+    // Posiciones del guide-tone actual y previo (para voice leading)
+    const cellPositions = []; // {string, fret, note, info}
+
+    // Recolectar candidatos respetando capas, antes de aplicar dirección
+    const candidates = [];
     for (let s = 1; s <= 6; s++) {
-      if (s < sMin || s > sMax) continue;
+      if (!stringSet.includes(s)) continue;
       const open = FB.OPEN_NOTES[6 - s];
       for (let f = 0; f <= NUM_FRETS; f++) {
         if (f < fMin || f > fMax) continue;
         const note = FB.fbNoteAt(open, f);
         const info = renderMap.get(note);
         if (!info) continue;
-        drawCell(dots, s, f, note, info);
+        candidates.push({ string: s, fret: f, note, info });
       }
     }
+
+    // Aplicar modo direccional
+    const filtered = applyDirection(candidates, state.filter);
+    filtered.forEach(c => {
+      drawCell(dots, c.string, c.fret, c.note, c.info);
+      cellPositions.push(c);
+    });
+
+    // Voice leading: si guideTones activo y existe prev chord con guide tones
+    // compartidos, dibujar línea entre la nota actual y la previa en la misma pc.
+    if (state.layers.guideTones && _prevChord) {
+      const prevMap = computeRenderMap(_prevChord, { guideTones: true });
+      const sharedPcs = new Set();
+      prevMap.forEach((_, pc) => { if (renderMap.has(pc) && renderMap.get(pc).kind === 'guideTones') sharedPcs.add(pc); });
+      sharedPcs.forEach(pc => {
+        const cur = cellPositions.find(c => c.note === pc && c.info.kind === 'guideTones');
+        // posición previa estimada: misma pc, en el mástil, cerca del cur
+        if (!cur) return;
+        const candidates = [];
+        for (let s = 1; s <= 6; s++) {
+          const open = FB.OPEN_NOTES[6 - s];
+          for (let f = 0; f <= NUM_FRETS; f++) {
+            if (FB.fbNoteAt(open, f) === pc) candidates.push({ string: s, fret: f });
+          }
+        }
+        let best = null, bestD = 999;
+        candidates.forEach(c => {
+          const dx = Math.abs(c.string - cur.string) + Math.abs(c.fret - cur.fret) * 0.4;
+          if (dx < bestD) { bestD = dx; best = c; }
+        });
+        if (!best) return;
+        const x1 = FB.fretX(best.fret, fretW);
+        const y1 = FB.stringY(6 - best.string);
+        const x2 = FB.fretX(cur.fret, fretW);
+        const y2 = FB.stringY(6 - cur.string);
+        const path = document.createElementNS(SVG_NS, 'path');
+        path.setAttribute('d', `M${x1},${y1} Q${(x1+x2)/2},${(y1+y2)/2 - 14} ${x2},${y2}`);
+        path.setAttribute('stroke', '#d4a847');
+        path.setAttribute('stroke-width', 1.5);
+        path.setAttribute('stroke-opacity', 0.6);
+        path.setAttribute('stroke-dasharray', '3,2');
+        path.setAttribute('fill', 'none');
+        dots.insertBefore(path, dots.firstChild);
+      });
+    }
+
     drawInfo();
     drawBar();
   }
+
+  let _prevChord = null;
 
   function drawCell(dots, string, fret, note, info) {
     const si = 6 - string;
@@ -369,6 +483,7 @@
     if (svg) {
       FB.fbInitBoard(svg, NUM_FRETS);
       fretW = FB.fbGetFretW(svg);
+      buildClickGrid();
     }
 
     // Capas
@@ -416,8 +531,139 @@
       if (e.key === 'ArrowRight') { nxt && nxt.click(); e.preventDefault(); }
     });
 
+    // Transporte
+    const playBtn = $('atlas-play');
+    if (playBtn) playBtn.addEventListener('click', play);
+    const stopBtn = $('atlas-stop');
+    if (stopBtn) stopBtn.addEventListener('click', stop);
+    const bpmInput = $('atlas-bpm');
+    if (bpmInput) {
+      bpmInput.value = state.bpm;
+      bpmInput.addEventListener('change', e => {
+        state.bpm = Math.max(40, Math.min(220, Number(e.target.value) || 80));
+        if (metro) metro.setBPM(state.bpm);
+        saveState();
+      });
+    }
+    const bpcSel = $('atlas-bpc');
+    if (bpcSel) {
+      bpcSel.value = String(state.beatsPerChord);
+      bpcSel.addEventListener('change', e => {
+        state.beatsPerChord = Number(e.target.value) || 4;
+        if (metro) metro.setBeatsPerChord(state.beatsPerChord);
+        saveState();
+      });
+    }
+    // Dirección (Fase 5 — stub: solo persistencia, render aún ignora)
+    const dirSel = $('atlas-direction');
+    if (dirSel) {
+      dirSel.value = state.filter.direction;
+      dirSel.addEventListener('change', e => {
+        state.filter.direction = e.target.value;
+        saveState(); render();
+      });
+    }
+
+    // Filtros: fret range
+    const fMin = $('atlas-fret-min'), fMax = $('atlas-fret-max');
+    if (fMin) { fMin.value = state.filter.fretRange[0];
+      fMin.addEventListener('change', e => { state.filter.fretRange[0] = Math.max(0, Math.min(22, Number(e.target.value) || 0)); saveState(); render(); });
+    }
+    if (fMax) { fMax.value = state.filter.fretRange[1];
+      fMax.addEventListener('change', e => { state.filter.fretRange[1] = Math.max(0, Math.min(22, Number(e.target.value) || 22)); saveState(); render(); });
+    }
+    // Cuerdas (custom set, no rango contiguo)
+    state.filter.stringSet = state.filter.stringSet || [1,2,3,4,5,6];
+    for (let s = 1; s <= 6; s++) {
+      const cb = $('atlas-s-' + s);
+      if (cb) {
+        cb.checked = state.filter.stringSet.includes(s);
+        cb.addEventListener('change', e => {
+          if (e.target.checked) state.filter.stringSet = Array.from(new Set([...state.filter.stringSet, s])).sort();
+          else state.filter.stringSet = state.filter.stringSet.filter(x => x !== s);
+          saveState(); render();
+        });
+      }
+    }
+    const reset = $('atlas-reset');
+    if (reset) reset.addEventListener('click', () => {
+      state.filter = Object.assign({}, DEFAULT_STATE.filter, { stringSet: [1,2,3,4,5,6] });
+      ['atlas-fret-min'].forEach(i => { const el = $(i); if (el) el.value = 0; });
+      const fmax = $('atlas-fret-max'); if (fmax) fmax.value = 22;
+      for (let s = 1; s <= 6; s++) { const cb = $('atlas-s-' + s); if (cb) cb.checked = true; }
+      const dir = $('atlas-direction'); if (dir) dir.value = 'all';
+      saveState(); render();
+    });
+
+    // Form: reflejar acorde activo en los selects de "agregar"
+    const newRoot = $('atlas-new-root');
+    if (newRoot && state.progression[0]) newRoot.value = state.progression[state.activeIdx].root;
+    const newQuality = $('atlas-new-quality');
+    if (newQuality && state.progression[0]) newQuality.value = state.progression[state.activeIdx].quality;
+
     drawLegend();
     render();
+  }
+
+  function play() {
+    if (metro && metro.playing) return;
+    if (!state.progression.length) return;
+    _prevChord = null;
+    metro = new G.metronome.Metronome({
+      bpm: state.bpm,
+      beatsPerChord: state.beatsPerChord,
+      onBeat: () => {},
+      onChordChange: () => {
+        _prevChord = activeChord();
+        const nextIdx = (state.activeIdx + 1) % state.progression.length;
+        state.activeIdx = nextIdx;
+        const cur = activeChord();
+        if (W.IntervallicAudio && cur) {
+          W.IntervallicAudio.playPositions(makePseudoVoicing(cur), { duration: (60 / state.bpm) * state.beatsPerChord * 0.9 });
+        }
+        render();
+      },
+    });
+    metro.start();
+    // Reproducir primer acorde inmediatamente
+    const cur = activeChord();
+    if (W.IntervallicAudio && cur) {
+      W.IntervallicAudio.playPositions(makePseudoVoicing(cur), { duration: (60 / state.bpm) * state.beatsPerChord * 0.9 });
+    }
+    render();
+  }
+
+  function stop() {
+    if (metro) { metro.stop(); metro = null; }
+    _prevChord = null;
+    render();
+  }
+
+  function buildClickGrid() {
+    let g = svg.querySelector('g[data-clickgrid]');
+    if (g) g.remove();
+    g = document.createElementNS(SVG_NS, 'g');
+    g.dataset.clickgrid = '1';
+    for (let s = 1; s <= 6; s++) {
+      const si = 6 - s;
+      const y = FB.stringY(si);
+      for (let f = 0; f <= NUM_FRETS; f++) {
+        const cx = FB.fretX(f, fretW);
+        const r = document.createElementNS(SVG_NS, 'rect');
+        const w = fretW * 0.9, h = FB.FB_STR_GAP * 0.8;
+        r.setAttribute('x', cx - w/2); r.setAttribute('y', y - h/2);
+        r.setAttribute('width', w); r.setAttribute('height', h);
+        r.setAttribute('fill', 'transparent');
+        r.style.cursor = 'pointer';
+        r.addEventListener('click', () => {
+          state.filter.focusString = s;
+          state.filter.focusFret = f;
+          saveState(); render();
+        });
+        g.appendChild(r);
+      }
+    }
+    svg.appendChild(g);
   }
 
   function bindLayer(id, key) {
@@ -435,5 +681,7 @@
     _SCALE_BY_QUALITY: SCALE_BY_QUALITY,
     _LAYER_PRIORITY: LAYER_PRIORITY,
     _intervalToSemi: intervalToSemi,
+    _applyDirection: applyDirection,
+    _makePseudoVoicing: makePseudoVoicing,
   };
 })(window.GuitarShared, window);
