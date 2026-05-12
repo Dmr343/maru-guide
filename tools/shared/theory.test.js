@@ -2,9 +2,25 @@
 (function (G) {
   const T = G.testRunner;
   const {
-    CHROMATIC, buildScale, buildChord, intervalToFunction, chordColor, cagedShapeFor,
+    CHROMATIC, buildScale, buildChord, intervalToFunction, intervalFromRoot, chordColor, cagedShapeFor,
     commonChordTones, pickScaleForChord, advanceChord,
   } = G.theory;
+
+  T.describe('intervalFromRoot', () => {
+    T.it('C → C = 1',      () => T.assertEq(intervalFromRoot('C','C'), '1'));
+    T.it('C → E = 3',      () => T.assertEq(intervalFromRoot('C','E'), '3'));
+    T.it('C → G = 5',      () => T.assertEq(intervalFromRoot('C','G'), '5'));
+    T.it('C → B = 7',      () => T.assertEq(intervalFromRoot('C','B'), '7'));
+    T.it('C → A# = b7',    () => T.assertEq(intervalFromRoot('C','A#'), 'b7'));
+    T.it('C → D# = b3',    () => T.assertEq(intervalFromRoot('C','D#'), 'b3'));
+    T.it('C → F# = b5',    () => T.assertEq(intervalFromRoot('C','F#'), 'b5'));
+    T.it('A → C = b3',     () => T.assertEq(intervalFromRoot('A','C'), 'b3'));
+    T.it('A → E = 5',      () => T.assertEq(intervalFromRoot('A','E'), '5'));
+    T.it('A → G = b7',     () => T.assertEq(intervalFromRoot('A','G'), 'b7'));
+    T.it('G → F = b7',     () => T.assertEq(intervalFromRoot('G','F'), 'b7'));
+    T.it('nota inválida → null', () => T.assertEq(intervalFromRoot('X','C'), null));
+  });
+
 
   T.describe('CHROMATIC', () => {
     T.it('has 12 notes', () => T.assertEq(CHROMATIC.length, 12));

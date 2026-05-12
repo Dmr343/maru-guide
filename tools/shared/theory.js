@@ -67,6 +67,16 @@
     return { root, quality, notes, intervals };
   }
 
+  // Nombre del intervalo cromático desde rootNote a targetNote.
+  // Devuelve '1','b2','2','b3','3','4','b5','5','b6','6','b7','7'.
+  const INTERVAL_NAMES = ['1','b2','2','b3','3','4','b5','5','b6','6','b7','7'];
+  function intervalFromRoot(rootNote, targetNote) {
+    const ri = CHROMATIC.indexOf(rootNote);
+    const ti = CHROMATIC.indexOf(targetNote);
+    if (ri < 0 || ti < 0) return null;
+    return INTERVAL_NAMES[(ti - ri + 12) % 12];
+  }
+
   function intervalToFunction(interval) {
     if (interval === '1')                      return 'R';
     if (interval === '3' || interval === 'b3') return '3';
@@ -156,7 +166,8 @@
     PENTATONIC_MAJOR_STEPS, PENTATONIC_MINOR_STEPS,
     MIXOLYDIAN_STEPS, DORIAN_STEPS,
     CAGED_COLORS, FUNC_COLORS, QUALITY_LABELS, QUALITY_SUFFIX,
-    chordColor, buildScale, buildChord, intervalToFunction,
+    INTERVAL_NAMES,
+    chordColor, buildScale, buildChord, intervalToFunction, intervalFromRoot,
     cagedShapeFor, fretsForCagedShape, chordName,
     commonChordTones, pickScaleForChord, advanceChord,
   };

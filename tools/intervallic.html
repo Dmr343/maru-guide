@@ -3,325 +3,138 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Intervallic Chord Lab</title>
+  <title>Interval Atlas</title>
   <style>
     :root {
       --bg:#0e0e0e; --surface:#141414; --surface2:#1a1a1a; --border:#222;
       --text:#e8d5b0; --text-dim:#666; --text-mid:#999; --gold:#d4a847;
-      --c-maj:#2ecc71; --c-min:#3498db; --c-dim:#f1c40f; --c-aug:#e67e22;
       --radius:10px; --font:'Trebuchet MS','Segoe UI',sans-serif;
     }
     *{box-sizing:border-box;margin:0;padding:0}
     body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;padding:18px}
     a.back{color:var(--text-dim);font-size:11px;text-decoration:none;letter-spacing:.1em;text-transform:uppercase}
     a.back:hover{color:var(--gold)}
-    h1{font-size:20px;font-weight:300;color:var(--gold);letter-spacing:.06em;margin:8px 0 16px}
-
-    .global-controls{display:flex;gap:14px;flex-wrap:wrap;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:14px}
-    .global-controls label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em;margin-right:6px}
-    .global-controls select,.global-controls input[type=number]{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:13px;padding:5px 8px;border-radius:6px}
-    .global-controls .toggle{display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text-mid)}
-    .global-controls .toggle input{cursor:pointer}
-
-    .tabs{display:flex;gap:2px;margin-bottom:14px;border-bottom:1px solid var(--border);overflow-x:auto}
-    .tab{background:transparent;border:none;color:var(--text-mid);font-family:var(--font);font-size:13px;padding:10px 16px;cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.04em;white-space:nowrap}
-    .tab:hover{color:var(--text)}
-    .tab.active{color:var(--gold);border-bottom-color:var(--gold)}
-
-    .tab-content{display:none}
-    .tab-content.active{display:block}
+    h1{font-size:22px;font-weight:300;color:var(--gold);letter-spacing:.06em;margin:8px 0 4px}
+    .subtitle{color:var(--text-mid);font-size:12px;margin-bottom:14px}
 
     .panel-layout{display:grid;grid-template-columns:1fr 320px;gap:14px}
     @media(max-width:1100px){.panel-layout{grid-template-columns:1fr}}
-    .fretboard-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px;overflow-x:auto}
+
+    .fretboard-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;overflow-x:auto}
     .side-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;min-height:300px}
     .side-panel h3{font-size:11px;letter-spacing:.15em;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px}
 
-    .interp{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
-    .interp:hover{border-color:var(--gold)}
-    .interp.active{border-color:var(--gold);background:#1d1810}
-    .interp-name{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:4px}
-    .interp-meta{font-size:11px;color:var(--text-mid);line-height:1.5}
-    .interp-tones{font-size:10px;color:var(--text-dim);margin-top:4px;font-family:monospace}
+    .row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;font-size:12px;color:var(--text-mid)}
+    .row label{display:inline-flex;gap:5px;align-items:center}
 
-    .btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:12px;padding:6px 12px;border-radius:6px;cursor:pointer;letter-spacing:.04em}
+    select, input[type=number], input[type=text]{
+      background:var(--surface2);border:1px solid var(--border);color:var(--text);
+      font-family:var(--font);font-size:12px;padding:5px 8px;border-radius:6px
+    }
+    .btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:12px;padding:6px 12px;border-radius:6px;cursor:pointer}
     .btn:hover{border-color:var(--gold);color:var(--gold)}
     .btn.primary{background:var(--gold);color:#000;border-color:var(--gold);font-weight:700}
     .btn.primary:hover{background:#f0c060}
     .btn.danger{color:#e74c3c;border-color:#3a1a1a}
 
-    .row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+    .layer-toggles{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 12px;padding:8px 12px;background:var(--surface2);border-radius:8px}
+    .layer-toggle{display:inline-flex;gap:5px;align-items:center;font-size:12px;color:var(--text-mid);cursor:pointer}
 
-    .voicing-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:8px;cursor:pointer;display:flex;gap:10px;align-items:flex-start;transition:border-color .15s}
-    .voicing-card:hover{border-color:var(--gold)}
-    .voicing-card.active{border-color:var(--gold)}
-    .voicing-card .vc-meta{flex:1;font-size:11px;line-height:1.5;color:var(--text-mid)}
-    .voicing-card .vc-name{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:3px}
-
-    .progression-bar{display:flex;gap:6px;background:var(--surface2);padding:8px;border-radius:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
-    .prog-chord{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:60px}
+    .progression-bar{display:flex;gap:6px;background:var(--surface2);padding:8px;border-radius:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;min-height:48px}
+    .prog-chord{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:60px;position:relative;cursor:pointer}
     .prog-chord.active{border-color:var(--gold);background:#1d1810;box-shadow:0 0 10px rgba(212,168,71,.3)}
     .prog-chord .pc-name{font-weight:700;color:var(--gold)}
     .prog-chord .pc-bars{font-size:9px;color:var(--text-dim)}
-    .prog-chord .pc-del{font-size:9px;color:var(--text-dim);cursor:pointer;margin-top:2px}
+    .prog-chord .pc-del{position:absolute;top:1px;right:4px;font-size:11px;color:var(--text-dim);cursor:pointer}
     .prog-chord .pc-del:hover{color:#e74c3c}
 
     .legend{display:flex;gap:14px;font-size:11px;color:var(--text-mid);flex-wrap:wrap;margin-top:8px}
     .legend-dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:4px}
 
-    .layer-toggles{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px}
-    .layer-toggle{display:inline-flex;gap:5px;align-items:center;font-size:12px;color:var(--text-mid);cursor:pointer}
-
     .empty-state{padding:30px 14px;text-align:center;color:var(--text-dim);font-size:12px;line-height:1.6}
-
-    .roman{font-family:'Times New Roman',serif;font-style:italic}
-    select.compact{padding:3px 6px;font-size:11px}
-
-    .help{font-size:11px;color:var(--text-dim);line-height:1.5;margin-top:8px}
   </style>
 </head>
 <body>
 
   <a href="index.html" class="back">← Volver</a>
-  <h1>Intervallic Chord Lab</h1>
+  <h1>Interval Atlas</h1>
+  <p class="subtitle">Intervalos del mástil sobre tu progresión, en todas las direcciones.</p>
 
-  <!-- Controles globales (sincronizados via iclState) -->
-  <div class="global-controls">
-    <div><label>Tónica</label>
-      <select id="g-root">
-        <option>C</option><option>C#</option><option>D</option><option>D#</option>
-        <option>E</option><option>F</option><option>F#</option><option>G</option>
-        <option>G#</option><option>A</option><option>A#</option><option>B</option>
-      </select>
-    </div>
-    <div><label>Modo</label>
-      <select id="g-mode">
-        <option value="major">Mayor</option>
-        <option value="minor">Menor natural</option>
-        <option value="dorian">Dorian</option>
-        <option value="phrygian">Phrygian</option>
-        <option value="lydian">Lydian</option>
-        <option value="mixolydian">Mixolydian</option>
-        <option value="locrian">Locrian</option>
-        <option value="harmonic_minor">Armónica menor</option>
-        <option value="melodic_minor">Melódica menor</option>
-      </select>
-    </div>
-    <div><label>Posición</label>
-      <select id="g-pos">
-        <option value="0">1</option><option value="1">2</option>
-        <option value="2">3</option><option value="3">4</option>
-        <option value="4">5</option>
-      </select>
-    </div>
-    <div><label>Octava</label>
-      <select id="g-octave">
-        <option value="0">normal</option>
-        <option value="1">+ 12</option>
-      </select>
-    </div>
-    <div style="margin-left:auto;font-size:11px;color:var(--text-dim)" id="g-summary"></div>
-  </div>
+  <div class="panel-layout">
+    <div class="fretboard-wrap">
+      <div class="progression-bar" id="atlas-bar"></div>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab active" data-tab="chord-id">1 · Identificar</button>
-    <button class="tab" data-tab="diatonic-lab">2 · Diatonic Lab</button>
-    <button class="tab" data-tab="shape-lab">3 · Shape Lab</button>
-    <button class="tab" data-tab="progression">4 · Progresión</button>
-    <button class="tab" data-tab="triads">5 · Tríadas</button>
-  </div>
-
-  <!-- Tab 1: Chord ID -->
-  <div class="tab-content active" id="tab-chord-id">
-    <div class="panel-layout">
-      <div class="fretboard-wrap">
-        <div class="row">
-          <button class="btn" id="ci-clear">Limpiar</button>
-          <label class="toggle"><input type="checkbox" id="ci-inv-mode"> Modo inversión (slash chords)</label>
-          <span class="help" id="ci-sel-count"></span>
-        </div>
-        <svg id="ci-fretboard" width="920" height="220"></svg>
-        <div class="legend">
-          <span><span class="legend-dot" style="background:#d4a847"></span>Raíz</span>
-          <span><span class="legend-dot" style="background:#e67e22"></span>3ª</span>
-          <span><span class="legend-dot" style="background:#3498db"></span>5ª</span>
-          <span><span class="legend-dot" style="background:#2ecc71"></span>7ª</span>
-        </div>
+      <div class="row">
+        <button class="btn primary" id="atlas-play">▶ Play</button>
+        <button class="btn" id="atlas-stop">■ Stop</button>
+        <button class="btn" id="atlas-prev">←</button>
+        <button class="btn" id="atlas-next">→</button>
+        <label>BPM <input type="number" id="atlas-bpm" value="80" min="40" max="220" style="width:60px"></label>
+        <label>Compases <select id="atlas-bpc">
+          <option value="2">2</option>
+          <option value="4" selected>4</option>
+          <option value="8">8</option>
+        </select></label>
+        <select id="atlas-direction">
+          <option value="all">Dirección: Todas</option>
+          <option value="horizontal">Horizontal</option>
+          <option value="vertical">Vertical</option>
+          <option value="diagonal">Diagonal</option>
+        </select>
       </div>
-      <div class="side-panel">
-        <h3>Interpretaciones</h3>
-        <div id="ci-results" class="empty-state">Seleccioná 2 o más notas en el mástil.</div>
-        <div id="ci-import-row" style="display:none;margin-top:10px">
-          <button class="btn primary" id="ci-import-to-shape">→ Guardar en Shape Lab</button>
-        </div>
+
+      <div class="layer-toggles">
+        <label class="layer-toggle"><input type="checkbox" id="atlas-l-chord" checked> Chord tones</label>
+        <label class="layer-toggle"><input type="checkbox" id="atlas-l-guide"> Guide tones (3/7)</label>
+        <label class="layer-toggle"><input type="checkbox" id="atlas-l-scale"> Escala asociada</label>
+        <label class="layer-toggle"><input type="checkbox" id="atlas-l-tensions"> Tensiones</label>
+        <label class="layer-toggle"><input type="checkbox" id="atlas-l-approach"> Aproximación</label>
+        <label class="layer-toggle"><input type="checkbox" id="atlas-l-all"> Todas las 12</label>
+        <label class="layer-toggle"><input type="checkbox" id="atlas-show-names"> Nombres de nota</label>
       </div>
+
+      <svg id="atlas-fretboard" width="920" height="220"></svg>
+      <div class="legend" id="atlas-legend"></div>
+    </div>
+
+    <div class="side-panel">
+      <h3>Editor de progresión</h3>
+      <div class="row">
+        <select id="atlas-new-root">
+          <option>C</option><option>C#</option><option>D</option><option>D#</option>
+          <option>E</option><option>F</option><option>F#</option><option>G</option>
+          <option>G#</option><option>A</option><option>A#</option><option>B</option>
+        </select>
+        <select id="atlas-new-quality">
+          <option value="maj7">maj7</option>
+          <option value="min7">m7</option>
+          <option value="dom7">7</option>
+          <option value="dim7">dim7</option>
+          <option value="m7b5">m7b5</option>
+          <option value="major">Mayor</option>
+          <option value="minor">menor</option>
+          <option value="dim">dim</option>
+          <option value="aug">aug</option>
+        </select>
+        <button class="btn primary" id="atlas-add">+ Agregar</button>
+      </div>
+
+      <h3 style="margin-top:14px">Acorde activo</h3>
+      <div id="atlas-info" class="empty-state">—</div>
     </div>
   </div>
 
-  <!-- Tab 2: Diatonic Lab -->
-  <div class="tab-content" id="tab-diatonic-lab">
-    <div class="panel-layout">
-      <div class="fretboard-wrap">
-        <div class="layer-toggles">
-          <label class="layer-toggle"><input type="checkbox" id="dl-layer-scale" checked> Escala</label>
-          <label class="layer-toggle"><input type="checkbox" id="dl-layer-roots" checked> Raíces diatónicas</label>
-          <label class="layer-toggle"><input type="checkbox" id="dl-layer-triangles" checked> Triángulos</label>
-          <label class="layer-toggle"><input type="checkbox" id="dl-layer-voicing"> Voicing activo</label>
-          <button class="btn" id="dl-next-pos" style="margin-left:auto">Siguiente posición →</button>
-        </div>
-        <svg id="dl-fretboard" width="920" height="220"></svg>
-        <div class="legend">
-          <span><span class="legend-dot" style="background:#2ecc71"></span>Mayor</span>
-          <span><span class="legend-dot" style="background:#3498db"></span>Menor</span>
-          <span><span class="legend-dot" style="background:#f1c40f"></span>Disminuido</span>
-          <span><span class="legend-dot" style="background:#e67e22"></span>Aumentado</span>
-        </div>
-      </div>
-      <div class="side-panel">
-        <h3>Acordes diatónicos</h3>
-        <div id="dl-chord-list"></div>
-        <h3 style="margin-top:14px">Voicings</h3>
-        <div id="dl-voicings" class="empty-state">Click una raíz diatónica.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tab 3: Shape Lab -->
-  <div class="tab-content" id="tab-shape-lab">
-    <div class="panel-layout">
-      <div class="fretboard-wrap">
-        <div class="row">
-          <button class="btn" id="sl-clear">Limpiar</button>
-          <button class="btn" id="sl-import">← Importar de Identificar</button>
-          <span class="help">Click 1° = raíz. Clicks sig = añadir nota (elegir intervalo en panel).</span>
-        </div>
-        <svg id="sl-fretboard" width="920" height="220"></svg>
-        <div id="sl-feedback" class="help" style="margin-top:8px"></div>
-      </div>
-      <div class="side-panel">
-        <h3>Editor</h3>
-        <div id="sl-editor" class="empty-state">Click la raíz primero.</div>
-        <div class="row" style="margin-top:10px">
-          <input type="text" id="sl-name" placeholder="Nombre del template" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:6px;font-size:12px">
-          <select id="sl-quality" class="compact">
-            <option value="major">Mayor</option>
-            <option value="minor">Menor</option>
-            <option value="dom7">7</option>
-            <option value="maj7">maj7</option>
-            <option value="min7">m7</option>
-            <option value="dim">dim</option>
-            <option value="m7b5">m7b5</option>
-            <option value="aug">aug</option>
-          </select>
-        </div>
-        <div class="row">
-          <button class="btn primary" id="sl-save">Guardar</button>
-        </div>
-        <h3 style="margin-top:14px">Biblioteca</h3>
-        <div id="sl-library"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tab 4: Progression Player -->
-  <div class="tab-content" id="tab-progression">
-    <div class="panel-layout">
-      <div class="fretboard-wrap">
-        <div class="row">
-          <span class="help">Acordes diatónicos:</span>
-          <span id="pp-numerals"></span>
-        </div>
-        <div class="progression-bar" id="pp-bar"></div>
-        <div class="row">
-          <button class="btn primary" id="pp-play">▶ Play</button>
-          <button class="btn" id="pp-stop">■ Stop</button>
-          <label>BPM
-            <input type="number" id="pp-bpm" value="80" min="40" max="220" style="width:60px">
-          </label>
-          <select id="pp-mode" class="compact">
-            <option value="metro">Solo metrónomo</option>
-            <option value="audio" selected>Audio + metrónomo</option>
-            <option value="loop">Looper</option>
-          </select>
-          <select id="pp-time-sig" class="compact">
-            <option value="4">4/4</option>
-            <option value="3">3/4</option>
-            <option value="6">6/8</option>
-          </select>
-          <label class="toggle"><input type="checkbox" id="pp-vl" checked> Voice leading</label>
-          <button class="btn" id="pp-save" style="margin-left:auto">💾 Guardar</button>
-          <button class="btn" id="pp-load">📂 Cargar</button>
-          <button class="btn danger" id="pp-clear">Limpiar</button>
-        </div>
-        <svg id="pp-fretboard" width="920" height="220"></svg>
-        <div class="help" id="pp-info"></div>
-      </div>
-      <div class="side-panel">
-        <h3>Próximos acordes</h3>
-        <div id="pp-queue" class="empty-state">Agregá acordes desde Diatonic Lab o usando los numerales.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tab 5: Triad Convergence -->
-  <div class="tab-content" id="tab-triads">
-    <div class="panel-layout">
-      <div class="fretboard-wrap">
-        <div class="row">
-          <label>Cuerdas
-            <select id="tc-strings" class="compact">
-              <option value="321">1-2-3</option>
-              <option value="432">2-3-4</option>
-            </select>
-          </label>
-          <label>Acorde
-            <select id="tc-chord" class="compact"></select>
-          </label>
-          <button class="btn" id="tc-elevator">🛗 Modo ascensor</button>
-          <label class="toggle"><input type="checkbox" id="tc-scale-overlay"> Overlay escala</label>
-          <button class="btn" id="tc-from-prog" style="margin-left:auto">← Ver progresión</button>
-        </div>
-        <svg id="tc-fretboard" width="920" height="220"></svg>
-        <div class="help" id="tc-info"></div>
-      </div>
-      <div class="side-panel">
-        <h3>Inversiones</h3>
-        <div id="tc-inversions"></div>
-        <p class="help">Las 1ª y 2ª inversiones (3ª o 5ª en el bajo) son válidas aquí: el contexto es melódico/soloing, no rítmico. Las 3 reglas inviolables no aplican.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Shared modules -->
   <script src="./shared/theory.js"></script>
   <script src="./shared/theory-modes.js"></script>
   <script src="./shared/fretboard.js"></script>
   <script src="./shared/storage.js"></script>
-  <script src="./shared/metronome.js"></script>
   <script src="./shared/positions.js"></script>
-  <script src="./shared/voicing-templates.js"></script>
-  <script src="./shared/voicing-engine.js"></script>
-  <script src="./shared/icl-state.js"></script>
-
-  <!-- Module scripts -->
+  <script src="./shared/metronome.js"></script>
   <script src="./intervallic/audio.js"></script>
-  <script src="./intervallic/shell.js"></script>
-  <script src="./intervallic/chord-id.js"></script>
-  <script src="./intervallic/diatonic-lab.js"></script>
-  <script src="./intervallic/shape-lab.js"></script>
-  <script src="./intervallic/progression.js"></script>
-  <script src="./intervallic/triad-convergence.js"></script>
+  <script src="./intervallic/atlas.js"></script>
 
   <script>
-    // Boot
-    window.GuitarShared.iclState.loadSaved();
-    window.IntervallicShell.init();
-    window.IntervallicChordId.init();
-    window.IntervallicDiatonicLab.init();
-    window.IntervallicShapeLab.init();
-    window.IntervallicProgression.init();
-    window.IntervallicTriadConvergence.init();
+    window.IntervalAtlas.init();
   </script>
 </body>
 </html>
