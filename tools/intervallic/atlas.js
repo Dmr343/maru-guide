@@ -170,6 +170,20 @@
       });
     }
 
+    // Cross-reference: si una pc es chord tone del actual Y existe en el
+    // próximo (con approach activo), guardar el intervalo del próximo
+    // como metadato para que drawCell pueda dibujar un anillo extra.
+    if (layers.approach && nextChord) {
+      const nextPcMap = new Map();
+      nextChord.notes.forEach((n, i) => nextPcMap.set(n, nextChord.intervals[i]));
+      map.forEach((info, pc) => {
+        if (info.kind === 'chordTones' && nextPcMap.has(pc)) {
+          info.nextInterval = nextPcMap.get(pc);
+          info.nextRoot = nextChord.root;
+        }
+      });
+    }
+
     return map;
   }
 
@@ -362,6 +376,47 @@
       label.setAttribute('font-family', 'Trebuchet MS,sans-serif');
       label.textContent = info.interval;
       dots.appendChild(label);
+
+      // Si la nota también es chord tone del próximo acorde: anillo dashed
+      // exterior + badge mini con el intervalo en el próximo (sutil pero visible).
+      if (info.nextInterval) {
+        const nextColor = INTERVAL_COLORS_FULL[info.nextInterval] || '#888';
+        const outerRing = document.createElementNS(SVG_NS, 'circle');
+        outerRing.setAttribute('cx', cx); outerRing.setAttribute('cy', cy);
+        outerRing.setAttribute('r', r + 5);
+        outerRing.setAttribute('fill', 'none');
+        outerRing.setAttribute('stroke', nextColor);
+        outerRing.setAttribute('stroke-width', 1.3);
+        outerRing.setAttribute('stroke-opacity', 0.7);
+        outerRing.setAttribute('stroke-dasharray', '2.2,1.8');
+        dots.appendChild(outerRing);
+
+        // Badge con el intervalo del próximo, abajo a la derecha
+        const badgeX = cx + r + 3;
+        const badgeY = cy + r + 2;
+        const txtLen = info.nextInterval.length * 4 + 4;
+        const badgeBg = document.createElementNS(SVG_NS, 'rect');
+        badgeBg.setAttribute('x', badgeX - txtLen / 2);
+        badgeBg.setAttribute('y', badgeY - 4.5);
+        badgeBg.setAttribute('width', txtLen);
+        badgeBg.setAttribute('height', 9);
+        badgeBg.setAttribute('rx', 3);
+        badgeBg.setAttribute('fill', '#0e0e0e');
+        badgeBg.setAttribute('stroke', nextColor);
+        badgeBg.setAttribute('stroke-width', 0.8);
+        badgeBg.setAttribute('stroke-opacity', 0.7);
+        dots.appendChild(badgeBg);
+        const badgeTxt = document.createElementNS(SVG_NS, 'text');
+        badgeTxt.setAttribute('x', badgeX);
+        badgeTxt.setAttribute('y', badgeY + 2.5);
+        badgeTxt.setAttribute('text-anchor', 'middle');
+        badgeTxt.setAttribute('font-size', 6);
+        badgeTxt.setAttribute('font-weight', 700);
+        badgeTxt.setAttribute('fill', nextColor);
+        badgeTxt.setAttribute('font-family', 'Trebuchet MS,sans-serif');
+        badgeTxt.textContent = info.nextInterval;
+        dots.appendChild(badgeTxt);
+      }
     }
 
     if (state.showNoteNames) {

@@ -111,6 +111,18 @@
       // A no está en Cmaj7 → es approach
       T.assertEq(m.get('A').kind, 'approach');
     });
+    T.it('cross-ref: chord tone que persiste lleva nextInterval', () => {
+      // Cmaj7 → Am7: C/E/G persisten en Am7 con intervalos b3/5/b7. B no persiste.
+      const m = A._computeRenderMap(chord('C','maj7'), { chordTones: true, approach: true }, chord('A','min7'));
+      T.assertEq(m.get('C').nextInterval, 'b3');
+      T.assertEq(m.get('E').nextInterval, '5');
+      T.assertEq(m.get('G').nextInterval, 'b7');
+      T.assert(!m.get('B').nextInterval, 'B no debería tener nextInterval');
+    });
+    T.it('cross-ref no aparece sin approach activo', () => {
+      const m = A._computeRenderMap(chord('C','maj7'), { chordTones: true }, chord('A','min7'));
+      T.assert(!m.get('C').nextInterval);
+    });
   });
 
   T.describe('computeRenderMap — allNotes', () => {
