@@ -321,6 +321,32 @@
     });
   });
 
+  T.describe('computeBpmFromTaps', () => {
+    T.it('menos de 2 taps → null', () => {
+      T.assertEq(A._computeBpmFromTaps([]), null);
+      T.assertEq(A._computeBpmFromTaps([1000]), null);
+    });
+    T.it('2 taps a 500ms = 120 BPM', () => {
+      T.assertEq(A._computeBpmFromTaps([0, 500]), 120);
+    });
+    T.it('4 taps a 750ms = 80 BPM', () => {
+      // 4 timestamps: 0, 750, 1500, 2250 → intervals 750, 750, 750 → avg 750 → 60000/750=80
+      T.assertEq(A._computeBpmFromTaps([0, 750, 1500, 2250]), 80);
+    });
+    T.it('redondea intervalos no exactos', () => {
+      // ~480ms → 125 BPM
+      T.assertEq(A._computeBpmFromTaps([0, 480]), 125);
+    });
+    T.it('clamp inferior a 40', () => {
+      // 2000ms entre taps = 30 BPM → clamp 40
+      T.assertEq(A._computeBpmFromTaps([0, 2000]), 40);
+    });
+    T.it('clamp superior a 220', () => {
+      // 100ms entre taps = 600 BPM → clamp 220
+      T.assertEq(A._computeBpmFromTaps([0, 100]), 220);
+    });
+  });
+
   T.describe('makePseudoVoicing', () => {
     T.it('produce una posición por chord note', () => {
       const c = TH.buildChord('C','maj7');

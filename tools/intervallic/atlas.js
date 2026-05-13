@@ -108,9 +108,10 @@
     bpm: 80,
     beatsPerChord: 4,
     filtersCollapsed: true,
-    paletteMode: 'libre',       // 'libre' | 'diatonic'
+    paletteMode: 'libre',
     diatonicKey: 'C',
     diatonicMode: 'major',
+    prerollEnabled: false,
   };
   let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 
@@ -770,6 +771,16 @@
         saveState();
       });
     }
+    const tapBtn = $('atlas-tap');
+    if (tapBtn) tapBtn.addEventListener('click', handleTap);
+    const prerollCb = $('atlas-preroll');
+    if (prerollCb) {
+      prerollCb.checked = !!state.prerollEnabled;
+      prerollCb.addEventListener('change', e => {
+        state.prerollEnabled = e.target.checked;
+        saveState();
+      });
+    }
     const bpcSel = $('atlas-bpc');
     if (bpcSel) {
       bpcSel.value = String(state.beatsPerChord);
@@ -854,6 +865,50 @@
   // Estados del transporte: 'stopped' | 'playing' | 'paused'
   let _transport = 'stopped';
 
+  // ─── Tap tempo ──────────────────────────────────────────────────────────
+  // Mantiene los últimos N taps (descartados si > 2s sin tocar) y calcula
+  // BPM del promedio de intervalos.
+  const TAP_WINDOW_MS = 2000;
+  const TAP_MAX_KEEP  = 4;
+
+  // Pure: dado un array de timestamps en ms, devuelve BPM o null si insuficientes.
+  function computeBpmFromTaps(timestamps) {
+    if (!timestamps || timestamps.length < 2) return null;
+    const intervals = [];
+    for (let i = 1; i < timestamps.length; i++) {
+      intervals.push(timestamps[i] - timestamps[i - 1]);
+    }
+    const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+    if (avg <= 0) return null;
+    return Math.max(40, Math.min(220, Math.round(60000 / avg)));
+  }
+
+  let _tapTimes = [];
+  function handleTap() {
+    const now = Date.now();
+    _tapTimes = _tapTimes.filter(t => now - t <= TAP_WINDOW_MS);
+    _tapTimes.push(now);
+    if (_tapTimes.length > TAP_MAX_KEEP) _tapTimes.shift();
+    const bpm = computeBpmFromTaps(_tapTimes);
+    if (bpm != null) {
+      state.bpm = bpm;
+      const inp = $('atlas-bpm');
+      if (inp) inp.value = bpm;
+      if (metro) metro.setBPM(bpm);
+      saveState();
+    }
+    const btn = $('atlas-tap');
+    if (btn) {
+      btn.classList.add('tap-pulse');
+      setTimeout(() => btn.classList.remove('tap-pulse'), 120);
+    }
+  }
+
+  // ─── Pre-roll ────────────────────────────────────────────────────────────
+  // Si está activo, antes de empezar la progresión real se reproducen 4
+  // clicks del metrónomo con countdown visual en el botón Play.
+  let _prerollRemaining = 0;
+
   function togglePlay() {
     if (_transport === 'playing') { pause(); return; }
     // 'stopped' o 'paused' → arranca/reanuda
@@ -869,6 +924,33 @@
       _chordBeatCount = 0;
     }
     _transport = 'playing';
+
+    // Pre-roll: 4 beats antes de empezar (solo si no estamos resumiendo)
+    if (!resuming && state.prerollEnabled) {
+      _prerollRemaining = BEATS_PER_COMPAS;
+      setPlayingUI('preroll');
+      metro = new G.metronome.Metronome({
+        bpm: state.bpm,
+        beatsPerChord: 99999,
+        onBeat: () => {
+          _prerollRemaining--;
+          const btn = $('atlas-play');
+          if (btn) btn.textContent = _prerollRemaining > 0
+            ? '◷ ' + _prerollRemaining
+            : '▶';
+          if (_prerollRemaining <= 0) {
+            if (metro) { metro.stop(); metro = null; }
+            startMainLoop();
+          }
+        },
+      });
+      metro.start();
+      return;
+    }
+    startMainLoop();
+  }
+
+  function startMainLoop() {
     setPlayingUI('playing');
     metro = new G.metronome.Metronome({
       bpm: state.bpm,
@@ -933,6 +1015,9 @@
     } else if (transport === 'paused') {
       btn.textContent = '▶ Reanudar';
       btn.classList.add('paused');
+    } else if (transport === 'preroll') {
+      btn.classList.add('playing');
+      btn.textContent = '◷ ' + BEATS_PER_COMPAS;
     } else {
       btn.textContent = '▶ Play';
     }
@@ -1013,5 +1098,6 @@
     _setPaletteMode: setPaletteMode,
     _QUALITY_GLYPH: QUALITY_GLYPH,
     _QUALITY_PALETTE_COLOR: QUALITY_PALETTE_COLOR,
+    _computeBpmFromTaps: computeBpmFromTaps,
   };
 })(window.GuitarShared, window);

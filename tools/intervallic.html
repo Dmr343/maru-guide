@@ -55,6 +55,8 @@
     .prog-chord .pc-bars-vis{font-size:8px;color:var(--text-dim);letter-spacing:1px;line-height:1}
     .btn.playing{background:#e74c3c;color:#fff;border-color:#e74c3c;animation:pulse 1s ease-in-out infinite}
     .btn.paused{background:#f0c060;color:#000;border-color:#f0c060}
+    .btn.tap-pulse{transform:scale(1.1);transition:transform .12s}
+    .toggle{display:inline-flex;gap:5px;align-items:center;font-size:12px;color:var(--text-mid);cursor:pointer}
     @keyframes pulse{50%{opacity:.7}}
     .filters-block{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:10px}
     .filters-block summary{cursor:pointer;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em;outline:none;list-style:none}
@@ -96,6 +98,8 @@
         <button class="btn" id="atlas-prev">←</button>
         <button class="btn" id="atlas-next">→</button>
         <label>BPM <input type="number" id="atlas-bpm" value="80" min="40" max="220" style="width:60px"></label>
+        <button class="btn" id="atlas-tap" title="Tap tempo (T): clickeá al ritmo">TAP</button>
+        <label class="toggle" title="Conteo previo de 4 clicks antes de empezar"><input type="checkbox" id="atlas-preroll"> Pre-roll</label>
         <label>Compases <select id="atlas-bpc">
           <option value="2">2</option>
           <option value="4" selected>4</option>
