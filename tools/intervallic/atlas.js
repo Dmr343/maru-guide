@@ -74,7 +74,7 @@
 
   // ──────────────── Estado ────────────────
   const DEFAULT_STATE = {
-    progression: [{ root: 'C', quality: 'maj7', bars: 4 }],
+    progression: [],
     activeIdx: 0,
     layers: {
       chordTones: true, scale: false, tensions: false,
@@ -86,6 +86,7 @@
     parentMode: 'major',
     bpm: 80,
     beatsPerChord: 4,
+    filtersCollapsed: true,
   };
   let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 
@@ -532,6 +533,17 @@
     });
   }
 
+  function addChord(c) {
+    const chord = {
+      root: c.root || 'C',
+      quality: c.quality || 'maj7',
+      bars: typeof c.bars === 'number' ? Math.max(1, Math.min(8, c.bars)) : 1,
+    };
+    state.progression.push(chord);
+    if (state.progression.length === 1) state.activeIdx = 0;
+    saveState(); render();
+  }
+
   function setActiveChord(idx) {
     if (idx < 0 || idx >= state.progression.length) return;
     state.activeIdx = idx;
@@ -585,8 +597,7 @@
     if (add) add.addEventListener('click', () => {
       const root = $('atlas-new-root').value;
       const quality = $('atlas-new-quality').value;
-      state.progression.push({ root, quality, bars: state.beatsPerChord === 8 ? 8 : 4 });
-      saveState(); render();
+      addChord({ root, quality, bars: 1 });
     });
 
     // Nav
@@ -605,9 +616,7 @@
 
     // Transporte
     const playBtn = $('atlas-play');
-    if (playBtn) playBtn.addEventListener('click', play);
-    const stopBtn = $('atlas-stop');
-    if (stopBtn) stopBtn.addEventListener('click', stop);
+    if (playBtn) playBtn.addEventListener('click', togglePlay);
     const bpmInput = $('atlas-bpm');
     if (bpmInput) {
       bpmInput.value = state.bpm;
@@ -665,6 +674,14 @@
         });
       }
     }
+    const filtersBlock = $('atlas-filters-block');
+    if (filtersBlock) {
+      filtersBlock.open = !state.filtersCollapsed;
+      filtersBlock.addEventListener('toggle', () => {
+        state.filtersCollapsed = !filtersBlock.open;
+        saveState();
+      });
+    }
     const reset = $('atlas-reset');
     if (reset) reset.addEventListener('click', () => {
       state.filter = Object.assign({}, DEFAULT_STATE.filter, { stringSet: [1,2,3,4,5,6] });
@@ -689,12 +706,25 @@
   let _chordBeatCount = 0;
   const BEATS_PER_COMPAS = 4; // hardcodeado 4/4
 
+  // Estados del transporte: 'stopped' | 'playing' | 'paused'
+  let _transport = 'stopped';
+
+  function togglePlay() {
+    if (_transport === 'playing') { pause(); return; }
+    // 'stopped' o 'paused' → arranca/reanuda
+    play();
+  }
+
   function play() {
-    if (metro && metro.playing) return;
     if (!state.progression.length) return;
-    _prevChord = null;
-    _chordBeatCount = 0;
-    setPlayingUI(true);
+    if (_transport === 'playing') return;
+    const resuming = _transport === 'paused';
+    if (!resuming) {
+      _prevChord = null;
+      _chordBeatCount = 0;
+    }
+    _transport = 'playing';
+    setPlayingUI('playing');
     metro = new G.metronome.Metronome({
       bpm: state.bpm,
       beatsPerChord: 99999, // controlamos el cambio manualmente
@@ -715,6 +745,12 @@
     metro.start();
     playCurrentChord();
     render();
+  }
+
+  function pause() {
+    if (metro) { metro.stop(); metro = null; }
+    _transport = 'paused';
+    setPlayingUI('paused');
   }
 
   function playCurrentChord() {
@@ -742,31 +778,39 @@
     }
   }
 
-  function setPlayingUI(playing) {
+  function setPlayingUI(transport) {
     const btn = $('atlas-play');
     if (!btn) return;
-    if (playing) {
-      btn.textContent = '● Tocando';
+    btn.classList.remove('playing', 'paused');
+    if (transport === 'playing') {
+      btn.textContent = '❚❚ Pausa';
       btn.classList.add('playing');
+    } else if (transport === 'paused') {
+      btn.textContent = '▶ Reanudar';
+      btn.classList.add('paused');
     } else {
       btn.textContent = '▶ Play';
-      btn.classList.remove('playing');
     }
   }
 
   function stop() {
     if (metro) { metro.stop(); metro = null; }
+    _transport = 'stopped';
     _prevChord = null;
     _chordBeatCount = 0;
-    setPlayingUI(false);
+    state.activeIdx = 0;
+    setPlayingUI('stopped');
     render();
   }
 
   function clearProgression() {
-    stop();
+    if (metro) { metro.stop(); metro = null; }
+    _transport = 'stopped';
     state.progression = [];
     state.activeIdx = 0;
     _prevChord = null;
+    _chordBeatCount = 0;
+    setPlayingUI('stopped');
     saveState();
     render();
   }

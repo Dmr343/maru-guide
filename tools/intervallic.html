@@ -48,7 +48,12 @@
     .prog-chord.beat{transform:scale(1.06);transition:transform .09s ease-out}
     .prog-chord.downbeat{background:#3a2e0a;box-shadow:0 0 18px rgba(212,168,71,.7);transition:background .14s ease-out, box-shadow .14s ease-out}
     .btn.playing{background:#e74c3c;color:#fff;border-color:#e74c3c;animation:pulse 1s ease-in-out infinite}
+    .btn.paused{background:#f0c060;color:#000;border-color:#f0c060}
     @keyframes pulse{50%{opacity:.7}}
+    .filters-block{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:10px}
+    .filters-block summary{cursor:pointer;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em;outline:none;list-style:none}
+    .filters-block summary::-webkit-details-marker{display:none}
+    .filters-block[open] summary{color:var(--gold)}
     .prog-chord .pc-name{font-weight:700;color:var(--gold)}
     .prog-chord .pc-bars{font-size:9px;color:var(--text-dim)}
     .prog-chord .pc-del{position:absolute;top:1px;right:4px;font-size:11px;color:var(--text-dim);cursor:pointer}
@@ -72,7 +77,6 @@
 
       <div class="row">
         <button class="btn primary" id="atlas-play">▶ Play</button>
-        <button class="btn" id="atlas-stop">■ Stop</button>
         <button class="btn" id="atlas-prev">←</button>
         <button class="btn" id="atlas-next">→</button>
         <label>BPM <input type="number" id="atlas-bpm" value="80" min="40" max="220" style="width:60px"></label>
@@ -98,22 +102,25 @@
         <label class="layer-toggle"><input type="checkbox" id="atlas-show-names"> Nombres de nota</label>
       </div>
 
-      <div class="row" style="background:var(--surface2);padding:8px 12px;border-radius:8px;margin-bottom:10px">
-        <label>Trastes
-          <input type="number" id="atlas-fret-min" value="0" min="0" max="22" style="width:48px">
-          <span>–</span>
-          <input type="number" id="atlas-fret-max" value="22" min="0" max="22" style="width:48px">
-        </label>
-        <label>Cuerdas
-          <input type="checkbox" id="atlas-s-1" data-string="1" checked>1
-          <input type="checkbox" id="atlas-s-2" data-string="2" checked>2
-          <input type="checkbox" id="atlas-s-3" data-string="3" checked>3
-          <input type="checkbox" id="atlas-s-4" data-string="4" checked>4
-          <input type="checkbox" id="atlas-s-5" data-string="5" checked>5
-          <input type="checkbox" id="atlas-s-6" data-string="6" checked>6
-        </label>
-        <button class="btn" id="atlas-reset" style="margin-left:auto">Reset filtros</button>
-      </div>
+      <details id="atlas-filters-block" class="filters-block">
+        <summary>▾ Filtros del mástil</summary>
+        <div class="row" style="margin-top:8px">
+          <label>Trastes
+            <input type="number" id="atlas-fret-min" value="0" min="0" max="22" style="width:48px">
+            <span>–</span>
+            <input type="number" id="atlas-fret-max" value="22" min="0" max="22" style="width:48px">
+          </label>
+          <label>Cuerdas
+            <input type="checkbox" id="atlas-s-1" data-string="1" checked>1
+            <input type="checkbox" id="atlas-s-2" data-string="2" checked>2
+            <input type="checkbox" id="atlas-s-3" data-string="3" checked>3
+            <input type="checkbox" id="atlas-s-4" data-string="4" checked>4
+            <input type="checkbox" id="atlas-s-5" data-string="5" checked>5
+            <input type="checkbox" id="atlas-s-6" data-string="6" checked>6
+          </label>
+          <button class="btn" id="atlas-reset" style="margin-left:auto">Reset filtros</button>
+        </div>
+      </details>
 
       <svg id="atlas-fretboard" viewBox="0 0 920 220" preserveAspectRatio="xMidYMid meet"></svg>
       <div class="legend" id="atlas-legend"></div>
