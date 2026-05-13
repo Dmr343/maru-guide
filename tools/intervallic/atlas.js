@@ -1262,7 +1262,13 @@
   }
 
   function togglePlay() {
-    const tc = ensureTransport(); if (tc) tc.togglePlay();
+    const tc = ensureTransport(); if (!tc) return;
+    // Sync settings desde la UI viva (defensa contra drift entre state/controller/DOM).
+    const prerollCb = $('atlas-preroll');
+    if (prerollCb) tc.setPrerollEnabled(prerollCb.checked);
+    const muteCb = $('atlas-mute-click');
+    if (muteCb) tc.setMuted(muteCb.checked);
+    tc.togglePlay();
   }
   function pause() {
     const tc = ensureTransport(); if (tc) tc.pause();
