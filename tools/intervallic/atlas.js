@@ -641,6 +641,7 @@
         return true;
       case 'Escape':
         if (_editPopover) closeEditPopover();
+        else if ($('atlas-presets-modal') && $('atlas-presets-modal').style.display === 'flex') closePresetsModal();
         else clearProgression();
         e.preventDefault(); return true;
     }
@@ -1145,15 +1146,6 @@
       prerollCb.checked = !!state.prerollEnabled;
       prerollCb.addEventListener('change', e => {
         state.prerollEnabled = e.target.checked;
-        saveState();
-      });
-    }
-    const bpcSel = $('atlas-bpc');
-    if (bpcSel) {
-      bpcSel.value = String(state.beatsPerChord);
-      bpcSel.addEventListener('change', e => {
-        state.beatsPerChord = Number(e.target.value) || 4;
-        if (metro) metro.setBeatsPerChord(state.beatsPerChord);
         saveState();
       });
     }
