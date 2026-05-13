@@ -398,17 +398,6 @@
     });
   });
 
-  T.describe('makePseudoVoicing', () => {
-    T.it('produce una posición por chord note', () => {
-      const c = TH.buildChord('C','maj7');
-      const v = A._makePseudoVoicing(c);
-      T.assertEq(v.length, c.notes.length);
-    });
-    T.it('strings dentro de 1-5', () => {
-      const c = TH.buildChord('A','min7');
-      const v = A._makePseudoVoicing(c);
-      v.forEach(p => T.assert(p.string >= 1 && p.string <= 5));
-    });
-  });
+  // makePseudoVoicing eliminado junto con el audio de bloque del acorde.
 
 })(window.GuitarShared, window);

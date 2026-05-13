@@ -108,6 +108,7 @@
     bpm: 80,
     beatsPerChord: 4,
     filtersCollapsed: true,
+    optionsCollapsed: false,
     paletteMode: 'libre',
     diatonicKey: 'C',
     diatonicMode: 'major',
@@ -281,29 +282,6 @@
     FB.fbInitBoard(svg, span, _fretStart);
     fretW = FB.fbGetFretW(svg);
     buildClickGrid();
-  }
-
-  // Pseudo-voicing: una nota por chord tone, en strings 5..1, frets 0-12.
-  // Usado solo para audio en cambios de acorde, no para didáctica.
-  function makePseudoVoicing(chord) {
-    const out = [];
-    const usedStrings = new Set();
-    chord.notes.forEach((note, idx) => {
-      // intentar string 5-idx, 4, 3, 2, 1
-      const preferred = [5 - idx, 4, 3, 2, 1].filter(s => s >= 1 && s <= 5);
-      for (const s of preferred) {
-        if (usedStrings.has(s)) continue;
-        const open = FB.OPEN_NOTES[6 - s];
-        const oi = TH.CHROMATIC.indexOf(open);
-        const ti = TH.CHROMATIC.indexOf(note);
-        let fret = (ti - oi + 12) % 12;
-        if (fret < 0) fret += 12;
-        out.push({ string: s, fret });
-        usedStrings.add(s);
-        break;
-      }
-    });
-    return out;
   }
 
   function render() {
@@ -1188,6 +1166,14 @@
         saveState();
       });
     }
+    const optionsBlock = $('atlas-options-block');
+    if (optionsBlock) {
+      optionsBlock.open = !state.optionsCollapsed;
+      optionsBlock.addEventListener('toggle', () => {
+        state.optionsCollapsed = !optionsBlock.open;
+        saveState();
+      });
+    }
     const reset = $('atlas-reset');
     if (reset) reset.addEventListener('click', () => {
       state.filter = Object.assign({}, DEFAULT_STATE.filter, { stringSet: [1,2,3,4,5,6] });
@@ -1332,13 +1318,11 @@
           _chordBeatCount = 0;
           _prevChord = activeChord();
           if (model) model.setActiveChord(model.nextIdx());
-          playCurrentChord();
           // render() ya lo dispara model.onChange (setActiveChord)
         }
       },
     });
     metro.start();
-    playCurrentChord();
     render();
   }
 
@@ -1348,14 +1332,9 @@
     setPlayingUI('paused');
   }
 
-  function playCurrentChord() {
-    const cur = activeChord();
-    if (!cur || !W.IntervallicAudio) return;
-    const beats = (state.progression[state.activeIdx].bars || 1) * BEATS_PER_COMPAS;
-    W.IntervallicAudio.playPositions(makePseudoVoicing(cur), {
-      duration: (60 / state.bpm) * beats * 0.9,
-    });
-  }
+  // Audio de bloque del acorde removido — sonaba mal. El play loop hoy solo
+  // dispara el click del metrónomo + avance visual; el sonido del acorde lo
+  // ponés vos con la guitarra.
 
   function pulseActiveChord(beat) {
     const bar = $('atlas-bar');
@@ -1459,7 +1438,6 @@
     _LAYER_PRIORITY: LAYER_PRIORITY,
     _intervalToSemi: intervalToSemi,
     _applyDirection: applyDirection,
-    _makePseudoVoicing: makePseudoVoicing,
     _slotWidth: slotWidth,
     _setPaletteMode: setPaletteMode,
     _QUALITY_GLYPH: QUALITY_GLYPH,

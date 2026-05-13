@@ -126,8 +126,6 @@
         <button class="btn" id="atlas-next">→</button>
         <label>BPM <input type="number" id="atlas-bpm" value="80" min="40" max="220" style="width:60px"></label>
         <button class="btn" id="atlas-tap" title="Tap tempo (T): clickeá al ritmo">TAP</button>
-        <label class="toggle" title="Conteo previo de 4 clicks antes de empezar"><input type="checkbox" id="atlas-preroll"> Pre-roll</label>
-        <label class="toggle" title="Silenciar click del metrónomo"><input type="checkbox" id="atlas-mute-click"> 🔇 Mute click</label>
         <select id="atlas-direction">
           <option value="all">Dirección: Todas</option>
           <option value="horizontal">Horizontal</option>
@@ -136,14 +134,20 @@
         </select>
       </div>
 
-      <div class="layer-toggles">
-        <label class="layer-toggle"><input type="checkbox" id="atlas-l-chord" checked> Chord tones</label>
-        <label class="layer-toggle"><input type="checkbox" id="atlas-l-scale"> Escala asociada</label>
-        <label class="layer-toggle"><input type="checkbox" id="atlas-l-tensions"> Tensiones</label>
-        <label class="layer-toggle"><input type="checkbox" id="atlas-l-approach"> Próximo acorde</label>
-        <label class="layer-toggle"><input type="checkbox" id="atlas-l-all"> Todas las 12</label>
-        <label class="layer-toggle"><input type="checkbox" id="atlas-show-names"> Nombres de nota</label>
-      </div>
+      <details id="atlas-options-block" class="filters-block" open>
+        <summary>▾ Capas y opciones</summary>
+        <div class="layer-toggles" style="margin-top:8px">
+          <label class="layer-toggle"><input type="checkbox" id="atlas-l-chord" checked> Chord tones</label>
+          <label class="layer-toggle"><input type="checkbox" id="atlas-l-scale"> Escala asociada</label>
+          <label class="layer-toggle"><input type="checkbox" id="atlas-l-tensions"> Tensiones</label>
+          <label class="layer-toggle"><input type="checkbox" id="atlas-l-approach"> Próximo acorde</label>
+          <label class="layer-toggle"><input type="checkbox" id="atlas-l-all"> Todas las 12</label>
+          <label class="layer-toggle"><input type="checkbox" id="atlas-show-names"> Nombres de nota</label>
+          <span style="border-left:1px solid var(--border);height:18px;margin:0 6px"></span>
+          <label class="layer-toggle" title="Conteo previo de 4 clicks antes de empezar"><input type="checkbox" id="atlas-preroll"> Pre-roll</label>
+          <label class="layer-toggle" title="Silenciar click del metrónomo"><input type="checkbox" id="atlas-mute-click"> 🔇 Mute click</label>
+        </div>
+      </details>
 
       <details id="atlas-filters-block" class="filters-block">
         <summary>▾ Filtros del mástil</summary>
