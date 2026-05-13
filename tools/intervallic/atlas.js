@@ -22,48 +22,9 @@
   };
   const CHORD_TONE_INTERVALS = new Set(['1','b3','3','b5','5','b7','7']);
 
-  // Capas y prioridad de pintado (mayor número = se pinta encima).
-  // approach = chord tones del PRÓXIMO acorde (sutil, hint visual de lo que viene).
-  const LAYER_PRIORITY = {
-    allNotes:   1,
-    scale:      2,
-    tensions:   3,
-    approach:   4,
-    chordTones: 5,
-  };
-
-  // Tensiones por calidad (offsets en semitonos desde la raíz).
-  const TENSION_SEMIS = {
-    '9': 14 % 12, '#9': 15 % 12, 'b9': 13 % 12,
-    '11': 17 % 12, '#11': 18 % 12,
-    '13': 21 % 12, 'b13': 20 % 12,
-  };
-  // En el mástil, las tensiones suenan en cualquier octava → solo importa el mod 12.
-  // 14%12=2 (=9 = "2 una octava arriba"), pero en el mástil = pitch class del 9.
-  const TENSIONS_BY_QUALITY = {
-    maj7:  ['9', '#11', '13'],
-    min7:  ['9', '11', '13'],
-    dom7:  ['9', '#9', 'b9', '#11', '13', 'b13'],
-    dim7:  ['9', '11', 'b13'],
-    m7b5:  ['9', '11', 'b13'],
-    major: ['9', '13'],
-    minor: ['9', '11'],
-    dim:   ['9', 'b13'],
-    aug:   ['9', '#11'],
-  };
-
-  // Mapa de calidad → modo asociado para la capa "scale".
-  const SCALE_BY_QUALITY = {
-    maj7: 'lydian',     // jónico/lidio según gusto; lidio brilla más
-    major: 'major',
-    min7: 'dorian',
-    minor: 'minor',
-    dom7: 'mixolydian',
-    dim7: 'locrian',
-    m7b5: 'locrian',
-    dim: 'locrian',
-    aug: 'lydian',
-  };
+  // LAYER_PRIORITY, TENSION_SEMIS, TENSIONS_BY_QUALITY, SCALE_BY_QUALITY,
+  // GUIDE_TONE_INTERVALS, INTERVAL_NAMES movidas a FretboardRenderer.
+  // Atlas accede via W.FretboardRenderer.* cuando las necesita.
 
   const QUALITY_LABEL = {
     major: '', minor: 'm', dim: 'dim', aug: 'aug',
@@ -136,134 +97,8 @@
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
   }
 
-  // ──────────────── Cálculo de intervalos a renderizar ────────────────
-
-  // Para el acorde activo, devuelve un map {pitchClass → {interval, kind, ...}}.
-  // nextChord (opcional): cuando layers.approach está activo, los chord tones
-  // del próximo acorde se pintan sutilmente con su intervalo relativo a la
-  // raíz del próximo (label tipo "1@A" para indicar contexto futuro).
-  function computeRenderMap(chord, layers, nextChord) {
-    if (!chord) return new Map();
-    const ri = TH.CHROMATIC.indexOf(chord.root);
-    const map = new Map();
-
-    function consider(pcIndex, interval, kind, extra) {
-      const pc = TH.CHROMATIC[((ri + pcIndex) % 12 + 12) % 12];
-      const priority = LAYER_PRIORITY[kind] || 0;
-      const cur = map.get(pc);
-      if (!cur || priority > cur.priority) {
-        map.set(pc, Object.assign({ interval, priority, kind }, extra || {}));
-      }
-    }
-    function considerPc(pc, interval, kind, extra) {
-      const priority = LAYER_PRIORITY[kind] || 0;
-      const cur = map.get(pc);
-      if (!cur || priority > cur.priority) {
-        map.set(pc, Object.assign({ interval, priority, kind }, extra || {}));
-      }
-    }
-
-    if (layers.allNotes) {
-      for (let s = 0; s < 12; s++) {
-        consider(s, TH.INTERVAL_NAMES[s], 'allNotes');
-      }
-    }
-
-    if (layers.scale) {
-      const mode = SCALE_BY_QUALITY[chord.quality] || 'major';
-      const scaleNotes = TH.buildModeScale
-        ? TH.buildModeScale(chord.root, mode)
-        : TH.buildScale(chord.root, mode);
-      scaleNotes.forEach(n => {
-        const sem = (TH.CHROMATIC.indexOf(n) - ri + 12) % 12;
-        consider(sem, TH.INTERVAL_NAMES[sem], 'scale');
-      });
-    }
-
-    if (layers.tensions) {
-      const ts = TENSIONS_BY_QUALITY[chord.quality] || [];
-      ts.forEach(t => {
-        const sem = TENSION_SEMIS[t];
-        if (sem != null) consider(sem, t, 'tensions');
-      });
-    }
-
-    // approach: chord tones del próximo acorde, con intervalo relativo a su raíz.
-    if (layers.approach && nextChord) {
-      nextChord.notes.forEach((note, idx) => {
-        considerPc(note, nextChord.intervals[idx], 'approach', { nextRoot: nextChord.root });
-      });
-    }
-
-    if (layers.chordTones) {
-      chord.intervals.forEach(intv => {
-        const sem = intervalToSemi(intv);
-        consider(sem, intv, 'chordTones');
-      });
-    }
-
-    // Cross-reference: si una pc es chord tone del actual Y existe en el
-    // próximo (con approach activo), guardar el intervalo del próximo
-    // como metadato para que drawCell pueda dibujar un anillo extra.
-    if (layers.approach && nextChord) {
-      const nextPcMap = new Map();
-      nextChord.notes.forEach((n, i) => nextPcMap.set(n, nextChord.intervals[i]));
-      map.forEach((info, pc) => {
-        if (info.kind === 'chordTones' && nextPcMap.has(pc)) {
-          info.nextInterval = nextPcMap.get(pc);
-          info.nextRoot = nextChord.root;
-        }
-      });
-    }
-
-    return map;
-  }
-
-  // Aplica el modo direccional a la lista de candidatos. Pure function.
-  function applyDirection(candidates, filter) {
-    const dir = filter.direction || 'all';
-    if (dir === 'all') return candidates;
-    if (dir === 'horizontal') {
-      const focus = filter.focusString != null ? filter.focusString : 3;
-      return candidates.filter(c => c.string === focus);
-    }
-    if (dir === 'vertical') {
-      const focus = filter.focusFret != null ? filter.focusFret : 5;
-      // Mostrar el traste ± 1 para mantener legibilidad
-      return candidates.filter(c => Math.abs(c.fret - focus) <= 1);
-    }
-    if (dir === 'diagonal') {
-      // 2 notas por cuerda máximo, ascendiendo: tomar las 2 con menor fret por cuerda
-      const byString = {};
-      candidates.forEach(c => { (byString[c.string] = byString[c.string] || []).push(c); });
-      const out = [];
-      // Para crear diagonal ascendente: cuerda 6 → frets más bajos, cuerda 1 → más altos
-      Object.keys(byString).forEach(s => {
-        byString[s].sort((a, b) => a.fret - b.fret);
-        const sNum = Number(s);
-        // ventana para esta cuerda: base + (6 - sNum) * 2 trastes aprox
-        const base = filter.focusFret != null ? filter.focusFret : 5;
-        const target = base + (6 - sNum) * 2;
-        const closest = byString[s]
-          .map(c => ({ c, d: Math.abs(c.fret - target) }))
-          .sort((a, b) => a.d - b.d)
-          .slice(0, 2)
-          .map(x => x.c);
-        out.push(...closest);
-      });
-      return out;
-    }
-    return candidates;
-  }
-
-  function intervalToSemi(name) {
-    const i = TH.INTERVAL_NAMES.indexOf(name);
-    if (i >= 0) return i;
-    // tensions extendidos
-    return TENSION_SEMIS[name] != null ? TENSION_SEMIS[name] : 0;
-  }
-
   // ──────────────── Render ────────────────
+  // computeRenderMap, applyDirection, intervalToSemi viven en FretboardRenderer.
 
   let svg, fretW;
   let _fretStart = 0;
@@ -285,178 +120,36 @@
 
   function render() {
     if (!svg) return;
-    const dots = FB.fbGetDotsGroup(svg);
-    dots.innerHTML = '';
-    const chord = activeChord();
-    if (!chord) { drawInfo(); drawBar(); return; }
-
-    const renderMap = applyHiddenIntervals(
-      computeRenderMap(chord, state.layers, nextChord()),
-      state.hiddenIntervals
-    );
-
-    // Filtros
-    const stringSet = state.filter.stringSet || [1,2,3,4,5,6];
-    const [fMin, fMax] = state.filter.fretRange;
-
-    // Para "horizontal" o "vertical", el spec habla de iluminar al clickear.
-    // En Fase 1 ignoramos eso — Fase 5 lo agregará. Por ahora pintamos todo.
-
-    // Posiciones del guide-tone actual y previo (para voice leading)
-    const cellPositions = []; // {string, fret, note, info}
-
-    // Recolectar candidatos respetando capas, antes de aplicar dirección
-    const candidates = [];
-    for (let s = 1; s <= 6; s++) {
-      if (!stringSet.includes(s)) continue;
-      const open = FB.OPEN_NOTES[6 - s];
-      for (let f = 0; f <= NUM_FRETS; f++) {
-        if (f < fMin || f > fMax) continue;
-        const note = FB.fbNoteAt(open, f);
-        const info = renderMap.get(note);
-        if (!info) continue;
-        candidates.push({ string: s, fret: f, note, info });
-      }
+    if (W.FretboardRenderer) {
+      W.FretboardRenderer.render(svg, {
+        chord: activeChord(),
+        nextChord: nextChord(),
+        layers: state.layers,
+        hiddenIntervals: state.hiddenIntervals,
+        filter: state.filter,
+        showNoteNames: state.showNoteNames,
+        numFrets: NUM_FRETS,
+        geometry: {
+          fretStart: _fretStart, fretW,
+          fretX: FB.fretX, stringY: FB.stringY,
+          openNotes: FB.OPEN_NOTES, noteAt: FB.fbNoteAt,
+        },
+      }, {
+        getDotsGroup: FB.fbGetDotsGroup,
+        INTERVAL_COLORS_FULL,
+        fallbackColor: '#888',
+        fontFamily: 'Trebuchet MS,sans-serif',
+      }, TH);
     }
-
-    // Aplicar modo direccional
-    const filtered = applyDirection(candidates, state.filter);
-    filtered.forEach(c => {
-      drawCell(dots, c.string, c.fret, c.note, c.info);
-      cellPositions.push(c);
-    });
-
     drawInfo();
     drawBar();
   }
 
   let _prevChord = null;
 
-  function drawCell(dots, string, fret, note, info) {
-    const si = 6 - string;
-    const cx = xFor(fret);
-    const cy = FB.stringY(si);
-    const color = INTERVAL_COLORS_FULL[info.interval.replace(/^→/, '')] || '#888';
-    const isChordTone = info.kind === 'chordTones';
-    const isApproach = info.kind === 'approach';
-    const isAll = info.kind === 'allNotes';
-    const r = isChordTone ? 12 : isApproach ? 7 : 9;
-    const alpha = isApproach ? 0.55 : (isAll ? 0.5 : 1.0);
-
-    if (info.interval === '1' && isChordTone) {
-      const halo = document.createElementNS(SVG_NS, 'circle');
-      halo.setAttribute('cx', cx); halo.setAttribute('cy', cy);
-      halo.setAttribute('r', r + 4); halo.setAttribute('fill', 'none');
-      halo.setAttribute('stroke', color); halo.setAttribute('stroke-width', 2);
-      halo.setAttribute('stroke-opacity', 0.8 * alpha);
-      dots.appendChild(halo);
-    }
-
-    if (isApproach) {
-      // Ghost: anillo dashed sin fill, label pequeño en el color del intervalo.
-      const ring = document.createElementNS(SVG_NS, 'circle');
-      ring.setAttribute('cx', cx); ring.setAttribute('cy', cy);
-      ring.setAttribute('r', r); ring.setAttribute('fill', 'none');
-      ring.setAttribute('stroke', color); ring.setAttribute('stroke-width', 1.3);
-      ring.setAttribute('stroke-opacity', alpha);
-      ring.setAttribute('stroke-dasharray', '2.2,1.8');
-      dots.appendChild(ring);
-      const label = document.createElementNS(SVG_NS, 'text');
-      label.setAttribute('x', cx); label.setAttribute('y', cy + 2.5);
-      label.setAttribute('text-anchor', 'middle');
-      label.setAttribute('font-size', 6.5);
-      label.setAttribute('font-weight', 700);
-      label.setAttribute('fill', color);
-      label.setAttribute('fill-opacity', alpha + 0.2);
-      label.setAttribute('font-family', 'Trebuchet MS,sans-serif');
-      label.textContent = info.interval;
-      dots.appendChild(label);
-    } else {
-      const c = document.createElementNS(SVG_NS, 'circle');
-      c.setAttribute('cx', cx); c.setAttribute('cy', cy);
-      c.setAttribute('r', r); c.setAttribute('fill', color);
-      c.setAttribute('fill-opacity', alpha);
-      dots.appendChild(c);
-      const label = document.createElementNS(SVG_NS, 'text');
-      label.setAttribute('x', cx); label.setAttribute('y', cy + 3);
-      label.setAttribute('text-anchor', 'middle');
-      label.setAttribute('font-size', isAll ? 7 : 9);
-      label.setAttribute('font-weight', 800);
-      label.setAttribute('fill', '#000');
-      label.setAttribute('fill-opacity', alpha);
-      label.setAttribute('font-family', 'Trebuchet MS,sans-serif');
-      label.textContent = info.interval;
-      dots.appendChild(label);
-
-      // Si la nota también es chord tone del próximo acorde: anillo dashed
-      // exterior + badge mini con el intervalo en el próximo (sutil pero visible).
-      if (info.nextInterval) {
-        const nextColor = INTERVAL_COLORS_FULL[info.nextInterval] || '#888';
-        const outerRing = document.createElementNS(SVG_NS, 'circle');
-        outerRing.setAttribute('cx', cx); outerRing.setAttribute('cy', cy);
-        outerRing.setAttribute('r', r + 5);
-        outerRing.setAttribute('fill', 'none');
-        outerRing.setAttribute('stroke', nextColor);
-        outerRing.setAttribute('stroke-width', 1.3);
-        outerRing.setAttribute('stroke-opacity', 0.7);
-        outerRing.setAttribute('stroke-dasharray', '2.2,1.8');
-        dots.appendChild(outerRing);
-
-        // Badge con el intervalo del próximo, abajo a la derecha
-        const badgeX = cx + r + 3;
-        const badgeY = cy + r + 2;
-        const txtLen = info.nextInterval.length * 4 + 4;
-        const badgeBg = document.createElementNS(SVG_NS, 'rect');
-        badgeBg.setAttribute('x', badgeX - txtLen / 2);
-        badgeBg.setAttribute('y', badgeY - 4.5);
-        badgeBg.setAttribute('width', txtLen);
-        badgeBg.setAttribute('height', 9);
-        badgeBg.setAttribute('rx', 3);
-        badgeBg.setAttribute('fill', '#0e0e0e');
-        badgeBg.setAttribute('stroke', nextColor);
-        badgeBg.setAttribute('stroke-width', 0.8);
-        badgeBg.setAttribute('stroke-opacity', 0.7);
-        dots.appendChild(badgeBg);
-        const badgeTxt = document.createElementNS(SVG_NS, 'text');
-        badgeTxt.setAttribute('x', badgeX);
-        badgeTxt.setAttribute('y', badgeY + 2.5);
-        badgeTxt.setAttribute('text-anchor', 'middle');
-        badgeTxt.setAttribute('font-size', 6);
-        badgeTxt.setAttribute('font-weight', 700);
-        badgeTxt.setAttribute('fill', nextColor);
-        badgeTxt.setAttribute('font-family', 'Trebuchet MS,sans-serif');
-        badgeTxt.textContent = info.nextInterval;
-        dots.appendChild(badgeTxt);
-      }
-    }
-
-    if (state.showNoteNames) {
-      const txtW = note.length === 2 ? 16 : 11;
-      const pillY = cy + r + 4;
-      const pill = document.createElementNS(SVG_NS, 'rect');
-      pill.setAttribute('x', cx - txtW / 2);
-      pill.setAttribute('y', pillY);
-      pill.setAttribute('width', txtW);
-      pill.setAttribute('height', 11);
-      pill.setAttribute('rx', 5);
-      pill.setAttribute('fill', '#0e0e0e');
-      pill.setAttribute('stroke', color);
-      pill.setAttribute('stroke-width', 1);
-      pill.setAttribute('stroke-opacity', 0.8 * alpha);
-      pill.setAttribute('fill-opacity', 0.95);
-      dots.appendChild(pill);
-      const noteLbl = document.createElementNS(SVG_NS, 'text');
-      noteLbl.setAttribute('x', cx);
-      noteLbl.setAttribute('y', pillY + 8.5);
-      noteLbl.setAttribute('text-anchor', 'middle');
-      noteLbl.setAttribute('font-size', 8.5);
-      noteLbl.setAttribute('font-weight', 700);
-      noteLbl.setAttribute('fill', color);
-      noteLbl.setAttribute('font-family', 'Trebuchet MS,sans-serif');
-      noteLbl.textContent = note;
-      dots.appendChild(noteLbl);
-    }
-  }
+  // drawCell movido a FretboardRenderer.applyDrawPlan (~250 líneas).
+  // computeRenderMap, applyHiddenIntervals, applyDirection viven en el
+  // renderer y son re-expuestos abajo como _xxx para compat de tests.
 
   // ──────────────── UI bindings ────────────────
 
@@ -900,18 +593,6 @@
     saveState(); render(); drawLegend();
   }
 
-  // Pure: dado el render map y la lista de hidden, filtra las celdas
-  // cuyo intervalo está oculto. También filtra el nextInterval del cross-ref.
-  function applyHiddenIntervals(renderMap, hidden) {
-    if (!hidden || !hidden.length) return renderMap;
-    const hiddenSet = new Set(hidden);
-    const filtered = new Map();
-    renderMap.forEach((info, pc) => {
-      if (hiddenSet.has(info.interval)) return;
-      filtered.set(pc, info);
-    });
-    return filtered;
-  }
 
   function addChord(c) {
     const m = ensureModel(); if (!m) return;
@@ -1370,14 +1051,15 @@
     // Acceso al modelo para tests integrales y tools externos.
     _ensureModel: ensureModel,
     _getModel: () => model,
-    // expuestos para testing (solo lo que sigue siendo responsabilidad de atlas).
-    // El CRUD de progresión ya no se testea acá — vive en progression-model.test.js.
-    _computeRenderMap: computeRenderMap,
-    _TENSIONS_BY_QUALITY: TENSIONS_BY_QUALITY,
-    _SCALE_BY_QUALITY: SCALE_BY_QUALITY,
-    _LAYER_PRIORITY: LAYER_PRIORITY,
-    _intervalToSemi: intervalToSemi,
-    _applyDirection: applyDirection,
+    // expuestos para testing. Funciones de render-map ahora viven en
+    // FretboardRenderer; las re-exportamos con la firma original.
+    _computeRenderMap: (chord, layers, nextChord) =>
+      W.FretboardRenderer.computeRenderMap(chord, layers, nextChord, TH),
+    _TENSIONS_BY_QUALITY: W.FretboardRenderer && W.FretboardRenderer.TENSIONS_BY_QUALITY,
+    _SCALE_BY_QUALITY:    W.FretboardRenderer && W.FretboardRenderer.SCALE_BY_QUALITY,
+    _LAYER_PRIORITY:      W.FretboardRenderer && W.FretboardRenderer.LAYER_PRIORITY,
+    _intervalToSemi:      W.FretboardRenderer && W.FretboardRenderer.intervalToSemi,
+    _applyDirection:      W.FretboardRenderer && W.FretboardRenderer.applyDirection,
     _slotWidth: slotWidth,
     _setPaletteMode: setPaletteMode,
     _QUALITY_GLYPH: QUALITY_GLYPH,
@@ -1385,7 +1067,7 @@
     _handleKeydown: handleKeydown,
     _saveCurrentAsFavorite: saveCurrentAsFavorite,
     _loadFavorites: loadFavorites,
-    _applyHiddenIntervals: applyHiddenIntervals,
+    _applyHiddenIntervals: W.FretboardRenderer && W.FretboardRenderer.applyHiddenIntervals,
     _toggleHiddenInterval: toggleHiddenInterval,
   };
 })(window.GuitarShared, window);

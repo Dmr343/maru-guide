@@ -389,6 +389,7 @@
     computeDrawPlan, applyDrawPlan, render,
     // Expuestos puros para tests / consumidores
     computeRenderMap, applyHiddenIntervals, applyDirection,
+    intervalToSemi,
     LAYER_PRIORITY, TENSIONS_BY_QUALITY, SCALE_BY_QUALITY,
     INTERVAL_NAMES, GUIDE_TONE_INTERVALS,
   };
