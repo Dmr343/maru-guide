@@ -1275,8 +1275,12 @@
     }
     _transport = 'playing';
 
-    // Pre-roll: 4 beats antes de empezar (solo si no estamos resumiendo)
-    if (!resuming && state.prerollEnabled) {
+    // Pre-roll: 4 beats antes de empezar (solo si no estamos resumiendo).
+    // Leemos el checkbox vivo como source-of-truth para evitar drift con state
+    // si quedó un valor viejo en localStorage.
+    const prerollCb = $('atlas-preroll');
+    const prerollOn = prerollCb ? prerollCb.checked : !!state.prerollEnabled;
+    if (!resuming && prerollOn) {
       _prerollRemaining = BEATS_PER_COMPAS;
       setPlayingUI('preroll');
       metro = new G.metronome.Metronome({
