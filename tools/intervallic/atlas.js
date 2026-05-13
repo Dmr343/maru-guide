@@ -267,7 +267,6 @@
 
   let svg, fretW;
   let _fretStart = 0;
-  let metro = null;
 
   // Posición x de un fret absoluto en el mástil (considera fretStart actual).
   function xFor(absoluteFret) {
@@ -607,7 +606,7 @@
       case 'Escape':
         if (_editPopover) closeEditPopover();
         else if ($('atlas-presets-modal') && $('atlas-presets-modal').style.display === 'flex') closePresetsModal();
-        else if (_transport === 'playing') pause();
+        else if (transport && transport.getState().transport === 'playing') pause();
         else clearProgression();
         e.preventDefault(); return true;
     }
@@ -1095,8 +1094,9 @@
     if (bpmInput) {
       bpmInput.value = state.bpm;
       bpmInput.addEventListener('change', e => {
-        state.bpm = Math.max(40, Math.min(220, Number(e.target.value) || 80));
-        if (metro) metro.setBPM(state.bpm);
+        const v = Math.max(40, Math.min(220, Number(e.target.value) || 80));
+        state.bpm = v;
+        const tc = ensureTransport(); if (tc) tc.setBpm(v);
         saveState();
       });
     }
@@ -1107,6 +1107,7 @@
       prerollCb.checked = !!state.prerollEnabled;
       prerollCb.addEventListener('change', e => {
         state.prerollEnabled = e.target.checked;
+        const tc = ensureTransport(); if (tc) tc.setPrerollEnabled(state.prerollEnabled);
         saveState();
       });
     }
@@ -1115,7 +1116,7 @@
       muteCb.checked = !!state.metroMuted;
       muteCb.addEventListener('change', e => {
         state.metroMuted = e.target.checked;
-        if (metro) metro.setMuted(state.metroMuted);
+        const tc = ensureTransport(); if (tc) tc.setMuted(state.metroMuted);
         saveState();
       });
     }
@@ -1208,43 +1209,74 @@
     render();
   }
 
-  // beats acumulados en el acorde activo (para respetar el `bars` de cada uno).
-  let _chordBeatCount = 0;
-  const BEATS_PER_COMPAS = 4; // hardcodeado 4/4
+  const BEATS_PER_COMPAS = 4;
 
-  // Estados del transporte: 'stopped' | 'playing' | 'paused'
-  let _transport = 'stopped';
-
-  // ─── Tap tempo ──────────────────────────────────────────────────────────
-  // Mantiene los últimos N taps (descartados si > 2s sin tocar) y calcula
-  // BPM del promedio de intervalos.
-  const TAP_WINDOW_MS = 2000;
-  const TAP_MAX_KEEP  = 4;
-
-  // Pure: dado un array de timestamps en ms, devuelve BPM o null si insuficientes.
-  function computeBpmFromTaps(timestamps) {
-    if (!timestamps || timestamps.length < 2) return null;
-    const intervals = [];
-    for (let i = 1; i < timestamps.length; i++) {
-      intervals.push(timestamps[i] - timestamps[i - 1]);
-    }
-    const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-    if (avg <= 0) return null;
-    return Math.max(40, Math.min(220, Math.round(60000 / avg)));
+  // Adapter sobre G.metronome.Metronome para que sea reemplazable en tests.
+  // Lazy: crea el Metronome cuando se llama start(), lo destruye en stop().
+  function MetronomeClock() {
+    let m = null;
+    const self = {
+      onBeat: () => {},
+      _bpm: 100, _muted: false,
+      start() {
+        if (m) m.stop();
+        m = new G.metronome.Metronome({
+          bpm: self._bpm,
+          beatsPerChord: 99999,
+          beatsPerCompas: BEATS_PER_COMPAS,
+          muted: self._muted,
+          onBeat: (beat) => self.onBeat(beat),
+        });
+        m.start();
+      },
+      stop()       { if (m) { m.stop(); m = null; } },
+      setBpm(n)    { self._bpm = n; if (m) m.setBPM(n); },
+      setMuted(b)  { self._muted = b; if (m) m.setMuted(b); },
+    };
+    return self;
   }
 
-  let _tapTimes = [];
+  let transport = null;  // TransportController lazy-creado en ensureTransport
+
+  function ensureTransport() {
+    if (transport) return transport;
+    if (!W.TransportController) return null;
+    const m = ensureModel();
+    if (!m) return null;
+    const clock = MetronomeClock();
+    transport = new W.TransportController({
+      clock,
+      model: m,
+      beatsPerCompas: BEATS_PER_COMPAS,
+      bpm: state.bpm,
+      muted: state.metroMuted,
+      prerollEnabled: state.prerollEnabled,
+      onTransportChange(s) {
+        setPlayingUI(s.transport, s.prerollRemaining);
+      },
+      onBeat(e) {
+        pulseActiveChord(e);
+      },
+    });
+    return transport;
+  }
+
+  function togglePlay() {
+    const tc = ensureTransport(); if (tc) tc.togglePlay();
+  }
+  function pause() {
+    const tc = ensureTransport(); if (tc) tc.pause();
+  }
+  function stop() {
+    const tc = ensureTransport(); if (tc) tc.stop();
+  }
   function handleTap() {
-    const now = Date.now();
-    _tapTimes = _tapTimes.filter(t => now - t <= TAP_WINDOW_MS);
-    _tapTimes.push(now);
-    if (_tapTimes.length > TAP_MAX_KEEP) _tapTimes.shift();
-    const bpm = computeBpmFromTaps(_tapTimes);
+    const tc = ensureTransport(); if (!tc) return;
+    const bpm = tc.handleTap();
     if (bpm != null) {
       state.bpm = bpm;
       const inp = $('atlas-bpm');
       if (inp) inp.value = bpm;
-      if (metro) metro.setBPM(bpm);
       saveState();
     }
     const btn = $('atlas-tap');
@@ -1254,142 +1286,40 @@
     }
   }
 
-  // ─── Pre-roll ────────────────────────────────────────────────────────────
-  // Si está activo, antes de empezar la progresión real se reproducen 4
-  // clicks del metrónomo con countdown visual en el botón Play.
-  let _prerollRemaining = 0;
-
-  function togglePlay() {
-    if (_transport === 'playing') { pause(); return; }
-    // 'stopped' o 'paused' → arranca/reanuda
-    play();
-  }
-
-  function play() {
-    if (!state.progression.length) return;
-    if (_transport === 'playing') return;
-    const resuming = _transport === 'paused';
-    if (!resuming) {
-      _prevChord = null;
-      _chordBeatCount = 0;
-    }
-    _transport = 'playing';
-
-    // Pre-roll: 4 beats antes de empezar (solo si no estamos resumiendo).
-    // Leemos el checkbox vivo como source-of-truth para evitar drift con state
-    // si quedó un valor viejo en localStorage.
-    const prerollCb = $('atlas-preroll');
-    const prerollOn = prerollCb ? prerollCb.checked : !!state.prerollEnabled;
-    if (!resuming && prerollOn) {
-      _prerollRemaining = BEATS_PER_COMPAS;
-      setPlayingUI('preroll');
-      metro = new G.metronome.Metronome({
-        bpm: state.bpm,
-        beatsPerChord: 99999,
-        beatsPerCompas: BEATS_PER_COMPAS,
-        muted: state.metroMuted,
-        onBeat: () => {
-          _prerollRemaining--;
-          const btn = $('atlas-play');
-          if (btn) btn.textContent = _prerollRemaining > 0
-            ? '◷ ' + _prerollRemaining
-            : '▶';
-          if (_prerollRemaining <= 0) {
-            if (metro) { metro.stop(); metro = null; }
-            startMainLoop();
-          }
-        },
-      });
-      metro.start();
-      return;
-    }
-    startMainLoop();
-  }
-
-  function startMainLoop() {
-    setPlayingUI('playing');
-    metro = new G.metronome.Metronome({
-      bpm: state.bpm,
-      beatsPerChord: 99999, // controlamos el cambio manualmente
-      beatsPerCompas: BEATS_PER_COMPAS,
-      muted: state.metroMuted,
-      onBeat: (beat) => {
-        _chordBeatCount++;
-        pulseActiveChord(beat);
-        const cur = state.progression[state.activeIdx];
-        const targetBeats = (cur ? cur.bars : 1) * BEATS_PER_COMPAS;
-        if (_chordBeatCount >= targetBeats) {
-          _chordBeatCount = 0;
-          _prevChord = activeChord();
-          if (model) model.setActiveChord(model.nextIdx());
-          // render() ya lo dispara model.onChange (setActiveChord)
-        }
-      },
-    });
-    metro.start();
-    render();
-  }
-
-  function pause() {
-    if (metro) { metro.stop(); metro = null; }
-    _transport = 'paused';
-    setPlayingUI('paused');
-  }
-
-  // Audio de bloque del acorde removido — sonaba mal. El play loop hoy solo
-  // dispara el click del metrónomo + avance visual; el sonido del acorde lo
-  // ponés vos con la guitarra.
-
-  function pulseActiveChord(beat) {
+  function pulseActiveChord(e) {
     const bar = $('atlas-bar');
     if (!bar) return;
     const cells = bar.querySelectorAll('.prog-chord');
-    const target = cells[state.activeIdx];
+    const target = cells[e.activeIdx];
     if (!target) return;
     target.classList.add('beat');
     setTimeout(() => target.classList.remove('beat'), 90);
-    // El primer beat de cada compás es un "downbeat" más fuerte
-    const isDownbeat = (_chordBeatCount - 1) % BEATS_PER_COMPAS === 0;
-    if (isDownbeat) {
+    if (e.isDownbeat) {
       target.classList.add('downbeat');
       setTimeout(() => target.classList.remove('downbeat'), 140);
     }
   }
 
-  function setPlayingUI(transport) {
+  function setPlayingUI(t, prerollRemaining) {
     const btn = $('atlas-play');
     if (!btn) return;
     btn.classList.remove('playing', 'paused');
-    if (transport === 'playing') {
+    if (t === 'playing') {
       btn.textContent = '❚❚ Pausa';
       btn.classList.add('playing');
-    } else if (transport === 'paused') {
+    } else if (t === 'paused') {
       btn.textContent = '▶ Reanudar';
       btn.classList.add('paused');
-    } else if (transport === 'preroll') {
+    } else if (t === 'preroll') {
       btn.classList.add('playing');
-      btn.textContent = '◷ ' + BEATS_PER_COMPAS;
+      btn.textContent = '◷ ' + (prerollRemaining != null ? prerollRemaining : BEATS_PER_COMPAS);
     } else {
       btn.textContent = '▶ Play';
     }
   }
 
-  function stop() {
-    if (metro) { metro.stop(); metro = null; }
-    _transport = 'stopped';
-    _prevChord = null;
-    _chordBeatCount = 0;
-    state.activeIdx = 0;
-    setPlayingUI('stopped');
-    render();
-  }
-
   function clearProgression() {
-    if (metro) { metro.stop(); metro = null; }
-    _transport = 'stopped';
-    _prevChord = null;
-    _chordBeatCount = 0;
-    setPlayingUI('stopped');
+    if (transport) transport.stop();
     if (model) model.clear();
     else { saveState(); render(); }
   }
@@ -1446,7 +1376,6 @@
     _setPaletteMode: setPaletteMode,
     _QUALITY_GLYPH: QUALITY_GLYPH,
     _QUALITY_PALETTE_COLOR: QUALITY_PALETTE_COLOR,
-    _computeBpmFromTaps: computeBpmFromTaps,
     _handleKeydown: handleKeydown,
     _saveCurrentAsFavorite: saveCurrentAsFavorite,
     _loadFavorites: loadFavorites,
