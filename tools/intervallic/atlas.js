@@ -505,25 +505,17 @@
   }
 
   function removeChordAt(idx) {
-    state.progression.splice(idx, 1);
-    if (state.progression.length === 0) state.activeIdx = 0;
-    else if (state.activeIdx >= state.progression.length) state.activeIdx = state.progression.length - 1;
+    const m = ensureModel(); if (!m) return;
     _prevChord = null;
-    saveState(); render();
+    m.removeChordAt(idx);
   }
 
   function moveChord(srcIdx, destIdx) {
-    if (srcIdx === destIdx || srcIdx < 0 || srcIdx >= state.progression.length) return;
-    const moved = state.progression.splice(srcIdx, 1)[0];
-    const insertAt = srcIdx < destIdx ? destIdx - 1 : destIdx;
-    state.progression.splice(insertAt, 0, moved);
-    // Mantener activeIdx apuntando al mismo acorde lógico
-    if (state.activeIdx === srcIdx) state.activeIdx = insertAt;
-    saveState(); render();
+    const m = ensureModel(); if (!m) return;
+    m.moveChord(srcIdx, destIdx);
   }
 
   let _dragSrcIdx = null;
-  let _copiedChord = null;  // no persistido; vive por sesión
   let _editPopover = null;
 
   // Edit inline: popover sobre un slot para editar root/quality sin borrar.
@@ -560,11 +552,8 @@
     const save = () => {
       const newRoot = pop.querySelector('.ep-root').value;
       const newQ    = pop.querySelector('.ep-quality').value;
-      state.progression[idx].root = newRoot;
-      state.progression[idx].quality = newQ;
-      saveState();
+      if (model) model.editChordAt(idx, { root: newRoot, quality: newQ });
       closeEditPopover();
-      render();
     };
     pop.querySelector('.ep-save').addEventListener('click', save);
     pop.querySelector('.ep-cancel').addEventListener('click', closeEditPopover);
@@ -591,12 +580,9 @@
     }
   }
 
-  // Copiar / pegar acorde activo (no persistido, no clipboard del SO)
+  // Copiar / pegar delegan al modelo (clipboard interno).
   function copyActiveChord() {
-    const c = state.progression[state.activeIdx];
-    if (!c) return false;
-    _copiedChord = { root: c.root, quality: c.quality, bars: c.bars };
-    return true;
+    const m = ensureModel(); return m ? m.copyActiveChord() : false;
   }
 
   // Switch único de atajos de teclado. Devuelve true si manejó la tecla.
@@ -656,17 +642,9 @@
   }
 
   function pasteAfterActive() {
-    if (!_copiedChord) return false;
-    const insertAt = state.progression.length === 0 ? 0 : state.activeIdx + 1;
-    state.progression.splice(insertAt, 0, {
-      root: _copiedChord.root,
-      quality: _copiedChord.quality,
-      bars: _copiedChord.bars,
-    });
-    state.activeIdx = insertAt;
+    const m = ensureModel(); if (!m) return false;
     _prevChord = null;
-    saveState(); render();
-    return true;
+    return m.pasteAfterActive();
   }
 
   function drawBar() {
@@ -696,16 +674,12 @@
       let _clickTimer = null;
       div.addEventListener('click', e => {
         if (e.shiftKey) {
-          // Loop region: primer shift-click setea start, segundo setea end,
-          // tercero limpia.
-          if (!state.loopRange) {
-            state.loopRange = [i, i];
-          } else if (state.loopRange[0] === state.loopRange[1] && state.loopRange[0] !== i) {
-            state.loopRange = [state.loopRange[0], i];
-          } else {
-            state.loopRange = null;
-          }
-          saveState(); render();
+          // Loop region: 1° shift-click setea start, 2° setea end, 3° limpia.
+          if (!model) return;
+          const lr = model.loopRange;
+          if (!lr) model.setLoopRange(i, i);
+          else if (lr[0] === lr[1] && lr[0] !== i) model.setLoopRange(lr[0], i);
+          else model.setLoopRange(null);
           return;
         }
         if (_clickTimer) return;
@@ -961,27 +935,12 @@
   }
 
   function addChord(c) {
-    const chord = {
+    const m = ensureModel(); if (!m) return;
+    m.addChord({
       root: c.root || 'C',
       quality: c.quality || 'maj7',
-      bars: typeof c.bars === 'number' ? Math.max(1, Math.min(8, c.bars)) : 1,
-    };
-    state.progression.push(chord);
-    if (state.progression.length === 1) state.activeIdx = 0;
-    saveState(); render();
-  }
-
-  // Pure: dado activeIdx, progLength y loopRange, devuelve el siguiente idx.
-  // Si hay loop y nos vamos del rango (o estamos fuera), envolvemos al start.
-  function nextIdxFor(activeIdx, progLength, loopRange) {
-    if (progLength <= 0) return 0;
-    const def = (activeIdx + 1) % progLength;
-    if (!loopRange) return def;
-    const [a, b] = loopRange;
-    if (a == null || b == null) return def;
-    const lo = Math.min(a, b), hi = Math.max(a, b);
-    if (activeIdx < lo || activeIdx >= hi) return lo;
-    return def;
+      bars: c.bars,
+    });
   }
 
   // ─── Favoritos ───────────────────────────────────────────────────────────
@@ -1008,11 +967,9 @@
   }
   function loadFavoriteIntoProg(favId) {
     const fav = loadFavorites().find(f => f.id === favId);
-    if (!fav) return false;
-    state.progression = fav.chords.map(c => ({ root: c.root, quality: c.quality, bars: c.bars }));
-    state.activeIdx = 0;
-    state.loopRange = null;
-    saveState(); render();
+    const m = ensureModel();
+    if (!fav || !m) return false;
+    m.loadProgression(fav.chords);
     return true;
   }
   function deleteFavorite(favId) {
@@ -1022,27 +979,20 @@
 
   // ─── Presets ─────────────────────────────────────────────────────────────
   function loadPreset(presetId) {
-    if (!W.AtlasPresets) return false;
+    const m = ensureModel();
+    if (!W.AtlasPresets || !m) return false;
     const p = W.AtlasPresets.byId(presetId);
     if (!p) return false;
-    state.progression = p.chords.map(c => ({ root: c.root, quality: c.quality, bars: c.bars }));
-    state.activeIdx = 0;
-    state.loopRange = null;
-    saveState(); render();
+    m.loadProgression(p.chords);
     return true;
   }
 
   function changeActiveBars(delta) {
-    const c = state.progression[state.activeIdx];
-    if (!c) return;
-    c.bars = Math.max(1, Math.min(8, (c.bars || 1) + delta));
-    saveState(); render();
+    const m = ensureModel(); if (m) m.changeActiveBars(delta);
   }
 
   function setActiveChord(idx) {
-    if (idx < 0 || idx >= state.progression.length) return;
-    state.activeIdx = idx;
-    saveState(); render();
+    const m = ensureModel(); if (m) m.setActiveChord(idx);
   }
 
   function setLayer(name, enabled) {
@@ -1051,16 +1001,47 @@
   }
 
   function setProgression(chords) {
-    state.progression = chords.slice();
-    state.activeIdx = 0;
-    saveState(); render();
+    const m = ensureModel(); if (!m) return;
+    m.loadProgression(chords);
   }
 
   function getState() { return state; }
 
   // ──────────────── Init ────────────────
+  let model = null;  // ProgressionModel — source of truth para progression/activeIdx/loopRange
+
+  function syncStateFromModel() {
+    if (!model) return;
+    const snap = model.snapshot();
+    state.progression = snap.progression;
+    state.activeIdx = snap.activeIdx;
+    state.loopRange = snap.loopRange;
+  }
+
+  // Lazy-init del modelo. Se llama desde init() y desde cualquier mutador.
+  // Permite usar el atlas en entorno de tests sin DOM.
+  function ensureModel() {
+    if (model) return model;
+    if (!W.ProgressionModel) return null;
+    model = new W.ProgressionModel({
+      initialState: {
+        progression: state.progression,
+        activeIdx: state.activeIdx,
+        loopRange: state.loopRange,
+      },
+      onChange() {
+        syncStateFromModel();
+        saveState();
+        render();
+      },
+    });
+    syncStateFromModel();
+    return model;
+  }
+
   function init() {
     loadState();
+    ensureModel();
     svg = $('atlas-fretboard');
     if (svg) reinitBoard();
 
@@ -1335,9 +1316,9 @@
         if (_chordBeatCount >= targetBeats) {
           _chordBeatCount = 0;
           _prevChord = activeChord();
-          state.activeIdx = nextIdxFor(state.activeIdx, state.progression.length, state.loopRange);
+          if (model) model.setActiveChord(model.nextIdx());
           playCurrentChord();
-          render();
+          // render() ya lo dispara model.onChange (setActiveChord)
         }
       },
     });
@@ -1408,13 +1389,11 @@
   function clearProgression() {
     if (metro) { metro.stop(); metro = null; }
     _transport = 'stopped';
-    state.progression = [];
-    state.activeIdx = 0;
     _prevChord = null;
     _chordBeatCount = 0;
     setPlayingUI('stopped');
-    saveState();
-    render();
+    if (model) model.clear();
+    else { saveState(); render(); }
   }
 
   function buildClickGrid() {
@@ -1454,7 +1433,11 @@
   W.IntervalAtlas = {
     init, setProgression, setActiveChord, setLayer,
     getState,
-    // expuestos para testing
+    // Acceso al modelo para tests integrales y tools externos.
+    _ensureModel: ensureModel,
+    _getModel: () => model,
+    // expuestos para testing (solo lo que sigue siendo responsabilidad de atlas).
+    // El CRUD de progresión ya no se testea acá — vive en progression-model.test.js.
     _computeRenderMap: computeRenderMap,
     _TENSIONS_BY_QUALITY: TENSIONS_BY_QUALITY,
     _SCALE_BY_QUALITY: SCALE_BY_QUALITY,
@@ -1463,21 +1446,11 @@
     _applyDirection: applyDirection,
     _makePseudoVoicing: makePseudoVoicing,
     _slotWidth: slotWidth,
-    _addChord: addChord,
-    _removeChordAt: removeChordAt,
-    _moveChord: moveChord,
-    _changeActiveBars: changeActiveBars,
     _setPaletteMode: setPaletteMode,
     _QUALITY_GLYPH: QUALITY_GLYPH,
     _QUALITY_PALETTE_COLOR: QUALITY_PALETTE_COLOR,
     _computeBpmFromTaps: computeBpmFromTaps,
-    _copyActiveChord: copyActiveChord,
-    _pasteAfterActive: pasteAfterActive,
-    _getCopiedChord: () => _copiedChord && Object.assign({}, _copiedChord),
-    _setCopiedChord: (c) => { _copiedChord = c ? Object.assign({}, c) : null; },
     _handleKeydown: handleKeydown,
-    _nextIdxFor: nextIdxFor,
-    _loadPreset: loadPreset,
     _saveCurrentAsFavorite: saveCurrentAsFavorite,
     _loadFavorites: loadFavorites,
     _applyHiddenIntervals: applyHiddenIntervals,

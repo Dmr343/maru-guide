@@ -202,99 +202,8 @@
     T.it('clamps over 8', () => T.assertEq(A._slotWidth(99), 280));
   });
 
-  T.describe('addChord defaults', () => {
-    T.it('bars omitido → 1', () => {
-      A.setProgression([]);
-      A._addChord({ root: 'C', quality: 'maj7' });
-      T.assertEq(A.getState().progression[0].bars, 1);
-    });
-    T.it('bars explícito se respeta', () => {
-      A.setProgression([]);
-      A._addChord({ root: 'D', quality: 'min7', bars: 4 });
-      T.assertEq(A.getState().progression[0].bars, 4);
-    });
-    T.it('bars clamp a 1-8', () => {
-      A.setProgression([]);
-      A._addChord({ root: 'C', quality: 'maj7', bars: 99 });
-      T.assertEq(A.getState().progression[0].bars, 8);
-      A.setProgression([]);
-      A._addChord({ root: 'C', quality: 'maj7', bars: 0 });
-      T.assertEq(A.getState().progression[0].bars, 1);
-    });
-    T.it('primer acorde activa idx 0', () => {
-      A.setProgression([]);
-      A._addChord({ root: 'C', quality: 'maj7' });
-      T.assertEq(A.getState().activeIdx, 0);
-    });
-  });
-
-  T.describe('moveChord', () => {
-    T.it('mueve forward', () => {
-      A.setProgression([
-        { root: 'C', quality: 'maj7', bars: 1 },
-        { root: 'D', quality: 'min7', bars: 1 },
-        { root: 'G', quality: 'dom7', bars: 1 },
-      ]);
-      A._moveChord(0, 2);
-      const p = A.getState().progression;
-      T.assertEq(p[0].root, 'D');
-      T.assertEq(p[1].root, 'C');
-      T.assertEq(p[2].root, 'G');
-    });
-    T.it('mueve backward', () => {
-      A.setProgression([
-        { root: 'C', quality: 'maj7', bars: 1 },
-        { root: 'D', quality: 'min7', bars: 1 },
-        { root: 'G', quality: 'dom7', bars: 1 },
-      ]);
-      A._moveChord(2, 0);
-      const p = A.getState().progression;
-      T.assertEq(p[0].root, 'G');
-      T.assertEq(p[1].root, 'C');
-      T.assertEq(p[2].root, 'D');
-    });
-    T.it('mismo origen y destino no rompe', () => {
-      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
-      A._moveChord(0, 0);
-      T.assertEq(A.getState().progression.length, 1);
-    });
-  });
-
-  T.describe('removeChordAt', () => {
-    T.it('remueve y baja activeIdx si era el último', () => {
-      A.setProgression([
-        { root: 'C', quality: 'maj7', bars: 1 },
-        { root: 'D', quality: 'min7', bars: 1 },
-      ]);
-      A.setActiveChord(1);
-      A._removeChordAt(1);
-      T.assertEq(A.getState().progression.length, 1);
-      T.assertEq(A.getState().activeIdx, 0);
-    });
-    T.it('progresión vacía → activeIdx 0', () => {
-      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
-      A._removeChordAt(0);
-      T.assertEq(A.getState().progression.length, 0);
-      T.assertEq(A.getState().activeIdx, 0);
-    });
-  });
-
-  T.describe('changeActiveBars', () => {
-    T.it('+1 sube bars con clamp a 8', () => {
-      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
-      A._changeActiveBars(1);
-      T.assertEq(A.getState().progression[0].bars, 2);
-      A._changeActiveBars(99);
-      T.assertEq(A.getState().progression[0].bars, 8);
-    });
-    T.it('-1 baja bars con clamp a 1', () => {
-      A.setProgression([{ root: 'C', quality: 'maj7', bars: 2 }]);
-      A._changeActiveBars(-1);
-      T.assertEq(A.getState().progression[0].bars, 1);
-      A._changeActiveBars(-99);
-      T.assertEq(A.getState().progression[0].bars, 1);
-    });
-  });
+  // NOTA: addChord/moveChord/removeChordAt/changeActiveBars/copy/paste/nextIdxFor
+  // se testean en progression-model.test.js (son responsabilidad del modelo).
 
   T.describe('paleta — glifos y colores muted', () => {
     T.it('maj7 → Δ', () => T.assertEq(A._QUALITY_GLYPH.maj7, 'Δ'));
@@ -347,50 +256,7 @@
     });
   });
 
-  T.describe('copyActiveChord / pasteAfterActive', () => {
-    T.it('copy sin progresión → false, sin afectar copiedChord', () => {
-      A.setProgression([]);
-      A._setCopiedChord(null);
-      T.assertEq(A._copyActiveChord(), false);
-      T.assertEq(A._getCopiedChord(), null);
-    });
-    T.it('copy con activeIdx válido guarda root/quality/bars', () => {
-      A.setProgression([{ root: 'D', quality: 'min7', bars: 2 }]);
-      A.setActiveChord(0);
-      T.assertEq(A._copyActiveChord(), true);
-      const cp = A._getCopiedChord();
-      T.assertEq(cp.root, 'D');
-      T.assertEq(cp.quality, 'min7');
-      T.assertEq(cp.bars, 2);
-    });
-    T.it('paste sin copy previo → false', () => {
-      A._setCopiedChord(null);
-      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
-      T.assertEq(A._pasteAfterActive(), false);
-    });
-    T.it('paste inserta después del activo y mueve activeIdx', () => {
-      A.setProgression([
-        { root: 'C', quality: 'maj7', bars: 1 },
-        { root: 'A', quality: 'min7', bars: 1 },
-      ]);
-      A.setActiveChord(0);
-      A._setCopiedChord({ root: 'G', quality: 'dom7', bars: 2 });
-      T.assertEq(A._pasteAfterActive(), true);
-      const p = A.getState().progression;
-      T.assertEq(p.length, 3);
-      T.assertEq(p[1].root, 'G');
-      T.assertEq(p[1].quality, 'dom7');
-      T.assertEq(p[1].bars, 2);
-      T.assertEq(A.getState().activeIdx, 1);
-    });
-    T.it('paste en progresión vacía inserta en idx 0', () => {
-      A.setProgression([]);
-      A._setCopiedChord({ root: 'C', quality: 'maj7', bars: 1 });
-      A._pasteAfterActive();
-      T.assertEq(A.getState().progression.length, 1);
-      T.assertEq(A.getState().activeIdx, 0);
-    });
-  });
+  // copy/paste se testean en progression-model.test.js.
 
   T.describe('handleKeydown — atajos', () => {
     function mockEvent(key, opts) {
@@ -454,30 +320,7 @@
     });
   });
 
-  T.describe('nextIdxFor — loop region', () => {
-    T.it('sin loop → wrap normal', () => {
-      T.assertEq(A._nextIdxFor(0, 4, null), 1);
-      T.assertEq(A._nextIdxFor(3, 4, null), 0);
-    });
-    T.it('progresión vacía → 0', () => {
-      T.assertEq(A._nextIdxFor(0, 0, null), 0);
-    });
-    T.it('loop [1,3]: avanza dentro del rango', () => {
-      T.assertEq(A._nextIdxFor(1, 5, [1, 3]), 2);
-      T.assertEq(A._nextIdxFor(2, 5, [1, 3]), 3);
-    });
-    T.it('loop [1,3]: al salir del rango vuelve al start', () => {
-      T.assertEq(A._nextIdxFor(3, 5, [1, 3]), 1);
-    });
-    T.it('loop [3,1] invertido → se normaliza a [1,3]', () => {
-      T.assertEq(A._nextIdxFor(2, 5, [3, 1]), 3);
-      T.assertEq(A._nextIdxFor(3, 5, [3, 1]), 1);
-    });
-    T.it('loop con activeIdx fuera → salta al start', () => {
-      T.assertEq(A._nextIdxFor(0, 5, [2, 3]), 2);
-      T.assertEq(A._nextIdxFor(4, 5, [2, 3]), 2);
-    });
-  });
+  // nextIdxFor → ahora vive en progression-model.test.js como model.nextIdx().
 
   T.describe('presets', () => {
     T.it('AtlasPresets expone PRESETS y GENRES', () => {
@@ -499,8 +342,10 @@
         });
       });
     });
-    T.it('loadPreset carga progresión', () => {
-      A._loadPreset('jazz-ii-V-I-C');
+    T.it('cargar preset vía setProgression delega al modelo y queda como esperado', () => {
+      const W = (typeof window !== 'undefined' ? window : globalThis);
+      const preset = W.AtlasPresets.byId('jazz-ii-V-I-C');
+      A.setProgression(preset.chords);
       const p = A.getState().progression;
       T.assertEq(p.length, 3);
       T.assertEq(p[0].root, 'D');
