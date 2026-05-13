@@ -347,6 +347,113 @@
     });
   });
 
+  T.describe('copyActiveChord / pasteAfterActive', () => {
+    T.it('copy sin progresión → false, sin afectar copiedChord', () => {
+      A.setProgression([]);
+      A._setCopiedChord(null);
+      T.assertEq(A._copyActiveChord(), false);
+      T.assertEq(A._getCopiedChord(), null);
+    });
+    T.it('copy con activeIdx válido guarda root/quality/bars', () => {
+      A.setProgression([{ root: 'D', quality: 'min7', bars: 2 }]);
+      A.setActiveChord(0);
+      T.assertEq(A._copyActiveChord(), true);
+      const cp = A._getCopiedChord();
+      T.assertEq(cp.root, 'D');
+      T.assertEq(cp.quality, 'min7');
+      T.assertEq(cp.bars, 2);
+    });
+    T.it('paste sin copy previo → false', () => {
+      A._setCopiedChord(null);
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      T.assertEq(A._pasteAfterActive(), false);
+    });
+    T.it('paste inserta después del activo y mueve activeIdx', () => {
+      A.setProgression([
+        { root: 'C', quality: 'maj7', bars: 1 },
+        { root: 'A', quality: 'min7', bars: 1 },
+      ]);
+      A.setActiveChord(0);
+      A._setCopiedChord({ root: 'G', quality: 'dom7', bars: 2 });
+      T.assertEq(A._pasteAfterActive(), true);
+      const p = A.getState().progression;
+      T.assertEq(p.length, 3);
+      T.assertEq(p[1].root, 'G');
+      T.assertEq(p[1].quality, 'dom7');
+      T.assertEq(p[1].bars, 2);
+      T.assertEq(A.getState().activeIdx, 1);
+    });
+    T.it('paste en progresión vacía inserta en idx 0', () => {
+      A.setProgression([]);
+      A._setCopiedChord({ root: 'C', quality: 'maj7', bars: 1 });
+      A._pasteAfterActive();
+      T.assertEq(A.getState().progression.length, 1);
+      T.assertEq(A.getState().activeIdx, 0);
+    });
+  });
+
+  T.describe('handleKeydown — atajos', () => {
+    function mockEvent(key, opts) {
+      let prevented = false;
+      return {
+        key,
+        target: { tagName: opts && opts.tagName || 'BODY' },
+        ctrlKey: !!(opts && opts.ctrl),
+        metaKey: false, shiftKey: false, altKey: false,
+        preventDefault() { prevented = true; },
+        get prevented() { return prevented; },
+      };
+    }
+    T.it('en INPUT → no captura', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      const e = mockEvent('ArrowRight', { tagName: 'INPUT' });
+      T.assertEq(A._handleKeydown(e), undefined === undefined ? false : false);
+    });
+    T.it('ArrowRight avanza activeIdx', () => {
+      A.setProgression([
+        { root: 'C', quality: 'maj7', bars: 1 },
+        { root: 'A', quality: 'min7', bars: 1 },
+      ]);
+      A.setActiveChord(0);
+      A._handleKeydown(mockEvent('ArrowRight'));
+      T.assertEq(A.getState().activeIdx, 1);
+    });
+    T.it('ArrowUp sube bars del activo', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      A.setActiveChord(0);
+      A._handleKeydown(mockEvent('ArrowUp'));
+      T.assertEq(A.getState().progression[0].bars, 2);
+    });
+    T.it('Delete remueve el activo', () => {
+      A.setProgression([
+        { root: 'C', quality: 'maj7', bars: 1 },
+        { root: 'A', quality: 'min7', bars: 1 },
+      ]);
+      A.setActiveChord(1);
+      A._handleKeydown(mockEvent('Delete'));
+      T.assertEq(A.getState().progression.length, 1);
+    });
+    T.it('tecla "2" salta a acorde 2', () => {
+      A.setProgression([
+        { root: 'C', quality: 'maj7', bars: 1 },
+        { root: 'A', quality: 'min7', bars: 1 },
+        { root: 'D', quality: 'min7', bars: 1 },
+      ]);
+      A.setActiveChord(0);
+      A._handleKeydown(mockEvent('2'));
+      T.assertEq(A.getState().activeIdx, 1);
+    });
+    T.it('Ctrl+C copia y Ctrl+V pega', () => {
+      A.setProgression([{ root: 'D', quality: 'min7', bars: 3 }]);
+      A.setActiveChord(0);
+      A._handleKeydown(mockEvent('c', { ctrl: true }));
+      A._handleKeydown(mockEvent('v', { ctrl: true }));
+      const p = A.getState().progression;
+      T.assertEq(p.length, 2);
+      T.assertEq(p[1].root, 'D');
+    });
+  });
+
   T.describe('makePseudoVoicing', () => {
     T.it('produce una posición por chord note', () => {
       const c = TH.buildChord('C','maj7');

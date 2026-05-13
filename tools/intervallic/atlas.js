@@ -516,6 +516,150 @@
   }
 
   let _dragSrcIdx = null;
+  let _copiedChord = null;  // no persistido; vive por sesión
+  let _editPopover = null;
+
+  // Edit inline: popover sobre un slot para editar root/quality sin borrar.
+  function openEditPopover(idx, anchorEl) {
+    closeEditPopover();
+    const c = state.progression[idx];
+    if (!c) return;
+    const pop = document.createElement('div');
+    pop.className = 'edit-popover';
+    pop.innerHTML = `
+      <div class="edit-popover-title">Editar acorde #${idx + 1}</div>
+      <select class="ep-root">
+        ${['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
+          .map(r => `<option ${r === c.root ? 'selected' : ''}>${r}</option>`).join('')}
+      </select>
+      <select class="ep-quality">
+        <option value="maj7" ${c.quality==='maj7'?'selected':''}>maj7</option>
+        <option value="min7" ${c.quality==='min7'?'selected':''}>m7</option>
+        <option value="dom7" ${c.quality==='dom7'?'selected':''}>7</option>
+        <option value="dim7" ${c.quality==='dim7'?'selected':''}>dim7</option>
+        <option value="m7b5" ${c.quality==='m7b5'?'selected':''}>m7b5</option>
+      </select>
+      <div class="edit-popover-actions">
+        <button class="btn ep-cancel">Cancelar</button>
+        <button class="btn primary ep-save">Guardar</button>
+      </div>
+    `;
+    document.body.appendChild(pop);
+    const r = anchorEl.getBoundingClientRect();
+    pop.style.left = Math.max(8, r.left) + 'px';
+    pop.style.top  = (r.bottom + 6) + 'px';
+    _editPopover = pop;
+
+    const save = () => {
+      const newRoot = pop.querySelector('.ep-root').value;
+      const newQ    = pop.querySelector('.ep-quality').value;
+      state.progression[idx].root = newRoot;
+      state.progression[idx].quality = newQ;
+      saveState();
+      closeEditPopover();
+      render();
+    };
+    pop.querySelector('.ep-save').addEventListener('click', save);
+    pop.querySelector('.ep-cancel').addEventListener('click', closeEditPopover);
+    pop.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { save(); e.preventDefault(); }
+      if (e.key === 'Escape') { closeEditPopover(); e.preventDefault(); }
+    });
+    setTimeout(() => {
+      const onDocClick = ev => {
+        if (!_editPopover) return;
+        if (!_editPopover.contains(ev.target)) {
+          closeEditPopover();
+          document.removeEventListener('mousedown', onDocClick);
+        }
+      };
+      document.addEventListener('mousedown', onDocClick);
+    }, 0);
+  }
+
+  function closeEditPopover() {
+    if (_editPopover) {
+      _editPopover.remove();
+      _editPopover = null;
+    }
+  }
+
+  // Copiar / pegar acorde activo (no persistido, no clipboard del SO)
+  function copyActiveChord() {
+    const c = state.progression[state.activeIdx];
+    if (!c) return false;
+    _copiedChord = { root: c.root, quality: c.quality, bars: c.bars };
+    return true;
+  }
+
+  // Switch único de atajos de teclado. Devuelve true si manejó la tecla.
+  function handleKeydown(e) {
+    const tag = e.target && e.target.tagName;
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return false;
+
+    // Modificadores (Ctrl+C, Ctrl+V)
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+      if (e.key === 'c' || e.key === 'C') {
+        if (copyActiveChord()) e.preventDefault();
+        return true;
+      }
+      if (e.key === 'v' || e.key === 'V') {
+        if (pasteAfterActive()) e.preventDefault();
+        return true;
+      }
+      return false;
+    }
+
+    switch (e.key) {
+      case ' ':
+      case 'Spacebar':
+        togglePlay(); e.preventDefault(); return true;
+      case 'ArrowLeft':
+        setActiveChord((state.activeIdx - 1 + Math.max(1, state.progression.length)) % Math.max(1, state.progression.length));
+        e.preventDefault(); return true;
+      case 'ArrowRight':
+        setActiveChord((state.activeIdx + 1) % Math.max(1, state.progression.length));
+        e.preventDefault(); return true;
+      case 'ArrowUp':
+        changeActiveBars(+1); e.preventDefault(); return true;
+      case 'ArrowDown':
+        changeActiveBars(-1); e.preventDefault(); return true;
+      case 't': case 'T':
+        handleTap(); e.preventDefault(); return true;
+      case 'Delete': case 'Backspace':
+        if (state.progression.length) {
+          removeChordAt(state.activeIdx);
+          e.preventDefault();
+        }
+        return true;
+      case 'Escape':
+        if (_editPopover) closeEditPopover();
+        else clearProgression();
+        e.preventDefault(); return true;
+    }
+
+    if (/^[1-9]$/.test(e.key)) {
+      const idx = Number(e.key) - 1;
+      if (idx < state.progression.length) setActiveChord(idx);
+      e.preventDefault();
+      return true;
+    }
+    return false;
+  }
+
+  function pasteAfterActive() {
+    if (!_copiedChord) return false;
+    const insertAt = state.progression.length === 0 ? 0 : state.activeIdx + 1;
+    state.progression.splice(insertAt, 0, {
+      root: _copiedChord.root,
+      quality: _copiedChord.quality,
+      bars: _copiedChord.bars,
+    });
+    state.activeIdx = insertAt;
+    _prevChord = null;
+    saveState(); render();
+    return true;
+  }
 
   function drawBar() {
     const bar = $('atlas-bar');
@@ -533,8 +677,23 @@
       div.innerHTML = `<div class="pc-name">${chordName(ch)}</div>
         <div class="pc-bars-vis" aria-label="${c.bars} compás${c.bars===1?'':'es'}">${'●'.repeat(c.bars)}</div>`;
 
-      // Click → quitar (modelo improvisar)
-      div.addEventListener('click', () => removeChordAt(i));
+      // Click → quitar (modelo improvisar).
+      // Diferenciar click simple de doble-click con timeout para evitar disparar
+      // remove cuando el usuario hace doble-click para editar.
+      let _clickTimer = null;
+      div.addEventListener('click', e => {
+        if (_clickTimer) return;
+        _clickTimer = setTimeout(() => {
+          _clickTimer = null;
+          removeChordAt(i);
+        }, 220);
+      });
+      div.addEventListener('dblclick', e => {
+        if (_clickTimer) { clearTimeout(_clickTimer); _clickTimer = null; }
+        e.preventDefault();
+        e.stopPropagation();
+        openEditPopover(i, div);
+      });
 
       // Drag-to-reorder
       div.addEventListener('dragstart', e => {
@@ -749,15 +908,7 @@
     if (nxt) nxt.addEventListener('click', () => setActiveChord((state.activeIdx + 1) % state.progression.length));
     const clearProg = $('atlas-clear-prog');
     if (clearProg) clearProg.addEventListener('click', clearProgression);
-    document.addEventListener('keydown', e => {
-      const tag = e.target.tagName;
-      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
-      if (e.key === 'ArrowLeft')  { prev && prev.click(); e.preventDefault(); return; }
-      if (e.key === 'ArrowRight') { nxt && nxt.click(); e.preventDefault(); return; }
-      if (e.key === 'Escape')     { clearProgression(); e.preventDefault(); return; }
-      if (e.key === 'ArrowUp')    { changeActiveBars(+1); e.preventDefault(); return; }
-      if (e.key === 'ArrowDown')  { changeActiveBars(-1); e.preventDefault(); return; }
-    });
+    document.addEventListener('keydown', handleKeydown);
 
     // Transporte
     const playBtn = $('atlas-play');
@@ -1099,5 +1250,10 @@
     _QUALITY_GLYPH: QUALITY_GLYPH,
     _QUALITY_PALETTE_COLOR: QUALITY_PALETTE_COLOR,
     _computeBpmFromTaps: computeBpmFromTaps,
+    _copyActiveChord: copyActiveChord,
+    _pasteAfterActive: pasteAfterActive,
+    _getCopiedChord: () => _copiedChord && Object.assign({}, _copiedChord),
+    _setCopiedChord: (c) => { _copiedChord = c ? Object.assign({}, c) : null; },
+    _handleKeydown: handleKeydown,
   };
 })(window.GuitarShared, window);
