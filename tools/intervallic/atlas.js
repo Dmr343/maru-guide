@@ -7,7 +7,6 @@
 
   const NUM_FRETS = 22;
   const SVG_NS = 'http://www.w3.org/2000/svg';
-  const LS_KEY = 'atlas_state';
 
   // Colores con par bemol/natural diferenciado: el natural más brillante,
   // el bemol más oscuro/desaturado pero misma familia de hue.
@@ -79,23 +78,47 @@
     metroMuted: false,
   };
 
-  const LS_FAVS = 'atlas_favorites';
-  let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+  // Migrations append-only. Versión actual = migrations.length.
+  const ATLAS_MIGRATIONS = [
+    // v0 → v1: ejemplo placeholder — la primera migration real entra acá
+    // (ej: renombrar parentKey → diatonicKey si quedó del Intervallic Lab viejo).
+    (s) => {
+      const o = Object.assign({}, s);
+      if (o.parentKey && !o.diatonicKey)  o.diatonicKey  = o.parentKey;
+      if (o.parentMode && !o.diatonicMode) o.diatonicMode = o.parentMode;
+      delete o.parentKey; delete o.parentMode;
+      return o;
+    },
+  ];
 
-  function loadState() {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        state = Object.assign({}, DEFAULT_STATE, parsed);
-        state.layers = Object.assign({}, DEFAULT_STATE.layers, parsed.layers || {});
-        state.filter = Object.assign({}, DEFAULT_STATE.filter, parsed.filter || {});
-      }
-    } catch (e) {}
+  // Stores Persistence — abstraen localStorage. En tests pueden inyectarse
+  // con MemoryStorageAdapter via W.IntervalAtlas._setStores(stateStore, favStore).
+  let stateStore = null, favStore = null;
+  function ensureStores() {
+    if (stateStore) return;
+    const Adapter = W.LocalStorageAdapter || (() => ({ getItem:()=>null, setItem:()=>{}, removeItem:()=>{} }));
+    const PCls = W.Persistence;
+    if (!PCls) return;
+    stateStore = new PCls({
+      storage: Adapter(),
+      key: 'atlas_state',
+      defaults: DEFAULT_STATE,
+      migrations: ATLAS_MIGRATIONS,
+      deepKeys: ['layers', 'filter'],
+    });
+    favStore = new PCls({
+      storage: Adapter(),
+      key: 'atlas_favorites',
+      defaults: [],
+      migrations: [],
+    });
   }
-  function saveState() {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
-  }
+  ensureStores();
+
+  let state = stateStore ? stateStore.load() : JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+  function loadState() { if (stateStore) state = stateStore.load(); }
+  function saveState() { if (stateStore) stateStore.save(state); }
 
   // ──────────────── Render ────────────────
   // computeRenderMap, applyDirection, intervalToSemi viven en FretboardRenderer.
@@ -606,15 +629,8 @@
   }
 
   // ─── Favoritos ───────────────────────────────────────────────────────────
-  function loadFavorites() {
-    try {
-      const raw = localStorage.getItem(LS_FAVS);
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) { return []; }
-  }
-  function saveFavorites(list) {
-    try { localStorage.setItem(LS_FAVS, JSON.stringify(list)); } catch (e) {}
-  }
+  function loadFavorites() { return favStore ? favStore.load() : []; }
+  function saveFavorites(list) { if (favStore) favStore.save(list); }
   function saveCurrentAsFavorite(name) {
     if (!state.progression.length) return null;
     const list = loadFavorites();
