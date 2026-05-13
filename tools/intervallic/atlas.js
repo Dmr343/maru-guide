@@ -114,6 +114,7 @@
     prerollEnabled: false,
     loopRange: null, // [startIdx, endIdx] inclusivo o null
     hiddenIntervals: [], // ej ['5','b5'] para ocultarlos del mástil
+    metroMuted: false,
   };
 
   const LS_FAVS = 'atlas_favorites';
@@ -628,6 +629,7 @@
       case 'Escape':
         if (_editPopover) closeEditPopover();
         else if ($('atlas-presets-modal') && $('atlas-presets-modal').style.display === 'flex') closePresetsModal();
+        else if (_transport === 'playing') pause();
         else clearProgression();
         e.preventDefault(); return true;
     }
@@ -1130,6 +1132,15 @@
         saveState();
       });
     }
+    const muteCb = $('atlas-mute-click');
+    if (muteCb) {
+      muteCb.checked = !!state.metroMuted;
+      muteCb.addEventListener('change', e => {
+        state.metroMuted = e.target.checked;
+        if (metro) metro.setMuted(state.metroMuted);
+        saveState();
+      });
+    }
     // Dirección (Fase 5 — stub: solo persistencia, render aún ignora)
     const dirSel = $('atlas-direction');
     if (dirSel) {
@@ -1285,6 +1296,8 @@
       metro = new G.metronome.Metronome({
         bpm: state.bpm,
         beatsPerChord: 99999,
+        beatsPerCompas: BEATS_PER_COMPAS,
+        muted: state.metroMuted,
         onBeat: () => {
           _prerollRemaining--;
           const btn = $('atlas-play');
@@ -1308,6 +1321,8 @@
     metro = new G.metronome.Metronome({
       bpm: state.bpm,
       beatsPerChord: 99999, // controlamos el cambio manualmente
+      beatsPerCompas: BEATS_PER_COMPAS,
+      muted: state.metroMuted,
       onBeat: (beat) => {
         _chordBeatCount++;
         pulseActiveChord(beat);
