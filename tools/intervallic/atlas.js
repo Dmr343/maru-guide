@@ -893,6 +893,7 @@
   }
 
   const BEATS_PER_COMPAS = 4;
+  const PREROLL_BEATS = 2;  // count-in corto, separado del compás
 
   // Adapter sobre G.metronome.Metronome para que sea reemplazable en tests.
   // Lazy: crea el Metronome cuando se llama start(), lo destruye en stop().
@@ -931,6 +932,7 @@
       clock,
       model: m,
       beatsPerCompas: BEATS_PER_COMPAS,
+      prerollBeats: PREROLL_BEATS,
       bpm: state.bpm,
       muted: state.metroMuted,
       prerollEnabled: state.prerollEnabled,
@@ -1001,7 +1003,7 @@
       btn.classList.add('paused');
     } else if (t === 'preroll') {
       btn.classList.add('playing');
-      btn.textContent = '◷ ' + (prerollRemaining != null ? prerollRemaining : BEATS_PER_COMPAS);
+      btn.textContent = '◷ ' + (prerollRemaining != null ? prerollRemaining : PREROLL_BEATS);
     } else {
       btn.textContent = '▶ Play';
     }

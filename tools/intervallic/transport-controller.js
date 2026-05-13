@@ -8,6 +8,9 @@
     this._clock = opts.clock;
     this._model = opts.model;
     this._BPC   = opts.beatsPerCompas || 4;
+    // Cuántos clicks de pre-roll antes de empezar. Separado del compás
+    // para que se sienta corto sin afectar el cálculo de downbeat.
+    this._prerollBeats = opts.prerollBeats != null ? opts.prerollBeats : 2;
     this._onTransportChange = opts.onTransportChange || function () {};
     this._onBeat            = opts.onBeat            || function () {};
 
@@ -57,7 +60,7 @@
     this._chordBeatCount = 0;
     if (this._prerollEnabled) {
       this._transport = 'preroll';
-      this._prerollRemaining = this._BPC;
+      this._prerollRemaining = this._prerollBeats;
     } else {
       this._transport = 'playing';
     }

@@ -101,31 +101,37 @@
       c.tc.setPrerollEnabled(true);
       c.tc.togglePlay();
       T.assertEq(c.tc.getState().transport, 'preroll');
-      T.assertEq(c.tc.getState().prerollRemaining, 4);
+      T.assertEq(c.tc.getState().prerollRemaining, 2, 'default preroll = 2 beats');
     });
     T.it('cada tick decrementa prerollRemaining', () => {
       const c = ctx();
       c.tc.setPrerollEnabled(true);
       c.tc.togglePlay();
       c.clock.tick(0);
-      T.assertEq(c.tc.getState().prerollRemaining, 3);
-      c.clock.tick(1);
-      T.assertEq(c.tc.getState().prerollRemaining, 2);
+      T.assertEq(c.tc.getState().prerollRemaining, 1);
     });
     T.it('al llegar a 0 → transition a playing y chordBeatCount=0', () => {
       const c = ctx();
       c.tc.setPrerollEnabled(true);
       c.tc.togglePlay();
-      c.clock.tickN(4);
+      c.clock.tickN(2);
       T.assertEq(c.tc.getState().transport, 'playing');
       T.assertEq(c.tc.getState().prerollRemaining, 0);
       T.assertEq(c.tc.getState().chordBeatCount, 0);
+    });
+    T.it('prerollBeats configurable via constructor', () => {
+      const clock = FakeClock();
+      const model = FakeModel([{ root:'C', quality:'maj7', bars:1 }]);
+      const tc = new TC({ clock, model, prerollBeats: 4 });
+      tc.setPrerollEnabled(true);
+      tc.togglePlay();
+      T.assertEq(tc.getState().prerollRemaining, 4);
     });
     T.it('resume desde pause NO repite preroll', () => {
       const c = ctx();
       c.tc.setPrerollEnabled(true);
       c.tc.togglePlay();   // → preroll
-      c.clock.tickN(4);    // → playing
+      c.clock.tickN(2);    // → playing
       c.clock.tick(0);     // playing beat 1
       c.tc.pause();
       c.tc.togglePlay();   // resume
@@ -137,7 +143,7 @@
       c.tc.setPrerollEnabled(true);
       c.tc.togglePlay();
       c.clock.tick(0);
-      T.assertEq(c.tc.getState().prerollRemaining, 3);
+      T.assertEq(c.tc.getState().prerollRemaining, 1);
       c.tc.stop();
       T.assertEq(c.tc.getState().prerollRemaining, 0);
       T.assertEq(c.tc.getState().transport, 'stopped');
@@ -146,10 +152,10 @@
       const c = ctx();
       c.tc.setPrerollEnabled(true);
       c.tc.togglePlay();
-      c.clock.tick(0);  // prerollRemaining=3
+      c.clock.tick(0);  // prerollRemaining=1
       c.tc.pause();
       T.assertEq(c.tc.getState().transport, 'paused');
-      T.assertEq(c.tc.getState().prerollRemaining, 3);
+      T.assertEq(c.tc.getState().prerollRemaining, 1);
     });
   });
 

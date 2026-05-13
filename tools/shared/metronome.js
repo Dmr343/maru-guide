@@ -28,6 +28,11 @@
       if (!this._audioCtx) {
         this._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
+      // Web Audio puede crearse en estado 'suspended' por la autoplay policy.
+      // Hay que resumir explícitamente para que el primer click sea inmediato.
+      if (this._audioCtx.state === 'suspended' && typeof this._audioCtx.resume === 'function') {
+        this._audioCtx.resume();
+      }
       return this._audioCtx;
     }
 
