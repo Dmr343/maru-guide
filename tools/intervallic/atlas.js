@@ -548,12 +548,14 @@
     if (!c) { info.className = 'empty-state'; info.textContent = '—'; return; }
     info.className = '';
     const tones = c.notes.map((n, i) => `${n}=${c.intervals[i]}`).join(' · ');
-    const ts = TENSIONS_BY_QUALITY[c.quality] || [];
+    const FR = W.FretboardRenderer;
+    const ts = (FR && FR.TENSIONS_BY_QUALITY && FR.TENSIONS_BY_QUALITY[c.quality]) || [];
+    const scaleName = (FR && FR.SCALE_BY_QUALITY && FR.SCALE_BY_QUALITY[c.quality]) || 'major';
     info.innerHTML = `
       <div style="font-size:18px;font-weight:700;color:var(--gold);margin-bottom:4px">${chordName(c)}</div>
       <div style="font-size:11px;color:var(--text-mid);line-height:1.6">${tones}</div>
       <div style="font-size:11px;color:var(--text-dim);margin-top:6px">Tensiones disponibles: ${ts.length ? ts.join(', ') : '—'}</div>
-      <div style="font-size:11px;color:var(--text-dim);margin-top:2px">Escala asociada: ${SCALE_BY_QUALITY[c.quality] || 'major'}</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:2px">Escala asociada: ${scaleName}</div>
     `;
   }
 
