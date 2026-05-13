@@ -454,6 +454,78 @@
     });
   });
 
+  T.describe('nextIdxFor — loop region', () => {
+    T.it('sin loop → wrap normal', () => {
+      T.assertEq(A._nextIdxFor(0, 4, null), 1);
+      T.assertEq(A._nextIdxFor(3, 4, null), 0);
+    });
+    T.it('progresión vacía → 0', () => {
+      T.assertEq(A._nextIdxFor(0, 0, null), 0);
+    });
+    T.it('loop [1,3]: avanza dentro del rango', () => {
+      T.assertEq(A._nextIdxFor(1, 5, [1, 3]), 2);
+      T.assertEq(A._nextIdxFor(2, 5, [1, 3]), 3);
+    });
+    T.it('loop [1,3]: al salir del rango vuelve al start', () => {
+      T.assertEq(A._nextIdxFor(3, 5, [1, 3]), 1);
+    });
+    T.it('loop [3,1] invertido → se normaliza a [1,3]', () => {
+      T.assertEq(A._nextIdxFor(2, 5, [3, 1]), 3);
+      T.assertEq(A._nextIdxFor(3, 5, [3, 1]), 1);
+    });
+    T.it('loop con activeIdx fuera → salta al start', () => {
+      T.assertEq(A._nextIdxFor(0, 5, [2, 3]), 2);
+      T.assertEq(A._nextIdxFor(4, 5, [2, 3]), 2);
+    });
+  });
+
+  T.describe('presets', () => {
+    T.it('AtlasPresets expone PRESETS y GENRES', () => {
+      const W = (typeof window !== 'undefined' ? window : globalThis);
+      T.assert(Array.isArray(W.AtlasPresets.PRESETS));
+      T.assert(Array.isArray(W.AtlasPresets.GENRES));
+    });
+    T.it('todos los presets tienen estructura válida', () => {
+      const W = (typeof window !== 'undefined' ? window : globalThis);
+      W.AtlasPresets.PRESETS.forEach(p => {
+        T.assert(typeof p.id === 'string', 'id falta en ' + JSON.stringify(p));
+        T.assert(typeof p.name === 'string', 'name falta');
+        T.assert(typeof p.genre === 'string', 'genre falta');
+        T.assert(Array.isArray(p.chords) && p.chords.length > 0, 'chords vacío en ' + p.id);
+        p.chords.forEach(c => {
+          T.assert(typeof c.root === 'string', 'chord sin root en ' + p.id);
+          T.assert(typeof c.quality === 'string', 'chord sin quality en ' + p.id);
+          T.assert(typeof c.bars === 'number' && c.bars >= 1 && c.bars <= 8, 'bars fuera de 1-8 en ' + p.id);
+        });
+      });
+    });
+    T.it('loadPreset carga progresión', () => {
+      A._loadPreset('jazz-ii-V-I-C');
+      const p = A.getState().progression;
+      T.assertEq(p.length, 3);
+      T.assertEq(p[0].root, 'D');
+      T.assertEq(p[2].quality, 'maj7');
+    });
+  });
+
+  T.describe('favoritos', () => {
+    T.it('saveCurrentAsFavorite con progresión vacía → null', () => {
+      A.setProgression([]);
+      T.assertEq(A._saveCurrentAsFavorite('test'), null);
+    });
+    T.it('saveCurrentAsFavorite con progresión válida devuelve fav', () => {
+      A.setProgression([
+        { root: 'C', quality: 'maj7', bars: 1 },
+        { root: 'A', quality: 'min7', bars: 2 },
+      ]);
+      const fav = A._saveCurrentAsFavorite('Test');
+      T.assert(fav && fav.id && fav.name === 'Test');
+      T.assertEq(fav.chords.length, 2);
+      T.assertEq(fav.chords[0].root, 'C');
+      T.assertEq(fav.chords[1].bars, 2);
+    });
+  });
+
   T.describe('makePseudoVoicing', () => {
     T.it('produce una posición por chord note', () => {
       const c = TH.buildChord('C','maj7');

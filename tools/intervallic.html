@@ -50,6 +50,7 @@
     .prog-chord.downbeat{background:#3a2e0a;box-shadow:0 0 18px rgba(212,168,71,.7);transition:background .14s ease-out, box-shadow .14s ease-out}
     .prog-chord.dragging{opacity:.45;transform:scale(.95)}
     .prog-chord.drag-over{outline:2px dashed var(--gold);outline-offset:2px}
+    .prog-chord.in-loop{box-shadow:inset 0 -3px 0 #9b59b6}
     .prog-chord[draggable=true]{cursor:grab}
     .prog-chord[draggable=true]:active{cursor:grabbing}
     .prog-chord .pc-bars-vis{font-size:8px;color:var(--text-dim);letter-spacing:1px;line-height:1}
@@ -65,6 +66,25 @@
     .edit-popover{position:fixed;background:var(--surface);border:1px solid var(--gold);border-radius:8px;padding:10px;box-shadow:0 8px 24px rgba(0,0,0,.6);z-index:1000;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
     .edit-popover-title{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em;width:100%}
     .edit-popover-actions{display:flex;gap:4px;margin-left:auto}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px}
+    .modal{background:var(--surface);border:1px solid var(--gold);border-radius:10px;padding:18px;width:min(720px,100%);max-height:80vh;display:flex;flex-direction:column;gap:10px}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .modal-header h3{color:var(--gold);font-size:14px;letter-spacing:.1em;text-transform:uppercase}
+    .modal-tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+    .modal-tab{background:transparent;border:none;color:var(--text-mid);font-family:var(--font);font-size:12px;padding:6px 12px;cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.04em}
+    .modal-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+    .modal-list{overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;padding:6px 2px}
+    .preset-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;transition:border-color .15s,transform .12s}
+    .preset-card:hover{border-color:var(--gold);transform:translateY(-1px)}
+    .preset-card-name{font-weight:700;color:var(--gold);font-size:13px;margin-bottom:4px}
+    .preset-card-chords{font-size:11px;color:var(--text-mid);line-height:1.5}
+    .fav-list{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+    .fav-item{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:12px}
+    .fav-item:hover{border-color:var(--gold)}
+    .fav-item-name{color:var(--text);cursor:pointer;flex:1}
+    .fav-item-name:hover{color:var(--gold)}
+    .fav-item-del{cursor:pointer;color:var(--text-dim);padding:2px 6px}
+    .fav-item-del:hover{color:#e74c3c}
     .prog-chord .pc-name{font-weight:700;color:var(--gold);font-size:13px}
 
     .legend{display:flex;gap:14px;font-size:11px;color:var(--text-mid);flex-wrap:wrap;margin-top:8px}
@@ -202,8 +222,26 @@
         <div id="atlas-diat-chips" class="diat-chips"></div>
       </div>
 
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="atlas-presets-btn">📚 Presets</button>
+        <button class="btn" id="atlas-fav-save">★ Guardar</button>
+      </div>
+      <div id="atlas-favorites"></div>
+
       <h3 style="margin-top:14px">Acorde activo</h3>
       <div id="atlas-info" class="empty-state">—</div>
+    </div>
+
+    <!-- Modal de presets -->
+    <div class="modal-backdrop" id="atlas-presets-modal" style="display:none">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Presets por género</h3>
+          <button class="btn" id="atlas-presets-close">Cerrar</button>
+        </div>
+        <div class="modal-tabs" id="atlas-presets-tabs"></div>
+        <div class="modal-list" id="atlas-presets-list"></div>
+      </div>
     </div>
   </div>
 
@@ -214,6 +252,7 @@
   <script src="./shared/positions.js"></script>
   <script src="./shared/metronome.js"></script>
   <script src="./intervallic/audio.js"></script>
+  <script src="./intervallic/presets.js"></script>
   <script src="./intervallic/atlas.js"></script>
 
   <script>

@@ -112,7 +112,10 @@
     diatonicKey: 'C',
     diatonicMode: 'major',
     prerollEnabled: false,
+    loopRange: null, // [startIdx, endIdx] inclusivo o null
   };
+
+  const LS_FAVS = 'atlas_favorites';
   let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 
   function loadState() {
@@ -677,11 +680,29 @@
       div.innerHTML = `<div class="pc-name">${chordName(ch)}</div>
         <div class="pc-bars-vis" aria-label="${c.bars} compás${c.bars===1?'':'es'}">${'●'.repeat(c.bars)}</div>`;
 
-      // Click → quitar (modelo improvisar).
-      // Diferenciar click simple de doble-click con timeout para evitar disparar
-      // remove cuando el usuario hace doble-click para editar.
+      // Visual: highlight si está dentro del loop range activo
+      if (state.loopRange) {
+        const [a, b] = state.loopRange;
+        const lo = Math.min(a, b), hi = Math.max(a, b);
+        if (i >= lo && i <= hi) div.classList.add('in-loop');
+      }
+
+      // Click simple → quitar; shift-click → setear loop range
       let _clickTimer = null;
       div.addEventListener('click', e => {
+        if (e.shiftKey) {
+          // Loop region: primer shift-click setea start, segundo setea end,
+          // tercero limpia.
+          if (!state.loopRange) {
+            state.loopRange = [i, i];
+          } else if (state.loopRange[0] === state.loopRange[1] && state.loopRange[0] !== i) {
+            state.loopRange = [state.loopRange[0], i];
+          } else {
+            state.loopRange = null;
+          }
+          saveState(); render();
+          return;
+        }
         if (_clickTimer) return;
         _clickTimer = setTimeout(() => {
           _clickTimer = null;
@@ -776,6 +797,99 @@
     renderPalette();
   }
 
+  // ─── UI de presets ─────────────────────────────────────────────────────
+  let _presetsActiveGenre = null;
+
+  function openPresetsModal() {
+    if (!W.AtlasPresets) return;
+    const modal = $('atlas-presets-modal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    if (!_presetsActiveGenre) _presetsActiveGenre = W.AtlasPresets.GENRES[0].id;
+    renderPresetsModal();
+  }
+
+  function closePresetsModal() {
+    const modal = $('atlas-presets-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function renderPresetsModal() {
+    const tabs = $('atlas-presets-tabs');
+    const list = $('atlas-presets-list');
+    if (!tabs || !list || !W.AtlasPresets) return;
+    tabs.innerHTML = '';
+    W.AtlasPresets.GENRES.forEach(g => {
+      const b = document.createElement('button');
+      b.className = 'modal-tab' + (g.id === _presetsActiveGenre ? ' active' : '');
+      b.textContent = g.label;
+      b.addEventListener('click', () => { _presetsActiveGenre = g.id; renderPresetsModal(); });
+      tabs.appendChild(b);
+    });
+    list.innerHTML = '';
+    const items = W.AtlasPresets.byGenre(_presetsActiveGenre);
+    items.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'preset-card';
+      const summary = p.chords.map(c =>
+        c.root + (QUALITY_LABEL[c.quality] ?? c.quality)).join(' · ');
+      card.innerHTML = `
+        <div class="preset-card-name">${p.name}</div>
+        <div class="preset-card-chords">${summary}</div>
+      `;
+      card.addEventListener('click', () => {
+        loadPreset(p.id);
+        closePresetsModal();
+      });
+      list.appendChild(card);
+    });
+  }
+
+  // ─── UI de favoritos ───────────────────────────────────────────────────
+  function renderFavorites() {
+    const cont = $('atlas-favorites');
+    if (!cont) return;
+    const list = loadFavorites();
+    if (!list.length) { cont.innerHTML = ''; return; }
+    const wrap = document.createElement('div');
+    wrap.className = 'fav-list';
+    list.forEach(f => {
+      const item = document.createElement('div');
+      item.className = 'fav-item';
+      const name = document.createElement('span');
+      name.className = 'fav-item-name';
+      name.textContent = '★ ' + f.name + '  (' + f.chords.length + ')';
+      name.addEventListener('click', () => loadFavoriteIntoProg(f.id));
+      const del = document.createElement('span');
+      del.className = 'fav-item-del';
+      del.textContent = '✕';
+      del.title = 'Borrar favorito';
+      del.addEventListener('click', e => {
+        e.stopPropagation();
+        if (confirm('¿Borrar "' + f.name + '"?')) {
+          deleteFavorite(f.id);
+          renderFavorites();
+        }
+      });
+      item.appendChild(name);
+      item.appendChild(del);
+      wrap.appendChild(item);
+    });
+    cont.innerHTML = '';
+    cont.appendChild(wrap);
+  }
+
+  function promptSaveFavorite() {
+    if (!state.progression.length) {
+      alert('Agregá acordes antes de guardar como favorito.');
+      return;
+    }
+    const name = prompt('Nombre del favorito:', 'Mi progresión');
+    if (!name) return;
+    saveCurrentAsFavorite(name.trim());
+    renderFavorites();
+  }
+
   function drawInfo() {
     const info = $('atlas-info');
     if (!info) return;
@@ -813,6 +927,67 @@
     state.progression.push(chord);
     if (state.progression.length === 1) state.activeIdx = 0;
     saveState(); render();
+  }
+
+  // Pure: dado activeIdx, progLength y loopRange, devuelve el siguiente idx.
+  // Si hay loop y nos vamos del rango (o estamos fuera), envolvemos al start.
+  function nextIdxFor(activeIdx, progLength, loopRange) {
+    if (progLength <= 0) return 0;
+    const def = (activeIdx + 1) % progLength;
+    if (!loopRange) return def;
+    const [a, b] = loopRange;
+    if (a == null || b == null) return def;
+    const lo = Math.min(a, b), hi = Math.max(a, b);
+    if (activeIdx < lo || activeIdx >= hi) return lo;
+    return def;
+  }
+
+  // ─── Favoritos ───────────────────────────────────────────────────────────
+  function loadFavorites() {
+    try {
+      const raw = localStorage.getItem(LS_FAVS);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+  }
+  function saveFavorites(list) {
+    try { localStorage.setItem(LS_FAVS, JSON.stringify(list)); } catch (e) {}
+  }
+  function saveCurrentAsFavorite(name) {
+    if (!state.progression.length) return null;
+    const list = loadFavorites();
+    const fav = {
+      id: 'fav_' + Date.now(),
+      name: name || ('Progresión ' + (list.length + 1)),
+      chords: state.progression.map(c => ({ root: c.root, quality: c.quality, bars: c.bars })),
+    };
+    list.push(fav);
+    saveFavorites(list);
+    return fav;
+  }
+  function loadFavoriteIntoProg(favId) {
+    const fav = loadFavorites().find(f => f.id === favId);
+    if (!fav) return false;
+    state.progression = fav.chords.map(c => ({ root: c.root, quality: c.quality, bars: c.bars }));
+    state.activeIdx = 0;
+    state.loopRange = null;
+    saveState(); render();
+    return true;
+  }
+  function deleteFavorite(favId) {
+    const list = loadFavorites().filter(f => f.id !== favId);
+    saveFavorites(list);
+  }
+
+  // ─── Presets ─────────────────────────────────────────────────────────────
+  function loadPreset(presetId) {
+    if (!W.AtlasPresets) return false;
+    const p = W.AtlasPresets.byId(presetId);
+    if (!p) return false;
+    state.progression = p.chords.map(c => ({ root: c.root, quality: c.quality, bars: c.bars }));
+    state.activeIdx = 0;
+    state.loopRange = null;
+    saveState(); render();
+    return true;
   }
 
   function changeActiveBars(delta) {
@@ -1004,8 +1179,21 @@
     const newQuality = $('atlas-new-quality');
     if (newQuality && state.progression[0]) newQuality.value = state.progression[state.activeIdx].quality;
 
+    // Presets y favoritos
+    const presetsBtn = $('atlas-presets-btn');
+    if (presetsBtn) presetsBtn.addEventListener('click', openPresetsModal);
+    const presetsClose = $('atlas-presets-close');
+    if (presetsClose) presetsClose.addEventListener('click', closePresetsModal);
+    const presetsModal = $('atlas-presets-modal');
+    if (presetsModal) presetsModal.addEventListener('click', e => {
+      if (e.target === presetsModal) closePresetsModal();
+    });
+    const favSave = $('atlas-fav-save');
+    if (favSave) favSave.addEventListener('click', promptSaveFavorite);
+
     drawLegend();
     renderPalette();
+    renderFavorites();
     render();
   }
 
@@ -1114,7 +1302,7 @@
         if (_chordBeatCount >= targetBeats) {
           _chordBeatCount = 0;
           _prevChord = activeChord();
-          state.activeIdx = (state.activeIdx + 1) % state.progression.length;
+          state.activeIdx = nextIdxFor(state.activeIdx, state.progression.length, state.loopRange);
           playCurrentChord();
           render();
         }
@@ -1255,5 +1443,9 @@
     _getCopiedChord: () => _copiedChord && Object.assign({}, _copiedChord),
     _setCopiedChord: (c) => { _copiedChord = c ? Object.assign({}, c) : null; },
     _handleKeydown: handleKeydown,
+    _nextIdxFor: nextIdxFor,
+    _loadPreset: loadPreset,
+    _saveCurrentAsFavorite: saveCurrentAsFavorite,
+    _loadFavorites: loadFavorites,
   };
 })(window.GuitarShared, window);
