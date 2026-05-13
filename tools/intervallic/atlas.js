@@ -466,6 +466,32 @@
     return TH.buildChord(c.root, c.quality);
   }
 
+  // Ancho del slot proporcional a bars. Base 70px + 30px por compás extra.
+  function slotWidth(bars) {
+    const b = Math.max(1, Math.min(8, bars || 1));
+    return 70 + (b - 1) * 30;
+  }
+
+  function removeChordAt(idx) {
+    state.progression.splice(idx, 1);
+    if (state.progression.length === 0) state.activeIdx = 0;
+    else if (state.activeIdx >= state.progression.length) state.activeIdx = state.progression.length - 1;
+    _prevChord = null;
+    saveState(); render();
+  }
+
+  function moveChord(srcIdx, destIdx) {
+    if (srcIdx === destIdx || srcIdx < 0 || srcIdx >= state.progression.length) return;
+    const moved = state.progression.splice(srcIdx, 1)[0];
+    const insertAt = srcIdx < destIdx ? destIdx - 1 : destIdx;
+    state.progression.splice(insertAt, 0, moved);
+    // Mantener activeIdx apuntando al mismo acorde lógico
+    if (state.activeIdx === srcIdx) state.activeIdx = insertAt;
+    saveState(); render();
+  }
+
+  let _dragSrcIdx = null;
+
   function drawBar() {
     const bar = $('atlas-bar');
     if (!bar) return;
@@ -474,33 +500,41 @@
       const ch = TH.buildChord(c.root, c.quality);
       const div = document.createElement('div');
       div.className = 'prog-chord' + (i === state.activeIdx ? ' active' : '');
-      div.innerHTML = `<div class="pc-name">${chordName(ch)}</div>`;
-      const barsBtn = document.createElement('div');
-      barsBtn.className = 'pc-bars';
-      barsBtn.textContent = c.bars + ' compás' + (c.bars === 1 ? '' : 'es');
-      barsBtn.title = 'Click para cambiar duración (1/2/4/8 compases)';
-      barsBtn.style.cursor = 'pointer';
-      barsBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        const seq = [1, 2, 4, 8];
-        const idx = seq.indexOf(c.bars);
-        state.progression[i].bars = seq[(idx + 1) % seq.length];
-        saveState(); render();
+      div.style.width = slotWidth(c.bars) + 'px';
+      div.setAttribute('draggable', 'true');
+      div.title = 'Click: quitar · arrastrar: reordenar · ↑↓: ± compás';
+      div.innerHTML = `<div class="pc-name">${chordName(ch)}</div>
+        <div class="pc-bars-vis" aria-label="${c.bars} compás${c.bars===1?'':'es'}">${'●'.repeat(c.bars)}</div>`;
+
+      // Click → quitar (modelo improvisar)
+      div.addEventListener('click', () => removeChordAt(i));
+
+      // Drag-to-reorder
+      div.addEventListener('dragstart', e => {
+        _dragSrcIdx = i;
+        e.dataTransfer.effectAllowed = 'move';
+        try { e.dataTransfer.setData('text/plain', String(i)); } catch (_) {}
+        div.classList.add('dragging');
       });
-      div.appendChild(barsBtn);
-      div.addEventListener('click', () => setActiveChord(i));
-      const del = document.createElement('div');
-      del.className = 'pc-del'; del.textContent = '×';
-      del.addEventListener('click', e => {
-        e.stopPropagation();
-        state.progression.splice(i, 1);
-        state.activeIdx = state.progression.length
-          ? Math.max(0, Math.min(state.activeIdx, state.progression.length - 1))
-          : 0;
-        _prevChord = null;
-        saveState(); render();
+      div.addEventListener('dragend', () => {
+        _dragSrcIdx = null;
+        div.classList.remove('dragging');
+        document.querySelectorAll('.prog-chord.drag-over').forEach(el => el.classList.remove('drag-over'));
       });
-      div.appendChild(del);
+      div.addEventListener('dragover', e => {
+        if (_dragSrcIdx === null) return;
+        e.preventDefault();
+        div.classList.add('drag-over');
+      });
+      div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
+      div.addEventListener('drop', e => {
+        e.preventDefault();
+        div.classList.remove('drag-over');
+        if (_dragSrcIdx === null) return;
+        moveChord(_dragSrcIdx, i);
+        _dragSrcIdx = null;
+      });
+
       bar.appendChild(div);
     });
   }
@@ -541,6 +575,13 @@
     };
     state.progression.push(chord);
     if (state.progression.length === 1) state.activeIdx = 0;
+    saveState(); render();
+  }
+
+  function changeActiveBars(delta) {
+    const c = state.progression[state.activeIdx];
+    if (!c) return;
+    c.bars = Math.max(1, Math.min(8, (c.bars || 1) + delta));
     saveState(); render();
   }
 
@@ -608,10 +649,13 @@
     const clearProg = $('atlas-clear-prog');
     if (clearProg) clearProg.addEventListener('click', clearProgression);
     document.addEventListener('keydown', e => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-      if (e.key === 'ArrowLeft')  { prev && prev.click(); e.preventDefault(); }
-      if (e.key === 'ArrowRight') { nxt && nxt.click(); e.preventDefault(); }
-      if (e.key === 'Escape')     { clearProgression(); e.preventDefault(); }
+      const tag = e.target.tagName;
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+      if (e.key === 'ArrowLeft')  { prev && prev.click(); e.preventDefault(); return; }
+      if (e.key === 'ArrowRight') { nxt && nxt.click(); e.preventDefault(); return; }
+      if (e.key === 'Escape')     { clearProgression(); e.preventDefault(); return; }
+      if (e.key === 'ArrowUp')    { changeActiveBars(+1); e.preventDefault(); return; }
+      if (e.key === 'ArrowDown')  { changeActiveBars(-1); e.preventDefault(); return; }
     });
 
     // Transporte
@@ -860,5 +904,10 @@
     _intervalToSemi: intervalToSemi,
     _applyDirection: applyDirection,
     _makePseudoVoicing: makePseudoVoicing,
+    _slotWidth: slotWidth,
+    _addChord: addChord,
+    _removeChordAt: removeChordAt,
+    _moveChord: moveChord,
+    _changeActiveBars: changeActiveBars,
   };
 })(window.GuitarShared, window);

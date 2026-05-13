@@ -193,6 +193,109 @@
     });
   });
 
+  T.describe('slotWidth (DAW-style)', () => {
+    T.it('1 compás = 70px', () => T.assertEq(A._slotWidth(1), 70));
+    T.it('2 compases = 100px', () => T.assertEq(A._slotWidth(2), 100));
+    T.it('4 compases = 160px', () => T.assertEq(A._slotWidth(4), 160));
+    T.it('8 compases = 280px', () => T.assertEq(A._slotWidth(8), 280));
+    T.it('clamps under 1', () => T.assertEq(A._slotWidth(0), 70));
+    T.it('clamps over 8', () => T.assertEq(A._slotWidth(99), 280));
+  });
+
+  T.describe('addChord defaults', () => {
+    T.it('bars omitido → 1', () => {
+      A.setProgression([]);
+      A._addChord({ root: 'C', quality: 'maj7' });
+      T.assertEq(A.getState().progression[0].bars, 1);
+    });
+    T.it('bars explícito se respeta', () => {
+      A.setProgression([]);
+      A._addChord({ root: 'D', quality: 'min7', bars: 4 });
+      T.assertEq(A.getState().progression[0].bars, 4);
+    });
+    T.it('bars clamp a 1-8', () => {
+      A.setProgression([]);
+      A._addChord({ root: 'C', quality: 'maj7', bars: 99 });
+      T.assertEq(A.getState().progression[0].bars, 8);
+      A.setProgression([]);
+      A._addChord({ root: 'C', quality: 'maj7', bars: 0 });
+      T.assertEq(A.getState().progression[0].bars, 1);
+    });
+    T.it('primer acorde activa idx 0', () => {
+      A.setProgression([]);
+      A._addChord({ root: 'C', quality: 'maj7' });
+      T.assertEq(A.getState().activeIdx, 0);
+    });
+  });
+
+  T.describe('moveChord', () => {
+    T.it('mueve forward', () => {
+      A.setProgression([
+        { root: 'C', quality: 'maj7', bars: 1 },
+        { root: 'D', quality: 'min7', bars: 1 },
+        { root: 'G', quality: 'dom7', bars: 1 },
+      ]);
+      A._moveChord(0, 2);
+      const p = A.getState().progression;
+      T.assertEq(p[0].root, 'D');
+      T.assertEq(p[1].root, 'C');
+      T.assertEq(p[2].root, 'G');
+    });
+    T.it('mueve backward', () => {
+      A.setProgression([
+        { root: 'C', quality: 'maj7', bars: 1 },
+        { root: 'D', quality: 'min7', bars: 1 },
+        { root: 'G', quality: 'dom7', bars: 1 },
+      ]);
+      A._moveChord(2, 0);
+      const p = A.getState().progression;
+      T.assertEq(p[0].root, 'G');
+      T.assertEq(p[1].root, 'C');
+      T.assertEq(p[2].root, 'D');
+    });
+    T.it('mismo origen y destino no rompe', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      A._moveChord(0, 0);
+      T.assertEq(A.getState().progression.length, 1);
+    });
+  });
+
+  T.describe('removeChordAt', () => {
+    T.it('remueve y baja activeIdx si era el último', () => {
+      A.setProgression([
+        { root: 'C', quality: 'maj7', bars: 1 },
+        { root: 'D', quality: 'min7', bars: 1 },
+      ]);
+      A.setActiveChord(1);
+      A._removeChordAt(1);
+      T.assertEq(A.getState().progression.length, 1);
+      T.assertEq(A.getState().activeIdx, 0);
+    });
+    T.it('progresión vacía → activeIdx 0', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      A._removeChordAt(0);
+      T.assertEq(A.getState().progression.length, 0);
+      T.assertEq(A.getState().activeIdx, 0);
+    });
+  });
+
+  T.describe('changeActiveBars', () => {
+    T.it('+1 sube bars con clamp a 8', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      A._changeActiveBars(1);
+      T.assertEq(A.getState().progression[0].bars, 2);
+      A._changeActiveBars(99);
+      T.assertEq(A.getState().progression[0].bars, 8);
+    });
+    T.it('-1 baja bars con clamp a 1', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 2 }]);
+      A._changeActiveBars(-1);
+      T.assertEq(A.getState().progression[0].bars, 1);
+      A._changeActiveBars(-99);
+      T.assertEq(A.getState().progression[0].bars, 1);
+    });
+  });
+
   T.describe('makePseudoVoicing', () => {
     T.it('produce una posición por chord note', () => {
       const c = TH.buildChord('C','maj7');

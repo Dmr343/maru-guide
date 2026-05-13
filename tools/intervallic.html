@@ -43,10 +43,16 @@
     .layer-toggle{display:inline-flex;gap:5px;align-items:center;font-size:12px;color:var(--text-mid);cursor:pointer}
 
     .progression-bar{display:flex;gap:6px;background:var(--surface2);padding:8px;border-radius:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;min-height:48px}
-    .prog-chord{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:60px;position:relative;cursor:pointer}
+    .prog-chord{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:60px;position:relative;cursor:pointer;transition:transform .12s, opacity .12s, box-shadow .12s;user-select:none}
+    .prog-chord:hover{box-shadow:0 0 0 1px var(--gold)}
     .prog-chord.active{border-color:var(--gold);background:#1d1810;box-shadow:0 0 10px rgba(212,168,71,.3)}
     .prog-chord.beat{transform:scale(1.06);transition:transform .09s ease-out}
     .prog-chord.downbeat{background:#3a2e0a;box-shadow:0 0 18px rgba(212,168,71,.7);transition:background .14s ease-out, box-shadow .14s ease-out}
+    .prog-chord.dragging{opacity:.45;transform:scale(.95)}
+    .prog-chord.drag-over{outline:2px dashed var(--gold);outline-offset:2px}
+    .prog-chord[draggable=true]{cursor:grab}
+    .prog-chord[draggable=true]:active{cursor:grabbing}
+    .prog-chord .pc-bars-vis{font-size:8px;color:var(--text-dim);letter-spacing:1px;line-height:1}
     .btn.playing{background:#e74c3c;color:#fff;border-color:#e74c3c;animation:pulse 1s ease-in-out infinite}
     .btn.paused{background:#f0c060;color:#000;border-color:#f0c060}
     @keyframes pulse{50%{opacity:.7}}
@@ -54,10 +60,7 @@
     .filters-block summary{cursor:pointer;font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em;outline:none;list-style:none}
     .filters-block summary::-webkit-details-marker{display:none}
     .filters-block[open] summary{color:var(--gold)}
-    .prog-chord .pc-name{font-weight:700;color:var(--gold)}
-    .prog-chord .pc-bars{font-size:9px;color:var(--text-dim)}
-    .prog-chord .pc-del{position:absolute;top:1px;right:4px;font-size:11px;color:var(--text-dim);cursor:pointer}
-    .prog-chord .pc-del:hover{color:#e74c3c}
+    .prog-chord .pc-name{font-weight:700;color:var(--gold);font-size:13px}
 
     .legend{display:flex;gap:14px;font-size:11px;color:var(--text-mid);flex-wrap:wrap;margin-top:8px}
     .legend-dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:4px}
