@@ -9,16 +9,16 @@
   const SVG_NS = 'http://www.w3.org/2000/svg';
   const LS_KEY = 'atlas_state';
 
-  // Colores: chord tones (R/3/5/7) usan los de FB.INTERVAL_COLORS;
-  // el resto (b2/2/4/b5/6/b6/b3) se pinta tenue.
+  // Colores con par bemol/natural diferenciado: el natural más brillante,
+  // el bemol más oscuro/desaturado pero misma familia de hue.
   const INTERVAL_COLORS_FULL = {
-    '1':  '#d4a847',
+    '1':  '#d4a847',                          // dorado raíz
     'b2': '#5a3a40', '2':  '#7a5a30',
-    'b3': '#e67e22', '3':  '#e67e22',
+    'b3': '#b35a14', '3':  '#ff9b3d',         // naranjas: b3 quemado, 3 brillante
     '4':  '#6a7a40',
-    'b5': '#3498db', '5':  '#3498db',
+    'b5': '#1e6da5', '5':  '#5fb8f0',         // azules: b5 profundo, 5 claro
     'b6': '#5a3a6a', '6':  '#7a5a8a',
-    'b7': '#2ecc71', '7':  '#2ecc71',
+    'b7': '#1e9650', '7':  '#7ce8a2',         // verdes: b7 oscuro, 7 lima
   };
   const CHORD_TONE_INTERVALS = new Set(['1','b3','3','b5','5','b7','7']);
 
