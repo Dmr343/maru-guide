@@ -526,6 +526,33 @@
     });
   });
 
+  T.describe('applyHiddenIntervals — filtra leyenda', () => {
+    T.it('lista vacía → renderMap inalterado', () => {
+      const m = A._computeRenderMap(TH.buildChord('C','maj7'), { chordTones: true });
+      const out = A._applyHiddenIntervals(m, []);
+      T.assertEq(out.size, m.size);
+    });
+    T.it('oculta "5" → excluye G de Cmaj7', () => {
+      const m = A._computeRenderMap(TH.buildChord('C','maj7'), { chordTones: true });
+      const out = A._applyHiddenIntervals(m, ['5']);
+      T.assert(!out.has('G'));
+      T.assert(out.has('C'));
+      T.assert(out.has('E'));
+      T.assert(out.has('B'));
+    });
+    T.it('oculta múltiples intervalos', () => {
+      const m = A._computeRenderMap(TH.buildChord('C','maj7'), { chordTones: true });
+      const out = A._applyHiddenIntervals(m, ['5', '7']);
+      T.assertArrayEq(Array.from(out.keys()).sort(), ['C','E']);
+    });
+    T.it('toggleHiddenInterval togglea en el state', () => {
+      A._toggleHiddenInterval('5');
+      T.assert(A.getState().hiddenIntervals.includes('5'));
+      A._toggleHiddenInterval('5');
+      T.assert(!A.getState().hiddenIntervals.includes('5'));
+    });
+  });
+
   T.describe('makePseudoVoicing', () => {
     T.it('produce una posición por chord note', () => {
       const c = TH.buildChord('C','maj7');

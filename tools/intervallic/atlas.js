@@ -113,6 +113,7 @@
     diatonicMode: 'major',
     prerollEnabled: false,
     loopRange: null, // [startIdx, endIdx] inclusivo o null
+    hiddenIntervals: [], // ej ['5','b5'] para ocultarlos del mástil
   };
 
   const LS_FAVS = 'atlas_favorites';
@@ -311,7 +312,10 @@
     const chord = activeChord();
     if (!chord) { drawInfo(); drawBar(); return; }
 
-    const renderMap = computeRenderMap(chord, state.layers, nextChord());
+    const renderMap = applyHiddenIntervals(
+      computeRenderMap(chord, state.layers, nextChord()),
+      state.hiddenIntervals
+    );
 
     // Filtros
     const stringSet = state.filter.stringSet || [1,2,3,4,5,6];
@@ -911,11 +915,48 @@
     if (!lg) return;
     lg.innerHTML = '';
     const ints = ['1','b3','3','b5','5','b7','7'];
+    const hidden = new Set(state.hiddenIntervals || []);
     ints.forEach(i => {
-      const span = document.createElement('span');
-      span.innerHTML = `<span class="legend-dot" style="background:${INTERVAL_COLORS_FULL[i]}"></span>${i}`;
-      lg.appendChild(span);
+      const btn = document.createElement('button');
+      const isHidden = hidden.has(i);
+      btn.className = 'legend-toggle' + (isHidden ? ' off' : '');
+      btn.title = isHidden ? `Mostrar ${i}` : `Ocultar ${i}`;
+      btn.innerHTML = `<span class="legend-dot" style="background:${INTERVAL_COLORS_FULL[i]}"></span>${i}`;
+      btn.addEventListener('click', () => toggleHiddenInterval(i));
+      lg.appendChild(btn);
     });
+    // Botón "mostrar todos" si hay algo oculto
+    if (hidden.size > 0) {
+      const reset = document.createElement('button');
+      reset.className = 'legend-toggle reset';
+      reset.textContent = 'Mostrar todos';
+      reset.addEventListener('click', () => {
+        state.hiddenIntervals = [];
+        saveState(); render(); drawLegend();
+      });
+      lg.appendChild(reset);
+    }
+  }
+
+  function toggleHiddenInterval(interval) {
+    const hidden = new Set(state.hiddenIntervals || []);
+    if (hidden.has(interval)) hidden.delete(interval);
+    else hidden.add(interval);
+    state.hiddenIntervals = Array.from(hidden);
+    saveState(); render(); drawLegend();
+  }
+
+  // Pure: dado el render map y la lista de hidden, filtra las celdas
+  // cuyo intervalo está oculto. También filtra el nextInterval del cross-ref.
+  function applyHiddenIntervals(renderMap, hidden) {
+    if (!hidden || !hidden.length) return renderMap;
+    const hiddenSet = new Set(hidden);
+    const filtered = new Map();
+    renderMap.forEach((info, pc) => {
+      if (hiddenSet.has(info.interval)) return;
+      filtered.set(pc, info);
+    });
+    return filtered;
   }
 
   function addChord(c) {
@@ -1447,5 +1488,7 @@
     _loadPreset: loadPreset,
     _saveCurrentAsFavorite: saveCurrentAsFavorite,
     _loadFavorites: loadFavorites,
+    _applyHiddenIntervals: applyHiddenIntervals,
+    _toggleHiddenInterval: toggleHiddenInterval,
   };
 })(window.GuitarShared, window);
