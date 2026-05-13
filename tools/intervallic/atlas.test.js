@@ -296,6 +296,31 @@
     });
   });
 
+  T.describe('paleta — glifos y colores muted', () => {
+    T.it('maj7 → Δ', () => T.assertEq(A._QUALITY_GLYPH.maj7, 'Δ'));
+    T.it('min7 → m7', () => T.assertEq(A._QUALITY_GLYPH.min7, 'm7'));
+    T.it('dom7 → 7', () => T.assertEq(A._QUALITY_GLYPH.dom7, '7'));
+    T.it('dim7 → °', () => T.assertEq(A._QUALITY_GLYPH.dim7, '°'));
+    T.it('m7b5 → ø', () => T.assertEq(A._QUALITY_GLYPH.m7b5, 'ø'));
+    T.it('todas las calidades tienen color muted', () => {
+      ['major','minor','dom7','maj7','min7','dim','dim7','m7b5','aug'].forEach(q =>
+        T.assert(typeof A._QUALITY_PALETTE_COLOR[q] === 'string', 'falta color ' + q));
+    });
+  });
+
+  T.describe('setPaletteMode', () => {
+    T.it('cambia entre libre y diatonic', () => {
+      A._setPaletteMode('diatonic');
+      T.assertEq(A.getState().paletteMode, 'diatonic');
+      A._setPaletteMode('libre');
+      T.assertEq(A.getState().paletteMode, 'libre');
+    });
+    T.it('valor inválido cae a libre', () => {
+      A._setPaletteMode('foobar');
+      T.assertEq(A.getState().paletteMode, 'libre');
+    });
+  });
+
   T.describe('makePseudoVoicing', () => {
     T.it('produce una posición por chord note', () => {
       const c = TH.buildChord('C','maj7');

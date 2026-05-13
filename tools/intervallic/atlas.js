@@ -70,6 +70,27 @@
     maj7: 'maj7', min7: 'm7', dom7: '7', dim7: 'dim7', m7b5: 'm7b5',
   };
 
+  // Glifo corto para la paleta (familia jazz: Δ, m, 7, °, ø)
+  const QUALITY_GLYPH = {
+    major: '',  maj7: 'Δ',
+    minor: 'm', min7: 'm7',
+    dom7:  '7',
+    dim:   '°', dim7: '°',
+    m7b5:  'ø',
+    aug:   '+',
+  };
+
+  // Color muted por cualidad — solo para borde de paleta. NO compite con
+  // los colores brillantes de los intervalos del mástil.
+  const QUALITY_PALETTE_COLOR = {
+    major: '#8a7333', maj7: '#8a7333',
+    minor: '#5a6b7a', min7: '#5a6b7a',
+    dom7:  '#7a4040',
+    dim:   '#5a3a6a', dim7: '#5a3a6a',
+    m7b5:  '#4a3a5a',
+    aug:   '#6b5a3a',
+  };
+
   function chordName(c) { return c.root + (QUALITY_LABEL[c.quality] ?? c.quality); }
 
   // ──────────────── Estado ────────────────
@@ -87,6 +108,9 @@
     bpm: 80,
     beatsPerChord: 4,
     filtersCollapsed: true,
+    paletteMode: 'libre',       // 'libre' | 'diatonic'
+    diatonicKey: 'C',
+    diatonicMode: 'major',
   };
   let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 
@@ -503,6 +527,8 @@
       div.style.width = slotWidth(c.bars) + 'px';
       div.setAttribute('draggable', 'true');
       div.title = 'Click: quitar · arrastrar: reordenar · ↑↓: ± compás';
+      const qCol = QUALITY_PALETTE_COLOR[c.quality] || '#5a5a5a';
+      div.style.borderLeft = '3px solid ' + qCol;
       div.innerHTML = `<div class="pc-name">${chordName(ch)}</div>
         <div class="pc-bars-vis" aria-label="${c.bars} compás${c.bars===1?'':'es'}">${'●'.repeat(c.bars)}</div>`;
 
@@ -537,6 +563,57 @@
 
       bar.appendChild(div);
     });
+  }
+
+  // Renderiza la paleta (modo Libre o Diatónico). Se llama en init y al
+  // cambiar de modo, tónica o modo. Independiente de la progresión.
+  function renderPalette() {
+    const paneLibre = $('atlas-palette-libre');
+    const paneDiat  = $('atlas-palette-diatonic');
+    const isDiat = state.paletteMode === 'diatonic';
+    if (paneLibre) paneLibre.style.display = isDiat ? 'none' : '';
+    if (paneDiat)  paneDiat.style.display  = isDiat ? '' : 'none';
+    document.querySelectorAll('.mode-tab').forEach(t =>
+      t.classList.toggle('active', t.dataset.mode === state.paletteMode));
+    if (isDiat) renderDiatonicChips();
+  }
+
+  function renderDiatonicChips() {
+    const cont = $('atlas-diat-chips');
+    if (!cont) return;
+    cont.innerHTML = '';
+    const key = state.diatonicKey || 'C';
+    const mode = state.diatonicMode || 'major';
+    let diatonic;
+    try { diatonic = TH.getDiatonicChords(key, mode); } catch (e) { return; }
+    diatonic.forEach(d => {
+      const q = d.chord.quality;
+      const color = QUALITY_PALETTE_COLOR[q] || '#5a5a5a';
+      const glyph = QUALITY_GLYPH[q] || '';
+      const name = chordName(d.chord);
+      const notes = d.chord.notes.join(' · ');
+      const btn = document.createElement('button');
+      btn.className = 'diat-chip';
+      btn.style.borderLeftColor = color;
+      btn.title = `${d.numeral} — ${name}\nNotas: ${notes}`;
+      btn.innerHTML = `
+        <div class="diat-chip-row">
+          <span class="diat-chip-roman">${d.numeral}</span>
+          <span class="diat-chip-glyph">${glyph}</span>
+        </div>
+        <div class="diat-chip-name">${name}</div>
+        <div class="diat-chip-notes">${notes}</div>
+      `;
+      btn.addEventListener('click', () =>
+        addChord({ root: d.chord.root, quality: q, bars: 1 }));
+      cont.appendChild(btn);
+    });
+  }
+
+  function setPaletteMode(mode) {
+    state.paletteMode = mode === 'diatonic' ? 'diatonic' : 'libre';
+    saveState();
+    renderPalette();
   }
 
   function drawInfo() {
@@ -633,13 +710,36 @@
       if (el) el.checked = !!state.layers[key];
     });
 
-    // Editor
+    // Editor — modo Libre
     const add = $('atlas-add');
     if (add) add.addEventListener('click', () => {
       const root = $('atlas-new-root').value;
       const quality = $('atlas-new-quality').value;
       addChord({ root, quality, bars: 1 });
     });
+
+    // Tabs de paleta
+    document.querySelectorAll('.mode-tab').forEach(tab => {
+      tab.addEventListener('click', () => setPaletteMode(tab.dataset.mode));
+    });
+
+    // Editor — modo Diatónico
+    const diatKey = $('atlas-diat-key');
+    if (diatKey) {
+      diatKey.value = state.diatonicKey || 'C';
+      diatKey.addEventListener('change', e => {
+        state.diatonicKey = e.target.value;
+        saveState(); renderPalette();
+      });
+    }
+    const diatMode = $('atlas-diat-mode');
+    if (diatMode) {
+      diatMode.value = state.diatonicMode || 'major';
+      diatMode.addEventListener('change', e => {
+        state.diatonicMode = e.target.value;
+        saveState(); renderPalette();
+      });
+    }
 
     // Nav
     const prev = $('atlas-prev');
@@ -743,6 +843,7 @@
     if (newQuality && state.progression[0]) newQuality.value = state.progression[state.activeIdx].quality;
 
     drawLegend();
+    renderPalette();
     render();
   }
 
@@ -909,5 +1010,8 @@
     _removeChordAt: removeChordAt,
     _moveChord: moveChord,
     _changeActiveBars: changeActiveBars,
+    _setPaletteMode: setPaletteMode,
+    _QUALITY_GLYPH: QUALITY_GLYPH,
+    _QUALITY_PALETTE_COLOR: QUALITY_PALETTE_COLOR,
   };
 })(window.GuitarShared, window);
