@@ -8,16 +8,17 @@
   const NUM_FRETS = 22;
   const SVG_NS = 'http://www.w3.org/2000/svg';
 
-  // Colores con par bemol/natural diferenciado: el natural más brillante,
-  // el bemol más oscuro/desaturado pero misma familia de hue.
+  // Pares bemol/natural en mismo hue. El BEMOL es la versión clara (luz),
+  // el NATURAL la oscura/profunda. La diferencia es marcada pero la familia
+  // de color hace que se reconozcan como "primos".
   const INTERVAL_COLORS_FULL = {
     '1':  '#d4a847',                          // dorado raíz
-    'b2': '#5a3a40', '2':  '#7a5a30',
-    'b3': '#a83232', '3':  '#e84a4a',         // rojos: b3 borgoña, 3 brillante
+    'b2': '#a06870', '2':  '#7a5a30',
+    'b3': '#ff7a7a', '3':  '#8a2828',         // rojos: b3 coral claro, 3 vino
     '4':  '#6a7a40',
-    'b5': '#1e6da5', '5':  '#5fb8f0',         // azules: b5 profundo, 5 claro
-    'b6': '#5a3a6a', '6':  '#7a5a8a',
-    'b7': '#1e9650', '7':  '#7ce8a2',         // verdes: b7 oscuro, 7 lima
+    'b5': '#8ed4ff', '5':  '#1a5a90',         // azules: b5 celeste, 5 marino
+    'b6': '#bd9adc', '6':  '#5a3a6a',
+    'b7': '#a6f0b8', '7':  '#0e6a3a',         // verdes: b7 lima, 7 bosque
   };
   const CHORD_TONE_INTERVALS = new Set(['1','b3','3','b5','5','b7','7']);
 
