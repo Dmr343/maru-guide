@@ -41,14 +41,15 @@
   };
 
   // Color muted por cualidad — solo para borde de paleta. NO compite con
-  // los colores brillantes de los intervalos del mástil.
+  // los colores brillantes de los intervalos del mástil. Brillo perceptual
+  // similar entre todos: ninguno se ve "apagado" al lado de los demás.
   const QUALITY_PALETTE_COLOR = {
-    major: '#8a7333', maj7: '#8a7333',
-    minor: '#5a6b7a', min7: '#5a6b7a',
-    dom7:  '#7a4040',
-    dim:   '#5a3a6a', dim7: '#5a3a6a',
-    m7b5:  '#4a3a5a',
-    aug:   '#6b5a3a',
+    major: '#9a7e36', maj7: '#9a7e36',
+    minor: '#4e80a8', min7: '#4e80a8',
+    dom7:  '#a04848',
+    dim:   '#7a4ea0', dim7: '#7a4ea0',
+    m7b5:  '#5e487e',
+    aug:   '#8a703a',
   };
 
   function chordName(c) { return c.root + (QUALITY_LABEL[c.quality] ?? c.quality); }
