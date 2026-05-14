@@ -13,7 +13,7 @@
   const INTERVAL_COLORS_FULL = {
     '1':  '#d4a847',                          // dorado raíz
     'b2': '#5a3a40', '2':  '#7a5a30',
-    'b3': '#b35a14', '3':  '#ff9b3d',         // naranjas: b3 quemado, 3 brillante
+    'b3': '#a83232', '3':  '#e84a4a',         // rojos: b3 borgoña, 3 brillante
     '4':  '#6a7a40',
     'b5': '#1e6da5', '5':  '#5fb8f0',         // azules: b5 profundo, 5 claro
     'b6': '#5a3a6a', '6':  '#7a5a8a',
