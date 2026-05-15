@@ -19,11 +19,18 @@
     .subtitle{color:var(--text-mid);font-size:12px;margin-bottom:14px}
 
     .panel-layout{display:grid;grid-template-columns:1fr 320px;gap:14px}
+    .panel-layout.collapsed{grid-template-columns:1fr}
+    .panel-layout.collapsed .side-panel{display:none}
+    .panel-layout.collapsed ~ #atlas-panel-show{display:flex}
     @media(max-width:1100px){.panel-layout{grid-template-columns:1fr}}
 
     .fretboard-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;overflow-x:auto;min-width:0}
     #atlas-fretboard{display:block;width:100%;height:auto;max-width:1600px}
-    .side-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;min-height:300px}
+    .side-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;min-height:300px;position:relative}
+    .panel-toggle{position:absolute;top:8px;right:8px;background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:var(--font);font-size:14px;line-height:1;padding:2px 8px;border-radius:5px;cursor:pointer;z-index:2}
+    .panel-toggle:hover{border-color:var(--gold);color:var(--gold)}
+    #atlas-panel-show{display:none;position:fixed;top:18px;right:18px;background:var(--surface);border:1px solid var(--border);color:var(--text-mid);font-family:var(--font);font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:6px 10px;border-radius:6px;cursor:pointer;align-items:center;gap:6px;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+    #atlas-panel-show:hover{border-color:var(--gold);color:var(--gold)}
     .side-panel h3{font-size:11px;letter-spacing:.15em;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px}
 
     .row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;font-size:12px;color:var(--text-mid)}
@@ -54,9 +61,17 @@
     .prog-chord[draggable=true]{cursor:grab}
     .prog-chord[draggable=true]:active{cursor:grabbing}
     .prog-chord .pc-bars-vis{font-size:8px;color:var(--text-dim);letter-spacing:1px;line-height:1}
+    .prog-chord .pc-del{position:absolute;top:1px;right:2px;background:transparent;border:none;color:var(--text-dim);font-size:13px;line-height:1;padding:1px 4px;cursor:pointer;opacity:0;transition:opacity .12s,color .12s;border-radius:3px}
+    .prog-chord:hover .pc-del{opacity:.7}
+    .prog-chord .pc-del:hover{opacity:1;color:#e74c3c;background:rgba(231,76,60,.12)}
     .btn.playing{background:#e74c3c;color:#fff;border-color:#e74c3c;animation:pulse 1s ease-in-out infinite}
     .btn.paused{background:#f0c060;color:#000;border-color:#f0c060}
     .btn.tap-pulse{transform:scale(1.1);transition:transform .12s}
+    .beat-meter{display:inline-flex;gap:4px;padding:2px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;align-items:center;height:28px}
+    .beat-dot{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:50%;background:var(--bg);border:1px solid var(--border);font-size:10px;font-weight:700;color:var(--text-dim);transition:background .08s,color .08s,transform .08s}
+    .beat-dot.downbeat{color:var(--gold);border-color:var(--gold-dim)}
+    .beat-dot.on{background:var(--text);color:#000;transform:scale(1.18)}
+    .beat-dot.downbeat.on{background:var(--gold);color:#000}
     .toggle{display:inline-flex;gap:5px;align-items:center;font-size:12px;color:var(--text-mid);cursor:pointer}
     @keyframes pulse{50%{opacity:.7}}
     .filters-block{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:10px}
@@ -104,9 +119,8 @@
     .diat-chip:hover{filter:brightness(1.3);transform:translateY(-1px)}
     .diat-chip:active{transform:translateY(0)}
     .diat-chip-row{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
-    .diat-chip-roman{font-style:italic;font-weight:700;font-size:13px;letter-spacing:.04em}
-    .diat-chip-glyph{font-size:11px;color:var(--text-dim);font-weight:700}
-    .diat-chip-name{font-size:14px;font-weight:700;color:var(--text);margin-top:2px}
+    .diat-chip-roman{font-style:italic;font-weight:700;font-size:13px;letter-spacing:.04em;color:var(--text-mid)}
+    .diat-chip-name{font-size:15px;font-weight:700;color:var(--gold)}
     .diat-chip-notes{font-size:10px;color:var(--text-mid);margin-top:2px;letter-spacing:.02em}
   </style>
 </head>
@@ -116,7 +130,7 @@
   <h1>Interval Atlas</h1>
   <p class="subtitle">Intervalos del mástil sobre tu progresión, en todas las direcciones.</p>
 
-  <div class="panel-layout">
+  <div class="panel-layout" id="atlas-panel-layout">
     <div class="fretboard-wrap">
       <div class="progression-bar" id="atlas-bar"></div>
 
@@ -126,6 +140,17 @@
         <button class="btn" id="atlas-next">→</button>
         <label>BPM <input type="number" id="atlas-bpm" value="80" min="40" max="220" style="width:60px"></label>
         <button class="btn" id="atlas-tap" title="Tap tempo (T): clickeá al ritmo">TAP</button>
+        <label title="Compás: clicks por barra antes de acentuar el 1">Compás
+          <select id="atlas-bpc" style="width:64px">
+            <option value="2">2/4</option>
+            <option value="3">3/4</option>
+            <option value="4" selected>4/4</option>
+            <option value="5">5/4</option>
+            <option value="6">6/8</option>
+            <option value="7">7/8</option>
+          </select>
+        </label>
+        <div id="atlas-beat-meter" class="beat-meter" title="Posición en el compás"></div>
         <select id="atlas-direction">
           <option value="all">Dirección: Todas</option>
           <option value="horizontal">Horizontal</option>
@@ -174,6 +199,7 @@
     </div>
 
     <div class="side-panel">
+      <button class="panel-toggle" id="atlas-panel-hide" type="button" title="Ocultar editor (más espacio para el diapasón)" aria-label="Ocultar editor">›</button>
       <h3>Editor de progresión</h3>
 
       <div class="mode-tabs">
@@ -248,6 +274,8 @@
       </div>
     </div>
   </div>
+
+  <button id="atlas-panel-show" type="button" title="Mostrar editor de progresión" aria-label="Mostrar editor">‹ Editor</button>
 
   <script src="./shared/theory.js"></script>
   <script src="./shared/theory-modes.js"></script>

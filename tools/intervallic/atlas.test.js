@@ -205,12 +205,14 @@
   // NOTA: addChord/moveChord/removeChordAt/changeActiveBars/copy/paste/nextIdxFor
   // se testean en progression-model.test.js (son responsabilidad del modelo).
 
-  T.describe('paleta — glifos y colores muted', () => {
-    T.it('maj7 → Δ', () => T.assertEq(A._QUALITY_GLYPH.maj7, 'Δ'));
-    T.it('min7 → m7', () => T.assertEq(A._QUALITY_GLYPH.min7, 'm7'));
-    T.it('dom7 → 7', () => T.assertEq(A._QUALITY_GLYPH.dom7, '7'));
-    T.it('dim7 → °', () => T.assertEq(A._QUALITY_GLYPH.dim7, '°'));
-    T.it('m7b5 → ø', () => T.assertEq(A._QUALITY_GLYPH.m7b5, 'ø'));
+  T.describe('paleta — labels jazz y colores muted', () => {
+    T.it('maj7 → Δ', () => T.assertEq(A._QUALITY_LABEL.maj7, 'Δ'));
+    T.it('min7 → m7', () => T.assertEq(A._QUALITY_LABEL.min7, 'm7'));
+    T.it('dom7 → 7', () => T.assertEq(A._QUALITY_LABEL.dom7, '7'));
+    T.it('dim7 → °7', () => T.assertEq(A._QUALITY_LABEL.dim7, '°7'));
+    T.it('m7b5 → ø', () => T.assertEq(A._QUALITY_LABEL.m7b5, 'ø'));
+    T.it('dim → °', () => T.assertEq(A._QUALITY_LABEL.dim, '°'));
+    T.it('major → "" (sin sufijo)', () => T.assertEq(A._QUALITY_LABEL.major, ''));
     T.it('todas las calidades tienen color muted', () => {
       ['major','minor','dom7','maj7','min7','dim','dim7','m7b5','aug'].forEach(q =>
         T.assert(typeof A._QUALITY_PALETTE_COLOR[q] === 'string', 'falta color ' + q));

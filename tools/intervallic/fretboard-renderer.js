@@ -252,15 +252,18 @@
     }
 
     if (p.showNoteNames) {
-      const txtW = c.note.length === 2 ? 16 : 11;
-      const pillY = y + radius + 4;
+      const txtW = c.note.length === 2 ? 14 : 10;
+      // Pill al costado derecho del círculo. Vertical (entre cuerdas) queda
+      // limpio porque ahí es donde uno se mueve entre intervalos.
+      const pillX = x + radius - 1;
+      const pillY = y - 5.5;
       cell.nameLabel = {
         pill: {
-          x: x - txtW / 2, y: pillY,
+          x: pillX, y: pillY,
           width: txtW, height: 11, rx: 5,
           colorKey, alpha: 0.8 * alpha,
         },
-        text: { x, y: pillY + 8.5, value: c.note, colorKey },
+        text: { x: pillX + txtW / 2, y: pillY + 8.5, value: c.note, colorKey },
       };
     }
     return cell;

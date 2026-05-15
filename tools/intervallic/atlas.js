@@ -26,19 +26,11 @@
   // GUIDE_TONE_INTERVALS, INTERVAL_NAMES movidas a FretboardRenderer.
   // Atlas accede via W.FretboardRenderer.* cuando las necesita.
 
+  // Simbología corta jazz — todas las cualidades en notación compacta.
+  // El nombre del acorde se forma con root + label (ej: "GΔ", "F#ø", "C°7").
   const QUALITY_LABEL = {
-    major: '', minor: 'm', dim: 'dim', aug: 'aug',
-    maj7: 'maj7', min7: 'm7', dom7: '7', dim7: 'dim7', m7b5: 'm7b5',
-  };
-
-  // Glifo corto para la paleta (familia jazz: Δ, m, 7, °, ø)
-  const QUALITY_GLYPH = {
-    major: '',  maj7: 'Δ',
-    minor: 'm', min7: 'm7',
-    dom7:  '7',
-    dim:   '°', dim7: '°',
-    m7b5:  'ø',
-    aug:   '+',
+    major: '',  minor: 'm', dim: '°',   aug:  '+',
+    maj7:  'Δ', min7:  'm7', dom7: '7', dim7: '°7', m7b5: 'ø',
   };
 
   // Color muted por cualidad — solo para borde de paleta. NO compite con
@@ -69,8 +61,10 @@
     parentMode: 'major',
     bpm: 80,
     beatsPerChord: 4,
+    beatsPerCompas: 4,  // numerador del compás (3, 4, 6, 8…)
     filtersCollapsed: true,
     optionsCollapsed: false,
+    sidePanelCollapsed: false,
     paletteMode: 'libre',
     diatonicKey: 'C',
     diatonicMode: 'major',
@@ -354,10 +348,11 @@
       div.className = 'prog-chord' + (i === state.activeIdx ? ' active' : '');
       div.style.width = slotWidth(c.bars) + 'px';
       div.setAttribute('draggable', 'true');
-      div.title = 'Click: quitar · arrastrar: reordenar · ↑↓: ± compás';
+      div.title = 'Click: activar · × : borrar · doble click: editar · arrastrar: reordenar · ↑↓: ± compás';
       const qCol = QUALITY_PALETTE_COLOR[c.quality] || '#5a5a5a';
       div.style.borderLeft = '3px solid ' + qCol;
-      div.innerHTML = `<div class="pc-name">${chordName(ch)}</div>
+      div.innerHTML = `<button class="pc-del" type="button" title="Borrar (Del)" aria-label="Borrar acorde">×</button>
+        <div class="pc-name">${chordName(ch)}</div>
         <div class="pc-bars-vis" aria-label="${c.bars} compás${c.bars===1?'':'es'}">${'●'.repeat(c.bars)}</div>`;
 
       // Visual: highlight si está dentro del loop range activo
@@ -367,11 +362,18 @@
         if (i >= lo && i <= hi) div.classList.add('in-loop');
       }
 
-      // Click simple → quitar; shift-click → setear loop range
+      // Click simple → activar; shift-click → loop range; × → borrar; dblclick → editar.
+      // El activar dispara render() y rebuildea la bar, lo que rompería el dblclick
+      // del browser (requiere mismo elemento). Por eso diferimos con timer corto.
       let _clickTimer = null;
       div.addEventListener('click', e => {
+        if (e.target.classList.contains('pc-del')) {
+          e.stopPropagation();
+          if (_clickTimer) { clearTimeout(_clickTimer); _clickTimer = null; }
+          removeChordAt(i);
+          return;
+        }
         if (e.shiftKey) {
-          // Loop region: 1° shift-click setea start, 2° setea end, 3° limpia.
           if (!model) return;
           const lr = model.loopRange;
           if (!lr) model.setLoopRange(i, i);
@@ -382,10 +384,11 @@
         if (_clickTimer) return;
         _clickTimer = setTimeout(() => {
           _clickTimer = null;
-          removeChordAt(i);
+          setActiveChord(i);
         }, 220);
       });
       div.addEventListener('dblclick', e => {
+        if (e.target.classList.contains('pc-del')) return;
         if (_clickTimer) { clearTimeout(_clickTimer); _clickTimer = null; }
         e.preventDefault();
         e.stopPropagation();
@@ -435,6 +438,34 @@
     if (isDiat) renderDiatonicChips();
   }
 
+  // Mapea una tríada diatónica a su versión con séptima usando el 7° grado
+  // de la escala. Si no hay una cualidad de 7ma soportada, deja la tríada.
+  function _seventhQuality(triadQuality, seventhSemi) {
+    if (triadQuality === 'major' && seventhSemi === 11) return 'maj7';
+    if (triadQuality === 'major' && seventhSemi === 10) return 'dom7';
+    if (triadQuality === 'minor' && seventhSemi === 10) return 'min7';
+    if (triadQuality === 'dim'   && seventhSemi === 9)  return 'dim7';
+    if (triadQuality === 'dim'   && seventhSemi === 10) return 'm7b5';
+    return triadQuality; // minMaj7, aug7, augMaj7 no soportadas → tríada
+  }
+  function _extendDiatonicTo7ths(key, mode, diatonic) {
+    const CHROM = (W.GuitarShared && W.GuitarShared.theory && W.GuitarShared.theory.CHROMATIC)
+      || ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    const scale = TH.buildModeScale ? TH.buildModeScale(key, mode) : null;
+    if (!scale || scale.length < 7) return diatonic;
+    return diatonic.map((d, i) => {
+      const seventh = scale[(i + 6) % 7];
+      const ri = CHROM.indexOf(d.chord.root);
+      const seventhSemi = (CHROM.indexOf(seventh) - ri + 12) % 12;
+      const q7 = _seventhQuality(d.chord.quality, seventhSemi);
+      if (q7 === d.chord.quality) return d;
+      const newChord = TH.buildChord(d.chord.root, q7);
+      // Jazz strict: m7b5 → numeral con ø en vez de ° (ej: vii° → viiø).
+      const numeral = q7 === 'm7b5' ? d.numeral.replace('°', 'ø') : d.numeral;
+      return Object.assign({}, d, { chord: newChord, numeral });
+    });
+  }
+
   function renderDiatonicChips() {
     const cont = $('atlas-diat-chips');
     if (!cont) return;
@@ -442,11 +473,13 @@
     const key = state.diatonicKey || 'C';
     const mode = state.diatonicMode || 'major';
     let diatonic;
-    try { diatonic = TH.getDiatonicChords(key, mode); } catch (e) { return; }
+    try {
+      diatonic = TH.getDiatonicChords(key, mode);
+      diatonic = _extendDiatonicTo7ths(key, mode, diatonic);
+    } catch (e) { return; }
     diatonic.forEach(d => {
       const q = d.chord.quality;
       const color = QUALITY_PALETTE_COLOR[q] || '#5a5a5a';
-      const glyph = QUALITY_GLYPH[q] || '';
       const name = chordName(d.chord);
       const notes = d.chord.notes.join(' · ');
       const btn = document.createElement('button');
@@ -456,9 +489,8 @@
       btn.innerHTML = `
         <div class="diat-chip-row">
           <span class="diat-chip-roman">${d.numeral}</span>
-          <span class="diat-chip-glyph">${glyph}</span>
+          <span class="diat-chip-name">${name}</span>
         </div>
-        <div class="diat-chip-name">${name}</div>
         <div class="diat-chip-notes">${notes}</div>
       `;
       btn.addEventListener('click', () =>
@@ -673,6 +705,11 @@
 
   function setActiveChord(idx) {
     const m = ensureModel(); if (m) m.setActiveChord(idx);
+    // Reiniciar el contador del compás: el acorde recién seleccionado arranca
+    // siempre en "1". Si está sonando, el próximo click es downbeat.
+    if (transport && transport.restartBar) transport.restartBar();
+    const meter = $('atlas-beat-meter');
+    if (meter) meter.querySelectorAll('.beat-dot.on').forEach(d => d.classList.remove('on'));
   }
 
   function setLayer(name, enabled) {
@@ -803,6 +840,14 @@
     }
     const tapBtn = $('atlas-tap');
     if (tapBtn) tapBtn.addEventListener('click', handleTap);
+    const bpcSel = $('atlas-bpc');
+    if (bpcSel) {
+      bpcSel.value = String(state.beatsPerCompas || 4);
+      bpcSel.addEventListener('change', e => {
+        setBeatsPerCompas(Number(e.target.value) || 4);
+      });
+    }
+    renderBeatMeter();
     const prerollCb = $('atlas-preroll');
     if (prerollCb) {
       prerollCb.checked = !!state.prerollEnabled;
@@ -876,6 +921,26 @@
         saveState();
       });
     }
+    const panelLayout = $('atlas-panel-layout');
+    const panelHide   = $('atlas-panel-hide');
+    const panelShow   = $('atlas-panel-show');
+    function applySidePanel() {
+      if (!panelLayout) return;
+      panelLayout.classList.toggle('collapsed', !!state.sidePanelCollapsed);
+      // Esperar al reflow del grid antes de remedir el fretboard
+      requestAnimationFrame(() => {
+        if (typeof reinitBoard === 'function') reinitBoard();
+        render();
+      });
+    }
+    function setSidePanelCollapsed(v) {
+      state.sidePanelCollapsed = !!v;
+      saveState();
+      applySidePanel();
+    }
+    if (panelHide) panelHide.addEventListener('click', () => setSidePanelCollapsed(true));
+    if (panelShow) panelShow.addEventListener('click', () => setSidePanelCollapsed(false));
+    applySidePanel();
     const reset = $('atlas-reset');
     if (reset) reset.addEventListener('click', () => {
       state.filter = Object.assign({}, DEFAULT_STATE.filter, { stringSet: [1,2,3,4,5,6] });
@@ -910,7 +975,6 @@
     render();
   }
 
-  const BEATS_PER_COMPAS = 4;
   const PREROLL_BEATS = 2;  // count-in corto, separado del compás
 
   // Adapter sobre G.metronome.Metronome para que sea reemplazable en tests.
@@ -919,21 +983,23 @@
     let m = null;
     const self = {
       onBeat: () => {},
-      _bpm: 100, _muted: false,
+      _bpm: 100, _muted: false, _bpc: 4,
       start() {
         if (m) m.stop();
         m = new G.metronome.Metronome({
           bpm: self._bpm,
           beatsPerChord: 99999,
-          beatsPerCompas: BEATS_PER_COMPAS,
+          beatsPerCompas: self._bpc,
           muted: self._muted,
           onBeat: (beat) => self.onBeat(beat),
         });
         m.start();
       },
-      stop()       { if (m) { m.stop(); m = null; } },
-      setBpm(n)    { self._bpm = n; if (m) m.setBPM(n); },
-      setMuted(b)  { self._muted = b; if (m) m.setMuted(b); },
+      stop()              { if (m) { m.stop(); m = null; } },
+      setBpm(n)           { self._bpm = n; if (m) m.setBPM(n); },
+      setMuted(b)         { self._muted = b; if (m) m.setMuted(b); },
+      setBeatsPerCompas(n){ self._bpc = n; if (m) m.setBeatsPerCompas(n); },
+      resetBeatCount()    { if (m) m.resetBeatCount(); },
     };
     return self;
   }
@@ -946,10 +1012,11 @@
     const m = ensureModel();
     if (!m) return null;
     const clock = MetronomeClock();
+    clock.setBeatsPerCompas(state.beatsPerCompas || 4);
     transport = new W.TransportController({
       clock,
       model: m,
-      beatsPerCompas: BEATS_PER_COMPAS,
+      beatsPerCompas: state.beatsPerCompas || 4,
       prerollBeats: PREROLL_BEATS,
       bpm: state.bpm,
       muted: state.metroMuted,
@@ -959,9 +1026,52 @@
       },
       onBeat(e) {
         pulseActiveChord(e);
+        pulseBeatMeter(e);
       },
     });
     return transport;
+  }
+
+  // ─── Beat meter (contador visual 1·2·3·4) ─────────────────────────────
+  function renderBeatMeter() {
+    const cont = $('atlas-beat-meter');
+    if (!cont) return;
+    const n = Math.max(1, Math.min(12, state.beatsPerCompas || 4));
+    cont.innerHTML = '';
+    for (let i = 1; i <= n; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'beat-dot' + (i === 1 ? ' downbeat' : '');
+      dot.textContent = i;
+      dot.dataset.beat = i;
+      cont.appendChild(dot);
+    }
+  }
+  function pulseBeatMeter(e) {
+    const cont = $('atlas-beat-meter');
+    if (!cont) return;
+    const bpc = Math.max(1, state.beatsPerCompas || 4);
+    // chordBeatCount viene del transport; lo mapeamos a posición en el compás
+    const posInBar = ((e.chordBeatCount - 1) % bpc) + 1;
+    cont.querySelectorAll('.beat-dot').forEach(d => d.classList.remove('on'));
+    const target = cont.querySelector('.beat-dot[data-beat="' + posInBar + '"]');
+    if (target) {
+      target.classList.add('on');
+      setTimeout(() => target.classList.remove('on'), 120);
+    }
+  }
+  function setBeatsPerCompas(n) {
+    state.beatsPerCompas = Math.max(1, Math.min(12, n));
+    saveState();
+    renderBeatMeter();
+    if (transport) transport._BPC = state.beatsPerCompas;
+    const clock = transport && transport._clock;
+    if (clock && clock.setBeatsPerCompas) clock.setBeatsPerCompas(state.beatsPerCompas);
+    // Si está sonando, reiniciar el clock para que el "1" caiga en el próximo
+    // beat y los acentos arranquen alineados a la nueva métrica.
+    if (transport && (transport.getState().transport === 'playing'
+                   || transport.getState().transport === 'preroll')) {
+      if (clock && clock.stop && clock.start) { clock.stop(); clock.start(); }
+    }
   }
 
   function togglePlay() {
@@ -1084,8 +1194,8 @@
     _applyDirection:      W.FretboardRenderer && W.FretboardRenderer.applyDirection,
     _slotWidth: slotWidth,
     _setPaletteMode: setPaletteMode,
-    _QUALITY_GLYPH: QUALITY_GLYPH,
     _QUALITY_PALETTE_COLOR: QUALITY_PALETTE_COLOR,
+    _QUALITY_LABEL: QUALITY_LABEL,
     _handleKeydown: handleKeydown,
     _saveCurrentAsFavorite: saveCurrentAsFavorite,
     _loadFavorites: loadFavorites,

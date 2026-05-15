@@ -1,3 +1,7 @@
 .claude/
 pdfs/
 transcript/
+
+# Media y zips
+*.mp3
+*.zip

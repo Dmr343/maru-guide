@@ -127,16 +127,25 @@
       tc.togglePlay();
       T.assertEq(tc.getState().prerollRemaining, 4);
     });
-    T.it('resume desde pause NO repite preroll', () => {
+    T.it('resume desde pause CON preroll → repite el count-in', () => {
       const c = ctx();
       c.tc.setPrerollEnabled(true);
       c.tc.togglePlay();   // → preroll
       c.clock.tickN(2);    // → playing
       c.clock.tick(0);     // playing beat 1
       c.tc.pause();
-      c.tc.togglePlay();   // resume
+      c.tc.togglePlay();   // resume → vuelve a preroll
+      T.assertEq(c.tc.getState().transport, 'preroll');
+      T.assertEq(c.tc.getState().prerollRemaining, 2);
+    });
+    T.it('resume desde pause SIN preroll → arranca directo (preserva counter)', () => {
+      const c = ctx();
+      c.tc.togglePlay();
+      c.clock.tick(0); c.clock.tick(1);
+      c.tc.pause();
+      c.tc.togglePlay();
       T.assertEq(c.tc.getState().transport, 'playing');
-      T.assertEq(c.tc.getState().prerollRemaining, 0);
+      T.assertEq(c.tc.getState().chordBeatCount, 2);
     });
     T.it('stop durante preroll resetea prerollRemaining', () => {
       const c = ctx();

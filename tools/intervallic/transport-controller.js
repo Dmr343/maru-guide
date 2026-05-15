@@ -48,20 +48,17 @@
       this.pause();
       return;
     }
-    // stopped o paused → arrancar
     if (!this._model || !this._model.progression || this._model.progression.length === 0) return;
-    if (this._transport === 'paused') {
-      this._transport = 'playing';
-      if (this._clock) this._clock.start();
-      this._emit();
-      return;
-    }
-    // stopped → playing (o preroll)
-    this._chordBeatCount = 0;
+    // Preroll se respeta SIEMPRE que esté activo: cada arranque (desde stopped
+    // o desde paused) hace cuenta-in. Sin preroll, resume conserva chordBeatCount.
     if (this._prerollEnabled) {
+      this._chordBeatCount = 0;
       this._transport = 'preroll';
       this._prerollRemaining = this._prerollBeats;
+    } else if (this._transport === 'paused') {
+      this._transport = 'playing';
     } else {
+      this._chordBeatCount = 0;
       this._transport = 'playing';
     }
     if (this._clock) this._clock.start();
@@ -121,6 +118,17 @@
     this._emit();
   };
 
+  // Reinicia la cuenta del compás del acorde activo. Si está sonando,
+  // reinicia el clock para que el próximo click sea downbeat (1).
+  TransportController.prototype.restartBar = function () {
+    this._chordBeatCount = 0;
+    if (this._transport === 'playing' && this._clock) {
+      this._clock.stop();
+      this._clock.start();
+    }
+    this._emit();
+  };
+
   TransportController.prototype.stop = function () {
     if (this._transport === 'stopped') return;
     if (this._clock) this._clock.stop();
@@ -136,6 +144,9 @@
       if (this._prerollRemaining <= 0) {
         this._transport = 'playing';
         this._chordBeatCount = 0;
+        // Realinear el conteo de beats del metrónomo: el próximo click es la
+        // "1" del primer compás del acorde activo, que debe sonar como downbeat.
+        if (this._clock && this._clock.resetBeatCount) this._clock.resetBeatCount();
       }
       this._emit();
       return;
