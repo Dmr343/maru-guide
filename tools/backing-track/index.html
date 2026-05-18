@@ -41,7 +41,18 @@
     <div id="status" class="status">Detenido</div>
 
     <div class="section-label">Progresión</div>
+    <div class="control-row">
+      <label for="prog-select">De fábrica</label>
+      <select id="prog-select" style="flex:1"></select>
+    </div>
     <div id="chord-strip" class="chord-strip"></div>
+    <div class="builder">
+      <select id="new-root"></select>
+      <select id="new-quality"></select>
+      <button id="btn-add-chord" class="btn secondary">+ Acorde</button>
+      <button id="btn-clear-prog" class="btn secondary" title="Limpiar progresión">Limpiar</button>
+    </div>
+    <div id="chord-editor" class="chord-editor" hidden></div>
 
     <div class="section-label">Pistas</div>
     <div id="tracks"></div>
@@ -63,6 +74,8 @@
 
   <!-- Dependencias compartidas del repo -->
   <script src="../shared/theory.js"></script>
+  <!-- Modelo de progresión reutilizado del Intervalic Atlas (read-only) -->
+  <script src="../intervallic/progression-model.js"></script>
 
   <!-- Módulos del backing track (orden = dependencias) -->
   <script src="./voicing.js"></script>

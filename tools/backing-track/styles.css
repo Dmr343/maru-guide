@@ -176,7 +176,7 @@ body {
   border-top: 1px solid var(--border);
 }
 .chord-chip {
-  padding: 6px 12px;
+  padding: 5px 11px 3px;
   border-radius: 8px;
   background: var(--surface2);
   border: 1px solid var(--border);
@@ -184,13 +184,76 @@ body {
   font-weight: 700;
   color: var(--text-mid);
   transition: all 0.12s;
+  cursor: pointer;
+  text-align: center;
 }
+.chord-chip.selected { border-color: var(--gold); color: var(--text); }
 .chord-chip.active {
   background: var(--gold-dim);
   border-color: var(--accent);
   color: var(--gold);
   box-shadow: 0 0 12px rgba(224,122,95,0.25);
 }
+.chip-bars {
+  display: block;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+.chord-chip.active .chip-bars { color: var(--accent); }
+
+/* ─── Constructor de acordes ─── */
+.builder {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.builder select {
+  font-family: var(--font);
+  font-size: 12px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 7px;
+  cursor: pointer;
+}
+.builder .btn { padding: 6px 14px; font-size: 12px; }
+
+.chord-editor {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  padding: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 11px;
+}
+.chord-editor select {
+  font-family: var(--font);
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.chord-editor .editor-label {
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
+.bars-stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.bars-stepper .value { min-width: 16px; text-align: center; color: var(--gold); }
 
 /* ─── Sección ─── */
 .section-label {
