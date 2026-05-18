@@ -1,0 +1,150 @@
+/* ─────────────────────────────────────────────────────────────
+   Backing Track — estilos base
+   Paleta y tipografía coherentes con el resto del repo (ver
+   tools/index.html / tools/intervallic.html).
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  --bg:        #0e0e0e;
+  --surface:   #141414;
+  --surface2:  #1a1a1a;
+  --border:    #222;
+  --text:      #e8d5b0;
+  --text-dim:  #666;
+  --text-mid:  #999;
+  --gold:      #d4a847;
+  --gold-dim:  #3a2e0a;
+  --accent:    #e07a5f;   /* color propio del módulo de backing tracks */
+
+  --radius: 12px;
+  --font: 'Trebuchet MS', 'Segoe UI', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { zoom: 1.4; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+  padding: 24px 16px 40px;
+}
+
+/* ─── Header ─── */
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.header-label {
+  font-size: 10px;
+  letter-spacing: 0.35em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.header h1 {
+  font-size: clamp(20px, 5vw, 32px);
+  font-weight: 300;
+  color: var(--gold);
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.header p {
+  font-size: 13px;
+  color: var(--text-mid);
+  max-width: 420px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 20px;
+  font-size: 12px;
+  color: var(--text-dim);
+  text-decoration: none;
+  letter-spacing: 0.05em;
+}
+.back-link:hover { color: var(--gold); }
+
+/* ─── Panel ─── */
+.panel {
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+}
+
+/* ─── Transporte ─── */
+.transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.btn {
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--bg);
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  padding: 12px 28px;
+  cursor: pointer;
+  transition: transform 0.12s, opacity 0.2s, box-shadow 0.2s;
+}
+.btn:hover { box-shadow: 0 6px 18px rgba(224,122,95,0.3); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.btn.secondary {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.tempo {
+  font-size: 13px;
+  color: var(--text-mid);
+  letter-spacing: 0.05em;
+}
+.tempo strong {
+  color: var(--gold);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* ─── Estado ─── */
+.status {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  min-height: 1.4em;
+}
+.status.playing { color: var(--accent); }
+.status.error   { color: #e74c3c; }
+
+/* ─── Pulso visual ─── */
+.beat-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--border);
+  margin: 18px auto 0;
+  transition: background 0.05s, transform 0.05s;
+}
+.beat-dot.on {
+  background: var(--accent);
+  transform: scale(1.4);
+}

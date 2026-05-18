@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backing Track — Guitarra con Maru</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+  <a href="../index.html" class="back-link">← Herramientas</a>
+
+  <div class="header">
+    <div class="header-label">Práctica de improvisación</div>
+    <h1>Backing Track</h1>
+    <p>Acompañamiento en loop para improvisar sobre los cambios de acorde.
+       Andamiaje inicial del módulo.</p>
+  </div>
+
+  <div class="panel">
+    <div class="transport">
+      <button id="btn-play" class="btn">▶ Play</button>
+      <button id="btn-stop" class="btn secondary" disabled>■ Stop</button>
+      <span class="tempo"><strong id="bpm">90</strong> BPM</span>
+    </div>
+    <div id="status" class="status">Detenido</div>
+    <div id="beat-dot" class="beat-dot"></div>
+  </div>
+
+  <!-- Tone.js vendorizado localmente: funciona en file:// sin internet.
+       Build UMD → expone el global window.Tone. Ver vendor/README.md -->
+  <script src="./vendor/Tone.js"></script>
+
+  <!-- ───────────────────────────────────────────────────────────
+       Tracer de audio (issue #49).
+       Prueba la ruta completa: gesto del usuario → Tone.start() →
+       Tone.Transport en loop a tempo fijo. Es código temporal: lo
+       reemplaza el motor real (engine.js) en el issue #56.
+       ─────────────────────────────────────────────────────────── -->
+  <script>
+  (function () {
+    'use strict';
+
+    var BPM = 90;
+    var NOTA_FIJA = 'A2';   // nota de referencia del tracer
+
+    var btnPlay = document.getElementById('btn-play');
+    var btnStop = document.getElementById('btn-stop');
+    var status  = document.getElementById('status');
+    var beatDot = document.getElementById('beat-dot');
+    document.getElementById('bpm').textContent = String(BPM);
+
+    var synth = null;   // instrumento Tone.js
+    var loop  = null;   // Tone.Loop que dispara la nota cada negra
+
+    function setStatus(texto, clase) {
+      status.textContent = texto;
+      status.className = 'status' + (clase ? ' ' + clase : '');
+    }
+
+    async function play() {
+      try {
+        // El audio del navegador solo arranca tras un gesto del usuario.
+        await Tone.start();
+
+        var transport = Tone.getTransport();
+        transport.bpm.value = BPM;
+
+        synth = new Tone.Synth().toDestination();
+
+        // Dispara una nota fija en cada negra; el loop la repite.
+        loop = new Tone.Loop(function (time) {
+          synth.triggerAttackRelease(NOTA_FIJA, '8n', time);
+          // Pulso visual sincronizado con el audio.
+          Tone.getDraw().schedule(function () {
+            beatDot.classList.add('on');
+            setTimeout(function () { beatDot.classList.remove('on'); }, 90);
+          }, time);
+        }, '4n').start(0);
+
+        transport.start();
+
+        btnPlay.disabled = true;
+        btnStop.disabled = false;
+        setStatus('Sonando — loop a tempo fijo', 'playing');
+      } catch (err) {
+        setStatus('Error al iniciar el audio: ' + err.message, 'error');
+      }
+    }
+
+    function stop() {
+      var transport = Tone.getTransport();
+      transport.stop();
+
+      // Liberar los nodos de Tone.js para no acumular instrumentos huérfanos.
+      if (loop)  { loop.dispose();  loop  = null; }
+      if (synth) { synth.dispose(); synth = null; }
+
+      beatDot.classList.remove('on');
+      btnPlay.disabled = false;
+      btnStop.disabled = true;
+      setStatus('Detenido');
+    }
+
+    btnPlay.addEventListener('click', play);
+    btnStop.addEventListener('click', stop);
+  })();
+  </script>
+
+</body>
+</html>
