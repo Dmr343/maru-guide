@@ -201,6 +201,91 @@ body {
   margin: 22px 0 8px;
 }
 
+/* ─── Pistas ─── */
+.track {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 11px;
+}
+.track.disabled { opacity: 0.45; }
+.track-mute {
+  width: 22px; height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+}
+.track.enabled .track-mute {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+.track-tipo {
+  min-width: 64px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.03em;
+}
+.track select {
+  font-family: var(--font);
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 5px;
+  cursor: pointer;
+}
+.track-preset { flex: 1; min-width: 90px; }
+.track-pattern { flex: 1; min-width: 80px; }
+.track-vol { width: 70px; accent-color: var(--accent); cursor: pointer; }
+.track-btn {
+  width: 22px; height: 22px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-mid);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 1;
+}
+.track-btn:hover { color: var(--accent); border-color: var(--accent); }
+.track-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+.add-track {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.add-track select {
+  font-family: var(--font);
+  font-size: 12px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+.add-track .btn { padding: 8px 16px; font-size: 12px; }
+
+.empty-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 8px 2px;
+}
+
 /* ─── Pulso visual ─── */
 .beat-dot {
   width: 14px;
