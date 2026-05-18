@@ -35,9 +35,10 @@
   const LAYER_PRIORITY = {
     allNotes:   1,
     scale:      2,
-    tensions:   3,
-    approach:   4,
-    chordTones: 5,
+    extra:      3,   // intervalos sueltos encendidos a mano desde la leyenda
+    tensions:   4,
+    approach:   5,
+    chordTones: 6,
   };
   const GUIDE_TONE_INTERVALS = new Set(['b3','3','b7','7']);
 
@@ -48,7 +49,7 @@
     return TENSION_SEMIS[name] != null ? TENSION_SEMIS[name] : 0;
   }
 
-  function computeRenderMap(chord, layers, nextChord, theoryAdapter) {
+  function computeRenderMap(chord, layers, nextChord, theoryAdapter, extraIntervals) {
     if (!chord) return new Map();
     const ri = CHROMATIC.indexOf(chord.root);
     const map = new Map();
@@ -93,6 +94,15 @@
     if (layers.approach && nextChord) {
       nextChord.notes.forEach((note, idx) => {
         considerPc(note, nextChord.intervals[idx], 'approach', { nextRoot: nextChord.root });
+      });
+    }
+
+    // Intervalos sueltos encendidos desde la leyenda. No cambian el acorde:
+    // son una ayuda visual (ej: encender la b6 para ubicarla en el mástil).
+    if (extraIntervals && extraIntervals.length) {
+      extraIntervals.forEach(name => {
+        const sem = INTERVAL_NAMES.indexOf(name);
+        if (sem >= 0) consider(sem, name, 'extra');
       });
     }
 
@@ -166,7 +176,7 @@
     if (!p.chord) return { cells };
 
     const renderMap = applyHiddenIntervals(
-      computeRenderMap(p.chord, p.layers, p.nextChord, theoryAdapter),
+      computeRenderMap(p.chord, p.layers, p.nextChord, theoryAdapter, p.extraIntervals),
       p.hiddenIntervals
     );
 
@@ -205,8 +215,9 @@
     const isChordTone = kind === 'chordTones';
     const isApproach  = kind === 'approach';
     const isAll       = kind === 'allNotes';
+    const isExtra     = kind === 'extra';
     const radius = isChordTone ? 12 : isApproach ? 7 : 9;
-    const alpha  = isApproach ? 0.55 : (isAll ? 0.5 : 1.0);
+    const alpha  = isApproach ? 0.55 : (isAll ? 0.5 : (isExtra ? 0.8 : 1.0));
 
     const cell = {
       string: c.string, fret: c.fret, note: c.note,
@@ -215,7 +226,7 @@
       label: {
         x, y: y + (isApproach ? 2.5 : 3),
         text: interval,
-        size: isApproach ? 6.5 : (isAll ? 7 : 9),
+        size: isApproach ? 6.5 : (isAll || isExtra ? 7 : 9),
         weight: isApproach ? 700 : 800,
         colorKey: isApproach ? colorKey : '_black',
         alpha: isApproach ? alpha + 0.2 : alpha,

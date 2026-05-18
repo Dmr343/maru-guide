@@ -91,6 +91,29 @@
     });
   });
 
+  T.describe('FretboardRenderer — extraIntervals', () => {
+    T.it('extraIntervals=["b6"] agrega cells con interval b6 y kind extra', () => {
+      const plan = FR.computeDrawPlan(defaultParams({ extraIntervals: ['b6'] }));
+      const b6 = plan.cells.filter(c => c.interval === 'b6');
+      T.assert(b6.length > 0, 'falta la b6');
+      b6.forEach(c => {
+        T.assertEq(c.kind, 'extra');
+        T.assertEq(c.radius, 9);
+        T.assertEq(c.hasFill, true);
+      });
+    });
+    T.it('sin extraIntervals no aparecen notas ajenas al acorde', () => {
+      const plan = FR.computeDrawPlan(defaultParams());
+      plan.cells.forEach(c =>
+        T.assert(['1','3','5','7'].includes(c.interval), 'nota ajena: ' + c.interval));
+    });
+    T.it('un extraInterval que coincide con chord tone se queda como chordTones', () => {
+      const m = FR.computeRenderMap(TH.buildChord('C','maj7'),
+        { chordTones: true }, null, TH, ['3']);
+      T.assertEq(m.get('E').kind, 'chordTones');
+    });
+  });
+
   T.describe('FretboardRenderer — approach (ghost)', () => {
     T.it('approach del próximo acorde produce ring + sin fill', () => {
       const plan = FR.computeDrawPlan(defaultParams({

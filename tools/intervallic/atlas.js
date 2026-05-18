@@ -70,7 +70,8 @@
     diatonicMode: 'major',
     prerollEnabled: false,
     loopRange: null, // [startIdx, endIdx] inclusivo o null
-    hiddenIntervals: [], // ej ['5','b5'] para ocultarlos del mástil
+    hiddenIntervals: [], // chord tones ocultados del mástil ej ['5','b5']
+    extraIntervals: [],  // intervalos NO-acorde encendidos a mano ej ['b6','2']
     metroMuted: false,
   };
 
@@ -145,6 +146,7 @@
         nextChord: nextChord(),
         layers: state.layers,
         hiddenIntervals: state.hiddenIntervals,
+        extraIntervals: state.extraIntervals,
         filter: state.filter,
         showNoteNames: state.showNoteNames,
         numFrets: NUM_FRETS,
@@ -162,6 +164,7 @@
     }
     drawInfo();
     drawBar();
+    drawLegend();
   }
 
   let _prevChord = null;
@@ -616,40 +619,80 @@
     `;
   }
 
+  // Leyenda: las 12 posiciones cromáticas hasta la 8va. Las notas del acorde
+  // activo arrancan encendidas; las demás (b2, 2, 4, b6, 6 según el acorde)
+  // arrancan apagadas y se encienden con un click. El acorde no cambia: es
+  // pura ayuda visual para ubicar, por ej, la b6 en el mástil.
+  const LEGEND_INTERVALS = ['1','b2','2','b3','3','4','b5','5','b6','6','b7','7'];
+
   function drawLegend() {
     const lg = $('atlas-legend');
     if (!lg) return;
     lg.innerHTML = '';
-    const ints = ['1','b3','3','b5','5','b7','7'];
+    const c = activeChord();
+    const chordTones = new Set(c ? c.intervals : []);
     const hidden = new Set(state.hiddenIntervals || []);
-    ints.forEach(i => {
+    const extra  = new Set(state.extraIntervals || []);
+
+    const hint = document.createElement('span');
+    hint.style.cssText = 'color:var(--text-dim);font-size:10px;margin-right:2px';
+    hint.textContent = 'Leyenda — click para mostrar/ocultar:';
+    lg.appendChild(hint);
+
+    LEGEND_INTERVALS.forEach(i => {
+      const isChord = chordTones.has(i);
+      // "on" = visible en el mástil. Nota del acorde: visible salvo que se
+      // oculte. Nota ajena: oculta salvo que se encienda a mano.
+      const on = isChord ? !hidden.has(i) : extra.has(i);
       const btn = document.createElement('button');
-      const isHidden = hidden.has(i);
-      btn.className = 'legend-toggle' + (isHidden ? ' off' : '');
-      btn.title = isHidden ? `Mostrar ${i}` : `Ocultar ${i}`;
+      btn.className = 'legend-toggle' + (on ? '' : ' off') + (isChord ? ' is-chord' : '');
+      btn.title = isChord
+        ? (on ? `Ocultar ${i} · nota del acorde` : `Mostrar ${i} · nota del acorde`)
+        : (on ? `Ocultar ${i}` : `Mostrar ${i}`);
       btn.innerHTML = `<span class="legend-dot" style="background:${INTERVAL_COLORS_FULL[i]}"></span>${i}`;
-      btn.addEventListener('click', () => toggleHiddenInterval(i));
+      btn.addEventListener('click', () => toggleLegendInterval(i));
       lg.appendChild(btn);
     });
-    // Botón "mostrar todos" si hay algo oculto
-    if (hidden.size > 0) {
+
+    // Reset: vuelve al acorde puro (sin ocultos ni extras encendidos).
+    if (hidden.size > 0 || extra.size > 0) {
       const reset = document.createElement('button');
       reset.className = 'legend-toggle reset';
-      reset.textContent = 'Mostrar todos';
+      reset.textContent = 'Reset';
+      reset.title = 'Volver al acorde puro';
       reset.addEventListener('click', () => {
         state.hiddenIntervals = [];
-        saveState(); render(); drawLegend();
+        state.extraIntervals = [];
+        saveState(); render();
       });
       lg.appendChild(reset);
     }
   }
 
+  // Click en la leyenda. Si el intervalo es nota del acorde, togglea su
+  // ocultamiento (hiddenIntervals); si no, togglea su encendido (extraIntervals).
+  function toggleLegendInterval(interval) {
+    const c = activeChord();
+    const chordTones = new Set(c ? c.intervals : []);
+    if (chordTones.has(interval)) {
+      const hidden = new Set(state.hiddenIntervals || []);
+      hidden.has(interval) ? hidden.delete(interval) : hidden.add(interval);
+      state.hiddenIntervals = Array.from(hidden);
+    } else {
+      const extra = new Set(state.extraIntervals || []);
+      extra.has(interval) ? extra.delete(interval) : extra.add(interval);
+      state.extraIntervals = Array.from(extra);
+    }
+    saveState(); render();
+  }
+
+  // Toggle directo de hiddenIntervals — usado por tests y consumidores.
   function toggleHiddenInterval(interval) {
     const hidden = new Set(state.hiddenIntervals || []);
     if (hidden.has(interval)) hidden.delete(interval);
     else hidden.add(interval);
     state.hiddenIntervals = Array.from(hidden);
-    saveState(); render(); drawLegend();
+    saveState(); render();
   }
 
 
@@ -1201,5 +1244,6 @@
     _loadFavorites: loadFavorites,
     _applyHiddenIntervals: W.FretboardRenderer && W.FretboardRenderer.applyHiddenIntervals,
     _toggleHiddenInterval: toggleHiddenInterval,
+    _toggleLegendInterval: toggleLegendInterval,
   };
 })(window.GuitarShared, window);

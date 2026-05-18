@@ -377,6 +377,24 @@
     });
   });
 
+  T.describe('toggleLegendInterval — extras vs ocultos', () => {
+    T.it('intervalo ajeno al acorde va a extraIntervals', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      A._toggleLegendInterval('b6');
+      T.assert(A.getState().extraIntervals.includes('b6'));
+      A._toggleLegendInterval('b6');
+      T.assert(!A.getState().extraIntervals.includes('b6'));
+    });
+    T.it('nota del acorde va a hiddenIntervals, no a extras', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      A.getState().hiddenIntervals = [];
+      A.getState().extraIntervals = [];
+      A._toggleLegendInterval('5');
+      T.assert(A.getState().hiddenIntervals.includes('5'));
+      T.assert(!A.getState().extraIntervals.includes('5'));
+    });
+  });
+
   // makePseudoVoicing eliminado junto con el audio de bloque del acorde.
 
 })(window.GuitarShared, window);
