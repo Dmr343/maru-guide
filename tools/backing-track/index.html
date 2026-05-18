@@ -69,6 +69,22 @@
     </div>
 
     <div id="preset-editor" class="preset-editor" hidden></div>
+
+    <div class="section-label">Proyecto</div>
+    <div class="control-row">
+      <input type="text" id="proj-name" placeholder="Nombre del proyecto">
+      <button id="btn-save-proj" class="btn secondary">Guardar</button>
+    </div>
+    <div class="control-row">
+      <select id="proj-select" style="flex:1"></select>
+      <button id="btn-load-proj" class="btn secondary">Cargar</button>
+      <button id="btn-del-proj" class="btn secondary">Borrar</button>
+    </div>
+    <div class="control-row">
+      <button id="btn-export" class="btn secondary">Exportar JSON</button>
+      <button id="btn-import" class="btn secondary">Importar JSON</button>
+      <input type="file" id="import-file" accept="application/json" hidden>
+    </div>
   </div>
 
   <!-- Tone.js vendorizado (file:// safe, sin internet). Ver vendor/README.md -->
@@ -87,6 +103,7 @@
   <script src="./patterns.js"></script>
   <script src="./progressions.js"></script>
   <script src="./user-library.js"></script>
+  <script src="./storage.js"></script>
   <script src="./engine.js"></script>
   <script src="./app.js"></script>
 

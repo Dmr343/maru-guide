@@ -165,6 +165,27 @@ body {
   height: 15px;
   cursor: pointer;
 }
+.control-row input[type="text"] {
+  flex: 1;
+  font-family: var(--font);
+  font-size: 12px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.control-row select {
+  font-family: var(--font);
+  font-size: 12px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 7px;
+  cursor: pointer;
+}
+.control-row .btn { padding: 6px 12px; font-size: 11px; }
 
 /* ─── Tira de acordes (indicador de progresión) ─── */
 .chord-strip {

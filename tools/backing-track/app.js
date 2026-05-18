@@ -34,6 +34,14 @@
   const addTipo = el('add-tipo');
   const btnAdd = el('btn-add');
   const presetEditorEl = el('preset-editor');
+  const projName = el('proj-name');
+  const btnSaveProj = el('btn-save-proj');
+  const projSelect = el('proj-select');
+  const btnLoadProj = el('btn-load-proj');
+  const btnDelProj = el('btn-del-proj');
+  const btnExport = el('btn-export');
+  const btnImport = el('btn-import');
+  const importFile = el('import-file');
 
   const TIPO_LABEL = {
     bajo: 'Bajo', acordes: 'Acordes', bateria: 'Batería',
@@ -68,6 +76,7 @@
   }
 
   const engine = BT.createEngine();
+  const storage = BT.createStorage();
 
   // ─── Modelo de progresión (reutilizado del Atlas) ───
   const model = new ProgressionModel({
@@ -548,6 +557,46 @@
     presetEditorEl.appendChild(actions);
   }
 
+  // ─── Proyectos y persistencia ───
+  function restoreSnapshot(snap) {
+    if (!snap) return;
+    if (editing) closeEditor();
+    engine.restore(snap);
+    model.loadProgression(snap.progression || []);
+    syncControls();
+    renderTracks();
+  }
+
+  function refreshProjects() {
+    const list = storage.listProjects();
+    projSelect.innerHTML = '';
+    if (!list.length) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = '(sin proyectos guardados)';
+      projSelect.appendChild(opt);
+      return;
+    }
+    list.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.nombre;
+      projSelect.appendChild(opt);
+    });
+  }
+
+  function downloadJSON(filename, text) {
+    const blob = new Blob([text], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   // ─── Sincronizar controles de transporte ───
   function syncControls() {
     ctlTempo.value = String(engine.getTempo());
@@ -615,7 +664,53 @@
     renderTracks();
   });
 
+  // Proyectos
+  btnSaveProj.addEventListener('click', function () {
+    const nombre = projName.value.trim() || 'Proyecto';
+    storage.saveProject(nombre, engine.snapshot());
+    refreshProjects();
+    projSelect.value = '';
+    setStatus('Proyecto "' + nombre + '" guardado');
+  });
+  btnLoadProj.addEventListener('click', function () {
+    const id = projSelect.value;
+    if (!id) return;
+    const snap = storage.loadProject(id);
+    if (snap) { restoreSnapshot(snap); setStatus('Proyecto cargado'); }
+  });
+  btnDelProj.addEventListener('click', function () {
+    const id = projSelect.value;
+    if (!id) return;
+    storage.deleteProject(id);
+    refreshProjects();
+  });
+
+  // Exportar / importar
+  btnExport.addEventListener('click', function () {
+    downloadJSON('backing-track-respaldo.json', storage.exportAll());
+  });
+  btnImport.addEventListener('click', () => importFile.click());
+  importFile.addEventListener('change', function () {
+    const file = importFile.files && importFile.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function () {
+      const ok = storage.importAll(String(reader.result));
+      if (ok) {
+        refreshProjects();
+        renderTracks();
+        setStatus('Librería y proyectos importados');
+      } else {
+        setStatus('Archivo JSON inválido', 'error');
+      }
+    };
+    reader.readAsText(file);
+    importFile.value = '';
+  });
+
   engine.onChordChange(highlightChord);
+  // Autoguardado de la sesión actual en cada cambio de estado.
+  engine.onStateChange(function () { storage.saveSession(engine.snapshot()); });
   engine.onTransport(function (ev) {
     if (ev === 'stop') {
       btnPlay.disabled = false;
@@ -623,14 +718,25 @@
       setStatus('Detenido');
     }
   });
-  // Si cambia la librería del usuario, refrescar los dropdowns de preset.
-  BT.userLibrary.onChange(renderTracks);
+  // Si cambia la librería del usuario, refrescar dropdowns y persistir.
+  BT.userLibrary.onChange(function () {
+    renderTracks();
+    storage.saveLibrary();
+  });
 
   // ─── Arranque ───
   initProgSelect();
   fillSelect(newRoot, ROOTS);
   fillSelect(newQuality, QUALITIES, 'v', it => it.label);
-  loadDefaultProject();
+
+  storage.loadLibrary();              // librería de presets del usuario
+  const session = storage.loadSession();
+  if (session && Array.isArray(session.tracks) && session.tracks.length) {
+    restoreSnapshot(session);         // reabrir donde se dejó
+  } else {
+    loadDefaultProject();
+  }
+  refreshProjects();
   renderChords();
   renderEditor();
   renderTracks();
