@@ -135,6 +135,72 @@ body {
 .status.playing { color: var(--accent); }
 .status.error   { color: #e74c3c; }
 
+/* ─── Filas de control (slider + valor) ─── */
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+  font-size: 12px;
+  color: var(--text-mid);
+}
+.control-row label {
+  min-width: 88px;
+  letter-spacing: 0.04em;
+}
+.control-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.control-row .value {
+  min-width: 56px;
+  text-align: right;
+  color: var(--gold);
+  font-weight: 700;
+}
+.control-row input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+/* ─── Tira de acordes (indicador de progresión) ─── */
+.chord-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.chord-chip {
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-mid);
+  transition: all 0.12s;
+}
+.chord-chip.active {
+  background: var(--gold-dim);
+  border-color: var(--accent);
+  color: var(--gold);
+  box-shadow: 0 0 12px rgba(224,122,95,0.25);
+}
+
+/* ─── Sección ─── */
+.section-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 22px 0 8px;
+}
+
 /* ─── Pulso visual ─── */
 .beat-dot {
   width: 14px;
