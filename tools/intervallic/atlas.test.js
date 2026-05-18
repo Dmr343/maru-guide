@@ -430,6 +430,41 @@
     });
   });
 
+  T.describe('agregar acorde desde el mástil (doble click)', () => {
+    T.it('agrega un acorde con la raíz de la posición y la cualidad elegida', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      // cuerda 1 (mi agudo), traste 0 → E
+      const root = A._addChordFromBoard(1, 0, 'min7');
+      const st = A.getState();
+      T.assertEq(st.progression.length, 2);
+      T.assertEq(st.progression[1].root, root);
+      T.assertEq(st.progression[1].quality, 'min7');
+    });
+    T.it('la raíz se calcula desde la posición del mástil', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      // cuerda 6 (mi grave), traste 3 → G
+      const root = A._addChordFromBoard(6, 3, 'dom7');
+      T.assertEq(root, 'G');
+      T.assertEq(A.getState().progression[1].root, 'G');
+    });
+    T.it('el acorde queda al final y pasa a ser el activo', () => {
+      A.setProgression([
+        { root: 'C', quality: 'maj7', bars: 1 },
+        { root: 'A', quality: 'min7', bars: 1 },
+      ]);
+      A._addChordFromBoard(6, 3, 'dom7');
+      const st = A.getState();
+      T.assertEq(st.progression.length, 3);
+      T.assertEq(st.activeIdx, 2, 'el nuevo acorde es el activo');
+      T.assertEq(st.progression[2].root, 'G');
+    });
+    T.it('el acorde agregado arranca con hiddenCells vacío', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      A._addChordFromBoard(1, 0, 'maj7');
+      T.assertArrayEq(A.getState().progression[1].hiddenCells, []);
+    });
+  });
+
   // makePseudoVoicing eliminado junto con el audio de bloque del acorde.
 
 })(window.GuitarShared, window);

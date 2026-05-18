@@ -219,6 +219,7 @@
 
   let _dragSrcIdx = null;
   let _editPopover = null;
+  let _quickAddPopover = null;
 
   // Edit inline: popover sobre un slot para editar root/quality sin borrar.
   function openEditPopover(idx, anchorEl) {
@@ -282,6 +283,69 @@
     }
   }
 
+  // Agrega un acorde con raíz = nota de la posición del mástil, al final de
+  // la progresión, y lo deja como acorde activo. Devuelve la raíz.
+  function addChordFromBoard(string, fret, quality) {
+    const open = FB.OPEN_NOTES[6 - string];
+    const root = FB.fbNoteAt(open, fret);
+    addChord({ root: root, quality: quality, bars: 1 });
+    setActiveChord(state.progression.length - 1);
+    return root;
+  }
+
+  // Popover de "agregar acorde" anclado a una posición del mástil (doble
+  // click). La raíz es la nota de esa posición; el usuario elige la cualidad.
+  const QUICK_ADD_QUALITIES = [
+    ['maj7', 'Δ'], ['min7', 'm7'], ['dom7', '7'], ['dim7', '°7'], ['m7b5', 'ø'],
+  ];
+
+  function openQuickAddPopover(string, fret, clientX, clientY) {
+    closeQuickAddPopover();
+    closeEditPopover();
+    const open = FB.OPEN_NOTES[6 - string];
+    const root = FB.fbNoteAt(open, fret);
+    const pop = document.createElement('div');
+    pop.className = 'edit-popover';
+    const title = document.createElement('div');
+    title.className = 'edit-popover-title';
+    title.textContent = 'Agregar acorde · ' + root;
+    pop.appendChild(title);
+    QUICK_ADD_QUALITIES.forEach(pair => {
+      const q = pair[0], label = pair[1];
+      const b = document.createElement('button');
+      b.className = 'btn';
+      b.textContent = label;
+      b.title = chordName({ root: root, quality: q });
+      b.addEventListener('click', () => {
+        addChordFromBoard(string, fret, q);
+        closeQuickAddPopover();
+      });
+      pop.appendChild(b);
+    });
+    document.body.appendChild(pop);
+    pop.style.left = Math.max(8, clientX) + 'px';
+    pop.style.top  = (clientY + 8) + 'px';
+    _quickAddPopover = pop;
+
+    setTimeout(() => {
+      const onDocClick = ev => {
+        if (!_quickAddPopover) return;
+        if (!_quickAddPopover.contains(ev.target)) {
+          closeQuickAddPopover();
+          document.removeEventListener('mousedown', onDocClick);
+        }
+      };
+      document.addEventListener('mousedown', onDocClick);
+    }, 0);
+  }
+
+  function closeQuickAddPopover() {
+    if (_quickAddPopover) {
+      _quickAddPopover.remove();
+      _quickAddPopover = null;
+    }
+  }
+
   // Copiar / pegar delegan al modelo (clipboard interno).
   function copyActiveChord() {
     const m = ensureModel(); return m ? m.copyActiveChord() : false;
@@ -329,6 +393,7 @@
         return true;
       case 'Escape':
         if (_editPopover) closeEditPopover();
+        else if (_quickAddPopover) closeQuickAddPopover();
         else if ($('atlas-presets-modal') && $('atlas-presets-modal').style.display === 'flex') closePresetsModal();
         else if (transport && transport.getState().transport === 'playing') pause();
         else clearProgression();
@@ -1240,8 +1305,8 @@
         r.setAttribute('width', w); r.setAttribute('height', h);
         r.setAttribute('fill', 'transparent');
         r.style.cursor = 'pointer';
-        // Click simple diferido: hay que esperar para no pisar un doble click
-        // (el doble click — agregar acorde — lo agrega el Slice 2).
+        // Click simple diferido: hay que esperar para no pisar un doble click.
+        // Click simple → ocultar nota / fijar foco. Doble click → agregar acorde.
         let _cellTimer = null;
         r.addEventListener('click', () => {
           if (_cellTimer) return;
@@ -1249,6 +1314,11 @@
             _cellTimer = null;
             handleBoardClick(s, f);
           }, BOARD_CLICK_DELAY);
+        });
+        r.addEventListener('dblclick', e => {
+          if (_cellTimer) { clearTimeout(_cellTimer); _cellTimer = null; }
+          if (e && e.preventDefault) e.preventDefault();
+          openQuickAddPopover(s, f, e.clientX, e.clientY);
         });
         g.appendChild(r);
       }
@@ -1289,5 +1359,6 @@
     _toggleLegendInterval: toggleLegendInterval,
     _toggleHiddenCell: toggleHiddenCellAt,
     _handleBoardClick: handleBoardClick,
+    _addChordFromBoard: addChordFromBoard,
   };
 })(window.GuitarShared, window);
