@@ -49,6 +49,7 @@
     let tracks = [];               // pistas (config, ver addTrack)
     let loopEnabled = true;
     let mode = 'practica';
+    let humanizeAmount = 0;        // 0..1 — intensidad de humanización
     let trackCounter = 0;
 
     // ─── Runtime (audio) ───
@@ -152,16 +153,41 @@
       return p ? JSON.parse(JSON.stringify(p)) : null;
     }
 
-    // ─── Scheduling ───
-    function patternsMap() {
-      const map = {};
-      tracks.forEach(t => {
-        if (t.patternId && !map[t.patternId]) {
-          const p = resolvePattern(t.patternId);
-          if (p) map[t.patternId] = p;
-        }
-      });
-      return map;
+    // ─── Patrones ───
+    // El patrón efectivo de una pista: la variante editada activa
+    // (track.patterns[track.variant]) si existe, o el patrón de
+    // fábrica por id.
+    function effectivePattern(track) {
+      if (track.patterns && track.variant && track.patterns[track.variant]) {
+        return track.patterns[track.variant];
+      }
+      return resolvePattern(track.patternId);
+    }
+
+    function getTrackPattern(id) {
+      const track = tracks.find(t => t.id === id);
+      if (!track) return null;
+      const p = effectivePattern(track);
+      return p ? JSON.parse(JSON.stringify(p)) : null;
+    }
+
+    // setTrackPattern — guarda una variante editada del patrón en la
+    // pista (variante A o B según track.variant).
+    function setTrackPattern(id, pattern) {
+      const track = tracks.find(t => t.id === id);
+      if (!track || !pattern) return;
+      if (!track.patterns) track.patterns = { A: null, B: null };
+      track.patterns[track.variant || 'A'] = pattern;
+      refreshIfPlaying();
+      emit('state');
+    }
+
+    function setTrackVariant(id, variant) {
+      const track = tracks.find(t => t.id === id);
+      if (!track) return;
+      track.variant = (variant === 'B') ? 'B' : 'A';
+      refreshIfPlaying();
+      emit('state');
     }
 
     function disposeParts() {
@@ -185,15 +211,37 @@
     function rebuildSchedule() {
       disposeParts();
       const T = Tone();
+
+      // Cada pista usa su patrón efectivo (variante editada o de
+      // fábrica), registrado bajo una clave sintética propia.
+      const patterns = {};
+      const schedTracks = tracks.map(t => {
+        const pat = effectivePattern(t);
+        if (!pat) return t;
+        const pid = '__p_' + t.id;
+        patterns[pid] = pat;
+        return Object.assign({}, t, { patternId: pid });
+      });
+
       const result = BT().scheduler.schedule({
         progression: progression,
         tempo: tempo,
-        tracks: tracks,
-        patterns: patternsMap(),
+        tracks: schedTracks,
+        patterns: patterns,
       });
 
-      const noteEvents = result.events.map(ev => ({
-        time: stepToBBS(ev.step), ev: ev,
+      // Humanización: micro-offsets de timing/velocity sobre los
+      // eventos. Con humanización activa se agenda en segundos
+      // (tiempo absoluto); sin ella, en tiempo musical (el BPM
+      // reescala solo).
+      let events = result.events;
+      const humanized = humanizeAmount > 0 && BT().humanize;
+      if (humanized) {
+        events = BT().humanize.apply(events,
+          { amount: humanizeAmount, seed: 1 });
+      }
+      const noteEvents = events.map(ev => ({
+        time: humanized ? ev.time : stepToBBS(ev.step), ev: ev,
       }));
       notePart = new T.Part(function (time, value) {
         dispatchEvent(time, value.ev);
@@ -248,9 +296,21 @@
       if (!Number.isFinite(bpm)) return;
       tempo = Math.max(40, Math.min(240, bpm));
       applyTransport();           // cambio en vivo, sin reprogramar
+      // Con humanización los eventos van en segundos: hay que
+      // reprogramarlos al cambiar el tempo.
+      if (playing && humanizeAmount > 0) rebuildSchedule();
       emit('state');
     }
     function getTempo() { return tempo; }
+
+    function setHumanize(amount) {
+      amount = Number(amount);
+      humanizeAmount = Number.isFinite(amount)
+        ? Math.max(0, Math.min(1, amount)) : 0;
+      refreshIfPlaying();
+      emit('state');
+    }
+    function getHumanize() { return humanizeAmount; }
 
     // ─── API: pistas ───
     function patternTipoFor(tipo) { return PATTERN_TIPO[tipo] || null; }
@@ -300,6 +360,8 @@
       if (!track || !patch) return;
       // Elegir un preset de fábrica descarta la copia de trabajo editada.
       if ('presetId' in patch) delete track.customPreset;
+      // Elegir otro patrón de fábrica descarta las variantes editadas.
+      if ('patternId' in patch) { delete track.patterns; track.variant = 'A'; }
       Object.keys(patch).forEach(k => { track[k] = patch[k]; });
       // Cambio de volumen en vivo sin reprogramar.
       const rt = runtime[id];
@@ -375,6 +437,7 @@
         tempo: tempo,
         loopEnabled: loopEnabled,
         mode: mode,
+        humanize: humanizeAmount,
         tracks: getTracks(),
       };
     }
@@ -388,6 +451,7 @@
       tempo = Number.isFinite(state.tempo) ? state.tempo : DEFAULT_TEMPO;
       loopEnabled = state.loopEnabled !== false;
       mode = state.mode === 'arreglo' ? 'arreglo' : 'practica';
+      humanizeAmount = Number.isFinite(state.humanize) ? state.humanize : 0;
       Object.keys(runtime).forEach(disposeRuntime);
       tracks = Array.isArray(state.tracks)
         ? state.tracks.map(t => Object.assign({}, t)) : [];
@@ -413,6 +477,8 @@
       setTempo, getTempo,
       addTrack, removeTrack, updateTrack, moveTrack, getTracks,
       applyTrackPreset, getTrackPreset,
+      getTrackPattern, setTrackPattern, setTrackVariant,
+      setHumanize, getHumanize,
       setMasterVolume, getMasterVolume,
       setLoop, getLoop,
       setMode, getMode,

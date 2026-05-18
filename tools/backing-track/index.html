@@ -22,6 +22,11 @@
       <button id="btn-stop" class="btn secondary" disabled>■ Stop</button>
     </div>
 
+    <div class="mode-toggle">
+      <button id="mode-practica" class="mode-btn active">Práctica</button>
+      <button id="mode-arreglo" class="mode-btn">Arreglo</button>
+    </div>
+
     <div class="control-row">
       <label for="ctl-tempo">Tempo</label>
       <input type="range" id="ctl-tempo" min="40" max="240" step="1">
@@ -70,6 +75,8 @@
 
     <div id="preset-editor" class="preset-editor" hidden></div>
 
+    <div id="arrange-panel" class="arrange-panel" hidden></div>
+
     <div class="section-label">Proyecto</div>
     <div class="control-row">
       <input type="text" id="proj-name" placeholder="Nombre del proyecto">
@@ -97,7 +104,9 @@
 
   <!-- Módulos del backing track (orden = dependencias) -->
   <script src="./voicing.js"></script>
+  <script src="./step-grid.js"></script>
   <script src="./scheduler.js"></script>
+  <script src="./humanize.js"></script>
   <script src="./instruments.js"></script>
   <script src="./presets.js"></script>
   <script src="./patterns.js"></script>

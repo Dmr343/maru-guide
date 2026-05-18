@@ -446,6 +446,108 @@ body {
 }
 .pe-actions .btn { padding: 6px 12px; font-size: 11px; }
 
+/* ─── Toggle de modo ─── */
+.mode-toggle {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+.mode-btn {
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 6px 18px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.mode-btn:first-child { border-radius: 8px 0 0 8px; }
+.mode-btn:last-child { border-radius: 0 8px 8px 0; }
+.mode-btn.active {
+  background: var(--gold-dim);
+  border-color: var(--accent);
+  color: var(--gold);
+}
+
+/* ─── Panel de modo arreglo ─── */
+.arrange-panel { margin-top: 10px; }
+.arrange-track {
+  margin-bottom: 10px;
+  padding: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.arrange-track-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+.arrange-track-head .track-tipo { min-width: 0; }
+.arrange-track-head select {
+  font-family: var(--font);
+  font-size: 10px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 5px;
+  cursor: pointer;
+}
+.variant-toggle { display: flex; gap: 2px; }
+.variant-btn {
+  width: 22px; height: 20px;
+  font-size: 10px; font-weight: 700;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.variant-btn:first-child { border-radius: 5px 0 0 5px; }
+.variant-btn:last-child { border-radius: 0 5px 5px 0; }
+.variant-btn.active {
+  background: var(--accent); color: var(--bg); border-color: var(--accent);
+}
+
+/* ─── Step sequencer ─── */
+.seq-lane {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 3px 0;
+}
+.seq-lane-label {
+  min-width: 56px;
+  font-size: 9px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.seq-cells { display: flex; gap: 2px; flex: 1; }
+.seq-cell {
+  flex: 1;
+  height: 22px;
+  min-width: 9px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0;
+}
+.seq-cell.beat { border-left: 1px solid var(--text-dim); }
+.seq-cell.v1 { background: #5a3a30; }
+.seq-cell.v2 { background: #a85a42; }
+.seq-cell.v3 { background: var(--accent); }
+.seq-cell.playhead { outline: 1px solid var(--gold); }
+
+.chord-strip.hidden-indicator { display: none; }
+
 /* ─── Pulso visual ─── */
 .beat-dot {
   width: 14px;

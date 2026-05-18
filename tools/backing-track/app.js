@@ -42,6 +42,9 @@
   const btnExport = el('btn-export');
   const btnImport = el('btn-import');
   const importFile = el('import-file');
+  const modePractica = el('mode-practica');
+  const modeArreglo = el('mode-arreglo');
+  const arrangePanel = el('arrange-panel');
 
   const TIPO_LABEL = {
     bajo: 'Bajo', acordes: 'Acordes', bateria: 'Batería',
@@ -304,16 +307,16 @@
       row.appendChild(gear);
     }
 
-    const up = mkBtn('track-btn', '▲', () => { engine.moveTrack(track.id, -1); renderTracks(); });
+    const up = mkBtn('track-btn', '▲', () => { engine.moveTrack(track.id, -1); refreshTracks(); });
     up.title = 'Subir';
     row.appendChild(up);
-    const down = mkBtn('track-btn', '▼', () => { engine.moveTrack(track.id, 1); renderTracks(); });
+    const down = mkBtn('track-btn', '▼', () => { engine.moveTrack(track.id, 1); refreshTracks(); });
     down.title = 'Bajar';
     row.appendChild(down);
     const rm = mkBtn('track-btn', '✕', () => {
       engine.removeTrack(track.id);
       if (editing && editing.trackId === track.id) closeEditor();
-      renderTracks();
+      refreshTracks();
     });
     rm.title = 'Quitar';
     row.appendChild(rm);
@@ -552,12 +555,224 @@
       // La pista pasa a referenciar el preset guardado (deja de ser "editado").
       engine.updateTrack(editing.trackId, { presetId: newId });
       closeEditor();
-      renderTracks();
+      refreshTracks();
     });
     actions.appendChild(save);
 
     actions.appendChild(mkBtn('btn secondary', 'Cerrar', closeEditor));
     presetEditorEl.appendChild(actions);
+  }
+
+  // ─── Modo arreglo ───
+  const LANE_LABEL = {
+    main: 'Notas', kick: 'Bombo', snare: 'Caja', hat: 'Hi-hat',
+    cymbal: 'Platillo', bongo_hi: 'Bongó ↑', bongo_lo: 'Bongó ↓',
+    conga: 'Conga', shaker: 'Shaker',
+  };
+  const VOICING_OPTS = [
+    { id: 'close', nombre: 'Cerrado' },
+    { id: 'open', nombre: 'Abierto (drop-2)' },
+  ];
+  const INVERSION_OPTS = [
+    { id: '0', nombre: 'Fundamental' }, { id: '1', nombre: '1ª inversión' },
+    { id: '2', nombre: '2ª inversión' }, { id: '3', nombre: '3ª inversión' },
+  ];
+  let hideIndicator = false;
+
+  function cycleCell(pattern, lane, step) {
+    const SG = BT.stepGrid;
+    const hit = SG.hitAt(pattern, lane, step);
+    if (!hit) return SG.setVelocity(pattern, lane, step, 0.4);
+    if (hit.velocity < 0.55) return SG.setVelocity(pattern, lane, step, 0.7);
+    if (hit.velocity < 0.85) return SG.setVelocity(pattern, lane, step, 1.0);
+    return SG.toggle(pattern, lane, step);   // 1.0 → apagado
+  }
+  function cellClass(hit) {
+    if (!hit) return '';
+    if (hit.velocity < 0.55) return 'v1';
+    if (hit.velocity < 0.85) return 'v2';
+    return 'v3';
+  }
+
+  function makeStepGrid(track) {
+    const SG = BT.stepGrid;
+    const pattern = engine.getTrackPattern(track.id);
+    const wrap = document.createElement('div');
+    if (!pattern) {
+      const note = document.createElement('div');
+      note.className = 'empty-hint';
+      note.textContent = '(acorde sostenido — sin patrón rítmico)';
+      wrap.appendChild(note);
+      return wrap;
+    }
+    pattern.lanes.forEach(lane => {
+      const laneRow = document.createElement('div');
+      laneRow.className = 'seq-lane';
+      const label = document.createElement('span');
+      label.className = 'seq-lane-label';
+      label.textContent = LANE_LABEL[lane] || lane;
+      laneRow.appendChild(label);
+      const cells = document.createElement('div');
+      cells.className = 'seq-cells';
+      for (let s = 0; s < pattern.steps; s++) {
+        const hit = SG.hitAt(pattern, lane, s);
+        const cell = document.createElement('button');
+        cell.className = 'seq-cell ' + cellClass(hit) +
+          (s % 4 === 0 ? ' beat' : '');
+        cell.addEventListener('click', function () {
+          const fresh = engine.getTrackPattern(track.id);
+          engine.setTrackPattern(track.id, cycleCell(fresh, lane, s));
+          renderArrange();
+        });
+        cells.appendChild(cell);
+      }
+      laneRow.appendChild(cells);
+      wrap.appendChild(laneRow);
+    });
+    return wrap;
+  }
+
+  function makeArrangeTrack(track) {
+    const block = document.createElement('div');
+    block.className = 'arrange-track';
+
+    const head = document.createElement('div');
+    head.className = 'arrange-track-head';
+    const name = document.createElement('span');
+    name.className = 'track-tipo';
+    name.textContent = TIPO_LABEL[track.tipo] || track.tipo;
+    head.appendChild(name);
+
+    // Variante A / B del patrón.
+    if (PATTERN_TIPO[track.tipo]) {
+      const vt = document.createElement('div');
+      vt.className = 'variant-toggle';
+      ['A', 'B'].forEach(v => {
+        const b = document.createElement('button');
+        b.className = 'variant-btn' +
+          ((track.variant || 'A') === v ? ' active' : '');
+        b.textContent = v;
+        b.addEventListener('click', function () {
+          engine.setTrackVariant(track.id, v);
+          renderArrange();
+        });
+        vt.appendChild(b);
+      });
+      head.appendChild(vt);
+    }
+
+    // Voicings (acordes / lead / pad) u octava (bajo).
+    if (track.tipo === 'bajo') {
+      head.appendChild(makeArrangeSelect(
+        [{ id: '1', nombre: 'Oct. 1' }, { id: '2', nombre: 'Oct. 2' },
+         { id: '3', nombre: 'Oct. 3' }],
+        String(track.octave != null ? track.octave : 2),
+        v => engine.updateTrack(track.id, { octave: Number(v) })));
+    } else if (['acordes', 'lead', 'pad'].indexOf(track.tipo) >= 0) {
+      head.appendChild(makeArrangeSelect(VOICING_OPTS,
+        track.voicing || 'close',
+        v => engine.updateTrack(track.id, { voicing: v })));
+      head.appendChild(makeArrangeSelect(INVERSION_OPTS,
+        String(track.inversion || 0),
+        v => engine.updateTrack(track.id, { inversion: Number(v) })));
+      head.appendChild(makeArrangeSelect(
+        [{ id: '2', nombre: 'Oct. 2' }, { id: '3', nombre: 'Oct. 3' },
+         { id: '4', nombre: 'Oct. 4' }],
+        String(track.octave != null ? track.octave : 3),
+        v => engine.updateTrack(track.id, { octave: Number(v) })));
+    }
+
+    block.appendChild(head);
+    block.appendChild(makeStepGrid(track));
+    return block;
+  }
+
+  function makeArrangeSelect(options, value, onChange) {
+    const sel = document.createElement('select');
+    options.forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o.id;
+      opt.textContent = o.nombre;
+      if (o.id === value) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => onChange(sel.value));
+    return sel;
+  }
+
+  function renderArrange() {
+    const isArreglo = engine.getMode() === 'arreglo';
+    modePractica.classList.toggle('active', !isArreglo);
+    modeArreglo.classList.toggle('active', isArreglo);
+    arrangePanel.hidden = !isArreglo;
+    chordStrip.classList.toggle('hidden-indicator', isArreglo && hideIndicator);
+    if (!isArreglo) return;
+
+    arrangePanel.innerHTML = '';
+
+    // Humanización (intensidad global).
+    const humLabel = document.createElement('div');
+    humLabel.className = 'section-label';
+    humLabel.textContent = 'Humanización';
+    arrangePanel.appendChild(humLabel);
+    const humRow = document.createElement('div');
+    humRow.className = 'control-row';
+    const humCap = document.createElement('label');
+    humCap.textContent = 'Intensidad';
+    const humSlider = document.createElement('input');
+    humSlider.type = 'range';
+    humSlider.min = '0'; humSlider.max = '100'; humSlider.step = '1';
+    humSlider.value = String(Math.round(engine.getHumanize() * 100));
+    const humVal = document.createElement('span');
+    humVal.className = 'value';
+    humVal.textContent = humSlider.value + '%';
+    humSlider.addEventListener('input', function () {
+      engine.setHumanize(Number(humSlider.value) / 100);
+      humVal.textContent = humSlider.value + '%';
+    });
+    humRow.appendChild(humCap);
+    humRow.appendChild(humSlider);
+    humRow.appendChild(humVal);
+    arrangePanel.appendChild(humRow);
+
+    // Ocultar indicador de acorde (entrenamiento de oído).
+    const hideRow = document.createElement('div');
+    hideRow.className = 'control-row';
+    const hideCap = document.createElement('label');
+    hideCap.textContent = 'Ocultar acorde';
+    const hideChk = document.createElement('input');
+    hideChk.type = 'checkbox';
+    hideChk.checked = hideIndicator;
+    hideChk.addEventListener('change', function () {
+      hideIndicator = hideChk.checked;
+      chordStrip.classList.toggle('hidden-indicator', hideIndicator);
+    });
+    hideRow.appendChild(hideCap);
+    hideRow.appendChild(hideChk);
+    const sp = document.createElement('span');
+    sp.style.flex = '1';
+    hideRow.appendChild(sp);
+    arrangePanel.appendChild(hideRow);
+
+    // Grooves y voicings por pista.
+    const grLabel = document.createElement('div');
+    grLabel.className = 'section-label';
+    grLabel.textContent = 'Groove y voicings por pista';
+    arrangePanel.appendChild(grLabel);
+    const tracks = engine.getTracks();
+    if (!tracks.length) {
+      const hint = document.createElement('div');
+      hint.className = 'empty-hint';
+      hint.textContent = 'Agregá pistas para editar sus grooves.';
+      arrangePanel.appendChild(hint);
+    } else {
+      tracks.forEach(t => arrangePanel.appendChild(makeArrangeTrack(t)));
+    }
+  }
+
+  function refreshTracks() {
+    renderTracks();
+    renderArrange();
   }
 
   // ─── Proyectos y persistencia ───
@@ -567,7 +782,7 @@
     engine.restore(snap);
     model.loadProgression(snap.progression || []);
     syncControls();
-    renderTracks();
+    refreshTracks();
   }
 
   function refreshProjects() {
@@ -664,7 +879,17 @@
 
   btnAdd.addEventListener('click', function () {
     engine.addTrack({ tipo: addTipo.value });
-    renderTracks();
+    refreshTracks();
+  });
+
+  // Toggle de modo práctica / arreglo.
+  modePractica.addEventListener('click', function () {
+    engine.setMode('practica');
+    renderArrange();
+  });
+  modeArreglo.addEventListener('click', function () {
+    engine.setMode('arreglo');
+    renderArrange();
   });
 
   // Proyectos
@@ -701,7 +926,7 @@
       const ok = storage.importAll(String(reader.result));
       if (ok) {
         refreshProjects();
-        renderTracks();
+        refreshTracks();
         setStatus('Librería y proyectos importados');
       } else {
         setStatus('Archivo JSON inválido', 'error');
@@ -723,7 +948,7 @@
   });
   // Si cambia la librería del usuario, refrescar dropdowns y persistir.
   BT.userLibrary.onChange(function () {
-    renderTracks();
+    refreshTracks();
     storage.saveLibrary();
   });
 
@@ -749,7 +974,7 @@
   refreshProjects();
   renderChords();
   renderEditor();
-  renderTracks();
+  refreshTracks();
   syncControls();
   setStatus(handoff ? 'Progresión recibida del Intervalic Atlas' : 'Detenido');
 })(typeof window !== 'undefined' ? window : globalThis);
