@@ -141,6 +141,10 @@
       root: c.root,
       quality: c.quality,
       bars: clampBars(c.bars),
+      // Posiciones del mástil ocultadas a mano para este acorde (claves
+      // 's<cuerda>f<traste>'). Saneo acá: cubre estado viejo, favoritos y
+      // presets sin necesidad de una migración aparte.
+      hiddenCells: Array.isArray(c.hiddenCells) ? c.hiddenCells.slice() : [],
     };
   }
 
@@ -183,7 +187,8 @@
   ProgressionModel.prototype.pasteAfterActive = function () {
     if (!this._copiedChord) return false;
     const insertAt = this._progression.length === 0 ? 0 : this._activeIdx + 1;
-    const cloned = { ...this._copiedChord };
+    // El acorde pegado arranca con el mástil limpio: no arrastra hiddenCells.
+    const cloned = normalizeChord(this._copiedChord);
     this._progression.splice(insertAt, 0, cloned);
     this._activeIdx = insertAt;
     this._normalize();
@@ -214,8 +219,30 @@
       root:    patch.root    != null ? patch.root    : cur.root,
       quality: patch.quality != null ? patch.quality : cur.quality,
       bars:    patch.bars    != null ? clampBars(patch.bars) : cur.bars,
+      // Editar root/quality/bars no toca las posiciones ocultas del acorde.
+      hiddenCells: Array.isArray(cur.hiddenCells) ? cur.hiddenCells : [],
     };
     this._progression[idx] = next;
+    this._notify();
+  };
+
+  // Togglea una posición del mástil en el hiddenCells del acorde en idx.
+  // Update inmutable: reemplaza el array (snapshot() comparte la referencia).
+  ProgressionModel.prototype.toggleHiddenCell = function (idx, key) {
+    const c = this._progression[idx];
+    if (!c || key == null) return;
+    const cur = Array.isArray(c.hiddenCells) ? c.hiddenCells : [];
+    c.hiddenCells = cur.indexOf(key) !== -1
+      ? cur.filter(function (k) { return k !== key; })
+      : cur.concat(key);
+    this._notify();
+  };
+
+  // Limpia todas las posiciones ocultas del acorde en idx.
+  ProgressionModel.prototype.clearHiddenCells = function (idx) {
+    const c = this._progression[idx];
+    if (!c || !Array.isArray(c.hiddenCells) || c.hiddenCells.length === 0) return;
+    c.hiddenCells = [];
     this._notify();
   };
 

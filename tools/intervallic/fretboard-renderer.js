@@ -35,11 +35,16 @@
   const LAYER_PRIORITY = {
     allNotes:   1,
     scale:      2,
-    tensions:   3,
-    approach:   4,
-    chordTones: 5,
+    extra:      3,   // intervalos sueltos encendidos a mano desde la leyenda
+    tensions:   4,
+    approach:   5,
+    chordTones: 6,
   };
   const GUIDE_TONE_INTERVALS = new Set(['b3','3','b7','7']);
+
+  // Clave canónica de una posición del mástil (cuerda + traste absolutos).
+  // Convención única compartida por el renderer y por el controlador.
+  function cellKey(string, fret) { return 's' + string + 'f' + fret; }
 
   // ─── computeRenderMap (puro, también exportado) ─────────────────────────
   function intervalToSemi(name) {
@@ -48,7 +53,7 @@
     return TENSION_SEMIS[name] != null ? TENSION_SEMIS[name] : 0;
   }
 
-  function computeRenderMap(chord, layers, nextChord, theoryAdapter) {
+  function computeRenderMap(chord, layers, nextChord, theoryAdapter, extraIntervals) {
     if (!chord) return new Map();
     const ri = CHROMATIC.indexOf(chord.root);
     const map = new Map();
@@ -93,6 +98,15 @@
     if (layers.approach && nextChord) {
       nextChord.notes.forEach((note, idx) => {
         considerPc(note, nextChord.intervals[idx], 'approach', { nextRoot: nextChord.root });
+      });
+    }
+
+    // Intervalos sueltos encendidos desde la leyenda. No cambian el acorde:
+    // son una ayuda visual (ej: encender la b6 para ubicarla en el mástil).
+    if (extraIntervals && extraIntervals.length) {
+      extraIntervals.forEach(name => {
+        const sem = INTERVAL_NAMES.indexOf(name);
+        if (sem >= 0) consider(sem, name, 'extra');
       });
     }
 
@@ -166,13 +180,15 @@
     if (!p.chord) return { cells };
 
     const renderMap = applyHiddenIntervals(
-      computeRenderMap(p.chord, p.layers, p.nextChord, theoryAdapter),
+      computeRenderMap(p.chord, p.layers, p.nextChord, theoryAdapter, p.extraIntervals),
       p.hiddenIntervals
     );
 
     const stringSet = (p.filter && p.filter.stringSet) || [1,2,3,4,5,6];
     const [fMin, fMax] = (p.filter && p.filter.fretRange) || [0, p.numFrets || 22];
     const geom = p.geometry;
+    // Posiciones ocultadas a mano para este acorde — se dibujan como fantasma.
+    const hiddenCellSet = new Set(p.hiddenCells || []);
 
     const candidates = [];
     for (let s = 1; s <= 6; s++) {
@@ -188,7 +204,7 @@
     const filtered = applyDirection(candidates, p.filter || {});
 
     filtered.forEach(c => {
-      const cellPlan = buildCell(c, p, geom);
+      const cellPlan = buildCell(c, p, geom, hiddenCellSet);
       if (cellPlan) cells.push(cellPlan);
     });
 
@@ -196,7 +212,7 @@
   }
 
   // ─── buildCell (puro) ───────────────────────────────────────────────────
-  function buildCell(c, p, geom) {
+  function buildCell(c, p, geom, hiddenCellSet) {
     const x = geom.fretX(c.fret - (geom.fretStart || 0), geom.fretW);
     const y = geom.stringY(6 - c.string);
     const kind = c.info.kind;
@@ -205,8 +221,9 @@
     const isChordTone = kind === 'chordTones';
     const isApproach  = kind === 'approach';
     const isAll       = kind === 'allNotes';
+    const isExtra     = kind === 'extra';
     const radius = isChordTone ? 12 : isApproach ? 7 : 9;
-    const alpha  = isApproach ? 0.55 : (isAll ? 0.5 : 1.0);
+    const alpha  = isApproach ? 0.55 : (isAll ? 0.5 : (isExtra ? 0.8 : 1.0));
 
     const cell = {
       string: c.string, fret: c.fret, note: c.note,
@@ -215,7 +232,7 @@
       label: {
         x, y: y + (isApproach ? 2.5 : 3),
         text: interval,
-        size: isApproach ? 6.5 : (isAll ? 7 : 9),
+        size: isApproach ? 6.5 : (isAll || isExtra ? 7 : 9),
         weight: isApproach ? 700 : 800,
         colorKey: isApproach ? colorKey : '_black',
         alpha: isApproach ? alpha + 0.2 : alpha,
@@ -224,6 +241,7 @@
       ring: null,
       crossRef: null,
       nameLabel: null,
+      ghost: false,
     };
 
     if (interval === '1' && isChordTone) {
@@ -265,6 +283,19 @@
         },
         text: { x: pillX + txtW / 2, y: pillY + 8.5, value: c.note, colorKey },
       };
+    }
+
+    // Fantasma: posición ocultada a mano. La celda NO se elimina del plan
+    // (sigue siendo clickeable para restaurarla); se reduce a un anillo hueco
+    // tenue al color del intervalo, sin relleno ni etiqueta.
+    if (hiddenCellSet && hiddenCellSet.has(cellKey(c.string, c.fret))) {
+      cell.ghost = true;
+      cell.hasFill = false;
+      cell.label = null;
+      cell.halo = null;
+      cell.crossRef = null;
+      cell.nameLabel = null;
+      cell.ring = { x, y, radius, colorKey, width: 1.4, alpha: 0.25 };
     }
     return cell;
   }
@@ -313,14 +344,15 @@
         });
       }
 
-      // Ring (approach)
+      // Ring (approach punteado, o fantasma sólido)
       if (cell.ring) {
-        appendCircle({
+        const ringAttrs = {
           cx: cell.ring.x, cy: cell.ring.y, r: cell.ring.radius,
           fill: 'none', stroke: resolve(cell.ring.colorKey),
           'stroke-width': cell.ring.width, 'stroke-opacity': cell.ring.alpha,
-          'stroke-dasharray': cell.ring.dasharray,
-        });
+        };
+        if (cell.ring.dasharray) ringAttrs['stroke-dasharray'] = cell.ring.dasharray;
+        appendCircle(ringAttrs);
       }
 
       // Fill (chord tone u other)
@@ -385,14 +417,32 @@
   }
 
   function render(svgEl, params, deps, theoryAdapter) {
-    applyDrawPlan(svgEl, computeDrawPlan(params, theoryAdapter), deps);
+    const plan = computeDrawPlan(params, theoryAdapter);
+    applyDrawPlan(svgEl, plan, deps);
+    return plan;
+  }
+
+  // Decide qué hace un click en (cuerda, traste): si en esa posición hay una
+  // celda en el plan (normal o fantasma) → ocultar/restaurar; si no → foco.
+  // Puro: recibe el plan como dato, sin DOM.
+  function resolveBoardClick(args) {
+    args = args || {};
+    const cells = (args.plan && args.plan.cells) || [];
+    let hit = false;
+    for (let i = 0; i < cells.length; i++) {
+      if (cells[i].string === args.string && cells[i].fret === args.fret) {
+        hit = true;
+        break;
+      }
+    }
+    return { action: hit ? 'toggleHide' : 'setFocus', string: args.string, fret: args.fret };
   }
 
   W.FretboardRenderer = {
     computeDrawPlan, applyDrawPlan, render,
     // Expuestos puros para tests / consumidores
     computeRenderMap, applyHiddenIntervals, applyDirection,
-    intervalToSemi,
+    intervalToSemi, cellKey, resolveBoardClick,
     LAYER_PRIORITY, TENSIONS_BY_QUALITY, SCALE_BY_QUALITY,
     INTERVAL_NAMES, GUIDE_TONE_INTERVALS,
   };

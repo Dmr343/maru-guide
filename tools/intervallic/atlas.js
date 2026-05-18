@@ -70,7 +70,8 @@
     diatonicMode: 'major',
     prerollEnabled: false,
     loopRange: null, // [startIdx, endIdx] inclusivo o null
-    hiddenIntervals: [], // ej ['5','b5'] para ocultarlos del mástil
+    hiddenIntervals: [], // chord tones ocultados del mástil ej ['5','b5']
+    extraIntervals: [],  // intervalos NO-acorde encendidos a mano ej ['b6','2']
     metroMuted: false,
   };
 
@@ -121,6 +122,8 @@
 
   let svg, fretW;
   let _fretStart = 0;
+  let _lastPlan = null;  // último DrawPlan computado — lo usa el click del mástil
+  const BOARD_CLICK_DELAY = 220;  // ms para distinguir click simple de doble click
 
   // Posición x de un fret absoluto en el mástil (considera fretStart actual).
   function xFor(absoluteFret) {
@@ -137,14 +140,22 @@
     buildClickGrid();
   }
 
+  // Posiciones del mástil ocultadas a mano para el acorde activo.
+  function activeHiddenCells() {
+    const c = state.progression[state.activeIdx];
+    return (c && c.hiddenCells) || [];
+  }
+
   function render() {
     if (!svg) return;
     if (W.FretboardRenderer) {
-      W.FretboardRenderer.render(svg, {
+      _lastPlan = W.FretboardRenderer.render(svg, {
         chord: activeChord(),
         nextChord: nextChord(),
         layers: state.layers,
         hiddenIntervals: state.hiddenIntervals,
+        extraIntervals: state.extraIntervals,
+        hiddenCells: activeHiddenCells(),
         filter: state.filter,
         showNoteNames: state.showNoteNames,
         numFrets: NUM_FRETS,
@@ -162,6 +173,7 @@
     }
     drawInfo();
     drawBar();
+    drawLegend();
   }
 
   let _prevChord = null;
@@ -207,6 +219,7 @@
 
   let _dragSrcIdx = null;
   let _editPopover = null;
+  let _quickAddPopover = null;
 
   // Edit inline: popover sobre un slot para editar root/quality sin borrar.
   function openEditPopover(idx, anchorEl) {
@@ -270,6 +283,69 @@
     }
   }
 
+  // Agrega un acorde con raíz = nota de la posición del mástil, al final de
+  // la progresión, y lo deja como acorde activo. Devuelve la raíz.
+  function addChordFromBoard(string, fret, quality) {
+    const open = FB.OPEN_NOTES[6 - string];
+    const root = FB.fbNoteAt(open, fret);
+    addChord({ root: root, quality: quality, bars: 1 });
+    setActiveChord(state.progression.length - 1);
+    return root;
+  }
+
+  // Popover de "agregar acorde" anclado a una posición del mástil (doble
+  // click). La raíz es la nota de esa posición; el usuario elige la cualidad.
+  const QUICK_ADD_QUALITIES = [
+    ['maj7', 'Δ'], ['min7', 'm7'], ['dom7', '7'], ['dim7', '°7'], ['m7b5', 'ø'],
+  ];
+
+  function openQuickAddPopover(string, fret, clientX, clientY) {
+    closeQuickAddPopover();
+    closeEditPopover();
+    const open = FB.OPEN_NOTES[6 - string];
+    const root = FB.fbNoteAt(open, fret);
+    const pop = document.createElement('div');
+    pop.className = 'edit-popover';
+    const title = document.createElement('div');
+    title.className = 'edit-popover-title';
+    title.textContent = 'Agregar acorde · ' + root;
+    pop.appendChild(title);
+    QUICK_ADD_QUALITIES.forEach(pair => {
+      const q = pair[0], label = pair[1];
+      const b = document.createElement('button');
+      b.className = 'btn';
+      b.textContent = label;
+      b.title = chordName({ root: root, quality: q });
+      b.addEventListener('click', () => {
+        addChordFromBoard(string, fret, q);
+        closeQuickAddPopover();
+      });
+      pop.appendChild(b);
+    });
+    document.body.appendChild(pop);
+    pop.style.left = Math.max(8, clientX) + 'px';
+    pop.style.top  = (clientY + 8) + 'px';
+    _quickAddPopover = pop;
+
+    setTimeout(() => {
+      const onDocClick = ev => {
+        if (!_quickAddPopover) return;
+        if (!_quickAddPopover.contains(ev.target)) {
+          closeQuickAddPopover();
+          document.removeEventListener('mousedown', onDocClick);
+        }
+      };
+      document.addEventListener('mousedown', onDocClick);
+    }, 0);
+  }
+
+  function closeQuickAddPopover() {
+    if (_quickAddPopover) {
+      _quickAddPopover.remove();
+      _quickAddPopover = null;
+    }
+  }
+
   // Copiar / pegar delegan al modelo (clipboard interno).
   function copyActiveChord() {
     const m = ensureModel(); return m ? m.copyActiveChord() : false;
@@ -317,6 +393,7 @@
         return true;
       case 'Escape':
         if (_editPopover) closeEditPopover();
+        else if (_quickAddPopover) closeQuickAddPopover();
         else if ($('atlas-presets-modal') && $('atlas-presets-modal').style.display === 'flex') closePresetsModal();
         else if (transport && transport.getState().transport === 'playing') pause();
         else clearProgression();
@@ -616,40 +693,108 @@
     `;
   }
 
+  // Leyenda: las 12 posiciones cromáticas hasta la 8va. Las notas del acorde
+  // activo arrancan encendidas; las demás (b2, 2, 4, b6, 6 según el acorde)
+  // arrancan apagadas y se encienden con un click. El acorde no cambia: es
+  // pura ayuda visual para ubicar, por ej, la b6 en el mástil.
+  const LEGEND_INTERVALS = ['1','b2','2','b3','3','4','b5','5','b6','6','b7','7'];
+
   function drawLegend() {
     const lg = $('atlas-legend');
     if (!lg) return;
     lg.innerHTML = '';
-    const ints = ['1','b3','3','b5','5','b7','7'];
+    const c = activeChord();
+    const chordTones = new Set(c ? c.intervals : []);
     const hidden = new Set(state.hiddenIntervals || []);
-    ints.forEach(i => {
+    const extra  = new Set(state.extraIntervals || []);
+
+    const hint = document.createElement('span');
+    hint.style.cssText = 'color:var(--text-dim);font-size:10px;margin-right:2px';
+    hint.textContent = 'Leyenda — click para mostrar/ocultar:';
+    lg.appendChild(hint);
+
+    LEGEND_INTERVALS.forEach(i => {
+      const isChord = chordTones.has(i);
+      // "on" = visible en el mástil. Nota del acorde: visible salvo que se
+      // oculte. Nota ajena: oculta salvo que se encienda a mano.
+      const on = isChord ? !hidden.has(i) : extra.has(i);
       const btn = document.createElement('button');
-      const isHidden = hidden.has(i);
-      btn.className = 'legend-toggle' + (isHidden ? ' off' : '');
-      btn.title = isHidden ? `Mostrar ${i}` : `Ocultar ${i}`;
+      btn.className = 'legend-toggle' + (on ? '' : ' off') + (isChord ? ' is-chord' : '');
+      btn.title = isChord
+        ? (on ? `Ocultar ${i} · nota del acorde` : `Mostrar ${i} · nota del acorde`)
+        : (on ? `Ocultar ${i}` : `Mostrar ${i}`);
       btn.innerHTML = `<span class="legend-dot" style="background:${INTERVAL_COLORS_FULL[i]}"></span>${i}`;
-      btn.addEventListener('click', () => toggleHiddenInterval(i));
+      btn.addEventListener('click', () => toggleLegendInterval(i));
       lg.appendChild(btn);
     });
-    // Botón "mostrar todos" si hay algo oculto
-    if (hidden.size > 0) {
+
+    // Reset: vuelve al acorde puro (sin ocultos ni extras encendidos).
+    // También limpia las posiciones ocultas a mano del acorde activo.
+    const hasHiddenCells = activeHiddenCells().length > 0;
+    if (hidden.size > 0 || extra.size > 0 || hasHiddenCells) {
       const reset = document.createElement('button');
       reset.className = 'legend-toggle reset';
-      reset.textContent = 'Mostrar todos';
+      reset.textContent = 'Reset';
+      reset.title = 'Volver al acorde puro';
       reset.addEventListener('click', () => {
         state.hiddenIntervals = [];
-        saveState(); render(); drawLegend();
+        state.extraIntervals = [];
+        const m = ensureModel();
+        if (m) m.clearHiddenCells(state.activeIdx);
+        saveState(); render();
       });
       lg.appendChild(reset);
     }
   }
 
+  // Click en la leyenda. Si el intervalo es nota del acorde, togglea su
+  // ocultamiento (hiddenIntervals); si no, togglea su encendido (extraIntervals).
+  function toggleLegendInterval(interval) {
+    const c = activeChord();
+    const chordTones = new Set(c ? c.intervals : []);
+    if (chordTones.has(interval)) {
+      const hidden = new Set(state.hiddenIntervals || []);
+      hidden.has(interval) ? hidden.delete(interval) : hidden.add(interval);
+      state.hiddenIntervals = Array.from(hidden);
+    } else {
+      const extra = new Set(state.extraIntervals || []);
+      extra.has(interval) ? extra.delete(interval) : extra.add(interval);
+      state.extraIntervals = Array.from(extra);
+    }
+    saveState(); render();
+  }
+
+  // Toggle directo de hiddenIntervals — usado por tests y consumidores.
   function toggleHiddenInterval(interval) {
     const hidden = new Set(state.hiddenIntervals || []);
     if (hidden.has(interval)) hidden.delete(interval);
     else hidden.add(interval);
     state.hiddenIntervals = Array.from(hidden);
-    saveState(); render(); drawLegend();
+    saveState(); render();
+  }
+
+  // Oculta/restaura una posición puntual del mástil en el acorde activo.
+  function toggleHiddenCellAt(string, fret) {
+    const m = ensureModel();
+    const FR = W.FretboardRenderer;
+    if (!m || !FR) return;
+    m.toggleHiddenCell(state.activeIdx, FR.cellKey(string, fret));
+  }
+
+  // Click simple en el mástil: según haya o no una nota en esa posición,
+  // oculta/restaura esa nota o fija el foco de dirección (comportamiento viejo).
+  function handleBoardClick(string, fret) {
+    const FR = W.FretboardRenderer;
+    const res = (FR && FR.resolveBoardClick)
+      ? FR.resolveBoardClick({ string: string, fret: fret, plan: _lastPlan })
+      : { action: 'setFocus' };
+    if (res.action === 'toggleHide') {
+      toggleHiddenCellAt(string, fret);
+    } else {
+      state.filter.focusString = string;
+      state.filter.focusFret = fret;
+      saveState(); render();
+    }
   }
 
 
@@ -1160,10 +1305,20 @@
         r.setAttribute('width', w); r.setAttribute('height', h);
         r.setAttribute('fill', 'transparent');
         r.style.cursor = 'pointer';
+        // Click simple diferido: hay que esperar para no pisar un doble click.
+        // Click simple → ocultar nota / fijar foco. Doble click → agregar acorde.
+        let _cellTimer = null;
         r.addEventListener('click', () => {
-          state.filter.focusString = s;
-          state.filter.focusFret = f;
-          saveState(); render();
+          if (_cellTimer) return;
+          _cellTimer = setTimeout(() => {
+            _cellTimer = null;
+            handleBoardClick(s, f);
+          }, BOARD_CLICK_DELAY);
+        });
+        r.addEventListener('dblclick', e => {
+          if (_cellTimer) { clearTimeout(_cellTimer); _cellTimer = null; }
+          if (e && e.preventDefault) e.preventDefault();
+          openQuickAddPopover(s, f, e.clientX, e.clientY);
         });
         g.appendChild(r);
       }
@@ -1201,5 +1356,9 @@
     _loadFavorites: loadFavorites,
     _applyHiddenIntervals: W.FretboardRenderer && W.FretboardRenderer.applyHiddenIntervals,
     _toggleHiddenInterval: toggleHiddenInterval,
+    _toggleLegendInterval: toggleLegendInterval,
+    _toggleHiddenCell: toggleHiddenCellAt,
+    _handleBoardClick: handleBoardClick,
+    _addChordFromBoard: addChordFromBoard,
   };
 })(window.GuitarShared, window);

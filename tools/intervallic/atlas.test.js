@@ -377,6 +377,94 @@
     });
   });
 
+  T.describe('toggleLegendInterval — extras vs ocultos', () => {
+    T.it('intervalo ajeno al acorde va a extraIntervals', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      A._toggleLegendInterval('b6');
+      T.assert(A.getState().extraIntervals.includes('b6'));
+      A._toggleLegendInterval('b6');
+      T.assert(!A.getState().extraIntervals.includes('b6'));
+    });
+    T.it('nota del acorde va a hiddenIntervals, no a extras', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      A.getState().hiddenIntervals = [];
+      A.getState().extraIntervals = [];
+      A._toggleLegendInterval('5');
+      T.assert(A.getState().hiddenIntervals.includes('5'));
+      T.assert(!A.getState().extraIntervals.includes('5'));
+    });
+  });
+
+  T.describe('hiddenCells — ocultar notas por acorde', () => {
+    T.it('toggle afecta solo al acorde activo', () => {
+      A.setProgression([
+        { root: 'C', quality: 'maj7', bars: 1 },
+        { root: 'A', quality: 'min7', bars: 1 },
+      ]);
+      A.setActiveChord(0);
+      A._toggleHiddenCell(3, 5);
+      const st = A.getState();
+      T.assert(st.progression[0].hiddenCells.indexOf('s3f5') !== -1);
+      T.assertEq(st.progression[1].hiddenCells.length, 0, 'el otro acorde queda intacto');
+    });
+    T.it('cada acorde conserva sus propias posiciones ocultas', () => {
+      A.setProgression([
+        { root: 'C', quality: 'maj7', bars: 1 },
+        { root: 'A', quality: 'min7', bars: 1 },
+      ]);
+      A.setActiveChord(0);
+      A._toggleHiddenCell(3, 5);
+      A.setActiveChord(1);
+      A._toggleHiddenCell(2, 4);
+      const st = A.getState();
+      T.assert(st.progression[0].hiddenCells.indexOf('s3f5') !== -1, 'acorde 0 conserva s3f5');
+      T.assert(st.progression[1].hiddenCells.indexOf('s2f4') !== -1, 'acorde 1 tiene s2f4');
+      T.assert(st.progression[0].hiddenCells.indexOf('s2f4') === -1, 'no se filtra al acorde 0');
+    });
+    T.it('re-togglear restaura la posición', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      A.setActiveChord(0);
+      A._toggleHiddenCell(1, 7);
+      A._toggleHiddenCell(1, 7);
+      T.assertEq(A.getState().progression[0].hiddenCells.length, 0);
+    });
+  });
+
+  T.describe('agregar acorde desde el mástil (doble click)', () => {
+    T.it('agrega un acorde con la raíz de la posición y la cualidad elegida', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      // cuerda 1 (mi agudo), traste 0 → E
+      const root = A._addChordFromBoard(1, 0, 'min7');
+      const st = A.getState();
+      T.assertEq(st.progression.length, 2);
+      T.assertEq(st.progression[1].root, root);
+      T.assertEq(st.progression[1].quality, 'min7');
+    });
+    T.it('la raíz se calcula desde la posición del mástil', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      // cuerda 6 (mi grave), traste 3 → G
+      const root = A._addChordFromBoard(6, 3, 'dom7');
+      T.assertEq(root, 'G');
+      T.assertEq(A.getState().progression[1].root, 'G');
+    });
+    T.it('el acorde queda al final y pasa a ser el activo', () => {
+      A.setProgression([
+        { root: 'C', quality: 'maj7', bars: 1 },
+        { root: 'A', quality: 'min7', bars: 1 },
+      ]);
+      A._addChordFromBoard(6, 3, 'dom7');
+      const st = A.getState();
+      T.assertEq(st.progression.length, 3);
+      T.assertEq(st.activeIdx, 2, 'el nuevo acorde es el activo');
+      T.assertEq(st.progression[2].root, 'G');
+    });
+    T.it('el acorde agregado arranca con hiddenCells vacío', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      A._addChordFromBoard(1, 0, 'maj7');
+      T.assertArrayEq(A.getState().progression[1].hiddenCells, []);
+    });
+  });
+
   // makePseudoVoicing eliminado junto con el audio de bloque del acorde.
 
 })(window.GuitarShared, window);
