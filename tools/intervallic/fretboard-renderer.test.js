@@ -114,6 +114,61 @@
     });
   });
 
+  T.describe('FretboardRenderer — hiddenCells (fantasma)', () => {
+    T.it('una posición en hiddenCells produce una cell ghost', () => {
+      const full = FR.computeDrawPlan(defaultParams());
+      const target = full.cells[0];
+      const key = FR.cellKey(target.string, target.fret);
+      const plan = FR.computeDrawPlan(defaultParams({ hiddenCells: [key] }));
+      const ghost = plan.cells.find(c => c.string === target.string && c.fret === target.fret);
+      T.assert(ghost, 'la celda sigue presente en el plan (clickeable)');
+      T.assertEq(ghost.ghost, true);
+      T.assertEq(ghost.hasFill, false);
+      T.assertEq(ghost.label, null);
+      T.assert(ghost.ring, 'el fantasma debe tener anillo');
+    });
+    T.it('posiciones fuera de hiddenCells siguen normales', () => {
+      const full = FR.computeDrawPlan(defaultParams());
+      const target = full.cells[0];
+      const key = FR.cellKey(target.string, target.fret);
+      const plan = FR.computeDrawPlan(defaultParams({ hiddenCells: [key] }));
+      plan.cells
+        .filter(c => !(c.string === target.string && c.fret === target.fret))
+        .forEach(c => T.assertEq(c.ghost, false));
+    });
+    T.it('sin hiddenCells ninguna celda es ghost', () => {
+      const plan = FR.computeDrawPlan(defaultParams());
+      plan.cells.forEach(c => T.assertEq(c.ghost, false));
+    });
+  });
+
+  T.describe('FretboardRenderer — cellKey + resolveBoardClick', () => {
+    T.it('cellKey es estable y distingue cuerda de traste', () => {
+      T.assertEq(FR.cellKey(3, 5), FR.cellKey(3, 5));
+      T.assert(FR.cellKey(3, 5) !== FR.cellKey(5, 3), 's3f5 != s5f3');
+    });
+    T.it('posición con celda → toggleHide', () => {
+      const plan = FR.computeDrawPlan(defaultParams());
+      const cell = plan.cells[0];
+      const res = FR.resolveBoardClick({ string: cell.string, fret: cell.fret, plan });
+      T.assertEq(res.action, 'toggleHide');
+    });
+    T.it('posición sin celda → setFocus', () => {
+      const plan = FR.computeDrawPlan(defaultParams());
+      const res = FR.resolveBoardClick({ string: 99, fret: 99, plan });
+      T.assertEq(res.action, 'setFocus');
+    });
+    T.it('una posición fantasma sigue resolviendo a toggleHide', () => {
+      const full = FR.computeDrawPlan(defaultParams());
+      const t = full.cells[0];
+      const plan = FR.computeDrawPlan(defaultParams({
+        hiddenCells: [FR.cellKey(t.string, t.fret)],
+      }));
+      const res = FR.resolveBoardClick({ string: t.string, fret: t.fret, plan });
+      T.assertEq(res.action, 'toggleHide');
+    });
+  });
+
   T.describe('FretboardRenderer — approach (ghost)', () => {
     T.it('approach del próximo acorde produce ring + sin fill', () => {
       const plan = FR.computeDrawPlan(defaultParams({

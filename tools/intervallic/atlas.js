@@ -122,6 +122,8 @@
 
   let svg, fretW;
   let _fretStart = 0;
+  let _lastPlan = null;  // último DrawPlan computado — lo usa el click del mástil
+  const BOARD_CLICK_DELAY = 220;  // ms para distinguir click simple de doble click
 
   // Posición x de un fret absoluto en el mástil (considera fretStart actual).
   function xFor(absoluteFret) {
@@ -138,15 +140,22 @@
     buildClickGrid();
   }
 
+  // Posiciones del mástil ocultadas a mano para el acorde activo.
+  function activeHiddenCells() {
+    const c = state.progression[state.activeIdx];
+    return (c && c.hiddenCells) || [];
+  }
+
   function render() {
     if (!svg) return;
     if (W.FretboardRenderer) {
-      W.FretboardRenderer.render(svg, {
+      _lastPlan = W.FretboardRenderer.render(svg, {
         chord: activeChord(),
         nextChord: nextChord(),
         layers: state.layers,
         hiddenIntervals: state.hiddenIntervals,
         extraIntervals: state.extraIntervals,
+        hiddenCells: activeHiddenCells(),
         filter: state.filter,
         showNoteNames: state.showNoteNames,
         numFrets: NUM_FRETS,
@@ -655,7 +664,9 @@
     });
 
     // Reset: vuelve al acorde puro (sin ocultos ni extras encendidos).
-    if (hidden.size > 0 || extra.size > 0) {
+    // También limpia las posiciones ocultas a mano del acorde activo.
+    const hasHiddenCells = activeHiddenCells().length > 0;
+    if (hidden.size > 0 || extra.size > 0 || hasHiddenCells) {
       const reset = document.createElement('button');
       reset.className = 'legend-toggle reset';
       reset.textContent = 'Reset';
@@ -663,6 +674,8 @@
       reset.addEventListener('click', () => {
         state.hiddenIntervals = [];
         state.extraIntervals = [];
+        const m = ensureModel();
+        if (m) m.clearHiddenCells(state.activeIdx);
         saveState(); render();
       });
       lg.appendChild(reset);
@@ -693,6 +706,30 @@
     else hidden.add(interval);
     state.hiddenIntervals = Array.from(hidden);
     saveState(); render();
+  }
+
+  // Oculta/restaura una posición puntual del mástil en el acorde activo.
+  function toggleHiddenCellAt(string, fret) {
+    const m = ensureModel();
+    const FR = W.FretboardRenderer;
+    if (!m || !FR) return;
+    m.toggleHiddenCell(state.activeIdx, FR.cellKey(string, fret));
+  }
+
+  // Click simple en el mástil: según haya o no una nota en esa posición,
+  // oculta/restaura esa nota o fija el foco de dirección (comportamiento viejo).
+  function handleBoardClick(string, fret) {
+    const FR = W.FretboardRenderer;
+    const res = (FR && FR.resolveBoardClick)
+      ? FR.resolveBoardClick({ string: string, fret: fret, plan: _lastPlan })
+      : { action: 'setFocus' };
+    if (res.action === 'toggleHide') {
+      toggleHiddenCellAt(string, fret);
+    } else {
+      state.filter.focusString = string;
+      state.filter.focusFret = fret;
+      saveState(); render();
+    }
   }
 
 
@@ -1203,10 +1240,15 @@
         r.setAttribute('width', w); r.setAttribute('height', h);
         r.setAttribute('fill', 'transparent');
         r.style.cursor = 'pointer';
+        // Click simple diferido: hay que esperar para no pisar un doble click
+        // (el doble click — agregar acorde — lo agrega el Slice 2).
+        let _cellTimer = null;
         r.addEventListener('click', () => {
-          state.filter.focusString = s;
-          state.filter.focusFret = f;
-          saveState(); render();
+          if (_cellTimer) return;
+          _cellTimer = setTimeout(() => {
+            _cellTimer = null;
+            handleBoardClick(s, f);
+          }, BOARD_CLICK_DELAY);
         });
         g.appendChild(r);
       }
@@ -1245,5 +1287,7 @@
     _applyHiddenIntervals: W.FretboardRenderer && W.FretboardRenderer.applyHiddenIntervals,
     _toggleHiddenInterval: toggleHiddenInterval,
     _toggleLegendInterval: toggleLegendInterval,
+    _toggleHiddenCell: toggleHiddenCellAt,
+    _handleBoardClick: handleBoardClick,
   };
 })(window.GuitarShared, window);

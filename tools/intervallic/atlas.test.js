@@ -395,6 +395,41 @@
     });
   });
 
+  T.describe('hiddenCells — ocultar notas por acorde', () => {
+    T.it('toggle afecta solo al acorde activo', () => {
+      A.setProgression([
+        { root: 'C', quality: 'maj7', bars: 1 },
+        { root: 'A', quality: 'min7', bars: 1 },
+      ]);
+      A.setActiveChord(0);
+      A._toggleHiddenCell(3, 5);
+      const st = A.getState();
+      T.assert(st.progression[0].hiddenCells.indexOf('s3f5') !== -1);
+      T.assertEq(st.progression[1].hiddenCells.length, 0, 'el otro acorde queda intacto');
+    });
+    T.it('cada acorde conserva sus propias posiciones ocultas', () => {
+      A.setProgression([
+        { root: 'C', quality: 'maj7', bars: 1 },
+        { root: 'A', quality: 'min7', bars: 1 },
+      ]);
+      A.setActiveChord(0);
+      A._toggleHiddenCell(3, 5);
+      A.setActiveChord(1);
+      A._toggleHiddenCell(2, 4);
+      const st = A.getState();
+      T.assert(st.progression[0].hiddenCells.indexOf('s3f5') !== -1, 'acorde 0 conserva s3f5');
+      T.assert(st.progression[1].hiddenCells.indexOf('s2f4') !== -1, 'acorde 1 tiene s2f4');
+      T.assert(st.progression[0].hiddenCells.indexOf('s2f4') === -1, 'no se filtra al acorde 0');
+    });
+    T.it('re-togglear restaura la posición', () => {
+      A.setProgression([{ root: 'C', quality: 'maj7', bars: 1 }]);
+      A.setActiveChord(0);
+      A._toggleHiddenCell(1, 7);
+      A._toggleHiddenCell(1, 7);
+      T.assertEq(A.getState().progression[0].hiddenCells.length, 0);
+    });
+  });
+
   // makePseudoVoicing eliminado junto con el audio de bloque del acorde.
 
 })(window.GuitarShared, window);

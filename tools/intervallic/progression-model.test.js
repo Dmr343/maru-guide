@@ -552,4 +552,59 @@
     });
   });
 
+  T.describe('ProgressionModel — hiddenCells', () => {
+    T.it('normalizeChord deja hiddenCells:[] cuando falta', () => {
+      const ctx = makeModel({ progression: [{ root: 'C', quality: 'maj7', bars: 1 }] });
+      T.assertArrayEq(ctx.model.progression[0].hiddenCells, []);
+    });
+    T.it('toggleHiddenCell agrega y luego quita una clave', () => {
+      const ctx = makeModel({ progression: [{ root: 'C', quality: 'maj7', bars: 1 }] });
+      ctx.model.toggleHiddenCell(0, 's3f5');
+      T.assertArrayEq(ctx.model.progression[0].hiddenCells, ['s3f5']);
+      ctx.model.toggleHiddenCell(0, 's3f5');
+      T.assertArrayEq(ctx.model.progression[0].hiddenCells, []);
+      T.assertEq(ctx.callCount, 2, 'cada toggle dispara onChange');
+    });
+    T.it('toggleHiddenCell hace update inmutable (reemplaza el array)', () => {
+      const ctx = makeModel({ progression: [{ root: 'C', quality: 'maj7', bars: 1 }] });
+      const before = ctx.model.progression[0].hiddenCells;
+      ctx.model.toggleHiddenCell(0, 's1f1');
+      T.assert(ctx.model.progression[0].hiddenCells !== before, 'array reemplazado');
+      T.assertArrayEq(before, [], 'el array previo no se mutó');
+    });
+    T.it('hiddenCells se preserva al editChordAt', () => {
+      const ctx = makeModel({ progression: [{ root: 'C', quality: 'maj7', bars: 1 }] });
+      ctx.model.toggleHiddenCell(0, 's2f3');
+      ctx.model.editChordAt(0, { quality: 'min7' });
+      T.assertEq(ctx.model.progression[0].quality, 'min7');
+      T.assertArrayEq(ctx.model.progression[0].hiddenCells, ['s2f3']);
+    });
+    T.it('hiddenCells viaja con su acorde al moveChord', () => {
+      const ctx = makeModel({ progression: [
+        { root: 'C', quality: 'maj7', bars: 1 },
+        { root: 'A', quality: 'min7', bars: 1 },
+        { root: 'G', quality: 'dom7', bars: 1 },
+      ] });
+      ctx.model.toggleHiddenCell(0, 's6f8');
+      ctx.model.moveChord(0, 2);
+      const moved = ctx.model.progression.find(c => c.root === 'C');
+      T.assertArrayEq(moved.hiddenCells, ['s6f8']);
+    });
+    T.it('clearHiddenCells vacía el acorde indicado', () => {
+      const ctx = makeModel({ progression: [{ root: 'C', quality: 'maj7', bars: 1 }] });
+      ctx.model.toggleHiddenCell(0, 's1f1');
+      ctx.model.clearHiddenCells(0);
+      T.assertArrayEq(ctx.model.progression[0].hiddenCells, []);
+    });
+    T.it('pasteAfterActive produce un acorde con hiddenCells vacío', () => {
+      const ctx = makeModel({ progression: [{ root: 'C', quality: 'maj7', bars: 1 }] });
+      ctx.model.toggleHiddenCell(0, 's1f1');
+      ctx.model.copyActiveChord();
+      ctx.model.pasteAfterActive();
+      T.assertEq(ctx.model.progression.length, 2);
+      T.assertArrayEq(ctx.model.progression[1].hiddenCells, [], 'el pegado arranca limpio');
+      T.assertArrayEq(ctx.model.progression[0].hiddenCells, ['s1f1'], 'el original conserva');
+    });
+  });
+
 })(window.GuitarShared, typeof window !== 'undefined' ? window : globalThis);
