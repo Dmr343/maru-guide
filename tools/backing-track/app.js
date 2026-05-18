@@ -3,9 +3,9 @@
 //
 // Crea el motor, arma un proyecto por defecto y cablea la UI:
 // transporte, progresión (constructor de acordes reutilizando el
-// ProgressionModel del Intervalic Atlas), indicador de acorde y
-// gestión de pistas. El panel de edición de presets y el modo
-// arreglo llegan en issues posteriores (#59, #62).
+// ProgressionModel del Atlas), indicador de acorde, gestión de
+// pistas y panel de edición de presets. La persistencia y el modo
+// arreglo llegan en issues posteriores (#60, #62).
 // ─────────────────────────────────────────────────────────────
 (function (W) {
   'use strict';
@@ -33,6 +33,7 @@
   const tracksEl = el('tracks');
   const addTipo = el('add-tipo');
   const btnAdd = el('btn-add');
+  const presetEditorEl = el('preset-editor');
 
   const TIPO_LABEL = {
     bajo: 'Bajo', acordes: 'Acordes', bateria: 'Batería',
@@ -42,7 +43,7 @@
     bajo: 'bass', acordes: 'chord', lead: 'chord',
     bateria: 'drums', percusion: 'perc',
   };
-  // Calidades soportadas por el motor (las que resuelve theory.buildChord).
+  const MELODIC_TIPOS = ['bajo', 'acordes', 'pad', 'lead'];
   const QUALITIES = [
     { v: 'major', label: 'Mayor' },
     { v: 'minor', label: 'menor' },
@@ -52,6 +53,14 @@
   ];
   const ROOTS = (theory && theory.CHROMATIC) ||
     ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const OSC_TYPES = ['sine', 'triangle', 'sawtooth', 'square',
+    'fatsawtooth', 'fattriangle', 'fatsquare', 'pulse'];
+  const FILTER_TYPES = ['lowpass', 'highpass', 'bandpass'];
+  const EFFECTS = [
+    { tipo: 'reverb', label: 'Reverb' },
+    { tipo: 'distortion', label: 'Distorsión' },
+    { tipo: 'chorus', label: 'Chorus' },
+  ];
 
   function setStatus(text, cls) {
     statusEl.textContent = text;
@@ -69,7 +78,7 @@
     },
   });
 
-  // ─── Opciones de <select> ───
+  // ─── Helpers de <select> ───
   function fillSelect(sel, items, valueKey, labelFn) {
     sel.innerHTML = '';
     items.forEach(it => {
@@ -78,6 +87,21 @@
       opt.textContent = labelFn ? labelFn(it) : (valueKey ? it[valueKey] : it);
       sel.appendChild(opt);
     });
+  }
+  function mkBtn(cls, text, onClick) {
+    const b = document.createElement('button');
+    b.className = cls;
+    b.textContent = text;
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  // Presets disponibles para un tipo: de fábrica + de la librería del usuario.
+  function presetsForTipo(tipo) {
+    const fac = BT.factoryPresets.byTipo(tipo);
+    const usr = BT.userLibrary.byTipo(tipo)
+      .map(p => ({ id: p.id, nombre: '★ ' + p.nombre }));
+    return fac.concat(usr);
   }
 
   function initProgSelect() {
@@ -105,7 +129,7 @@
     engine.addTrack({ tipo: 'bateria' });
   }
 
-  // ─── Tira de acordes (selección + indicador) ───
+  // ─── Tira de acordes ───
   function chordLabel(c) {
     if (theory && theory.chordName) return theory.chordName(c.root, c.quality);
     return c.root + (c.quality === 'major' ? '' : ' ' + c.quality);
@@ -168,12 +192,12 @@
 
     const stepper = document.createElement('div');
     stepper.className = 'bars-stepper';
-    const minus = mkBtn('track-btn', '−', () => model.changeActiveBars(-1));
+    stepper.appendChild(mkBtn('track-btn', '−', () => model.changeActiveBars(-1)));
     const val = document.createElement('span');
     val.className = 'value';
     val.textContent = String(chord.bars);
-    const plus = mkBtn('track-btn', '+', () => model.changeActiveBars(1));
-    stepper.appendChild(minus); stepper.appendChild(val); stepper.appendChild(plus);
+    stepper.appendChild(val);
+    stepper.appendChild(mkBtn('track-btn', '+', () => model.changeActiveBars(1)));
     chordEditor.appendChild(stepper);
 
     chordEditor.appendChild(mkBtn('track-btn', '◀', () => {
@@ -183,14 +207,6 @@
       if (idx < model.progression.length - 1) model.moveChord(idx, idx + 1);
     }));
     chordEditor.appendChild(mkBtn('track-btn', '✕', () => model.removeChordAt(idx)));
-  }
-
-  function mkBtn(cls, text, onClick) {
-    const b = document.createElement('button');
-    b.className = cls;
-    b.textContent = text;
-    b.addEventListener('click', onClick);
-    return b;
   }
 
   // ─── Gestión de pistas ───
@@ -229,10 +245,19 @@
     tipo.textContent = TIPO_LABEL[track.tipo] || track.tipo;
     row.appendChild(tipo);
 
-    const presets = BT.factoryPresets.byTipo(track.tipo);
-    const presetSel = makeSelect('track-preset', presets, track.presetId);
-    presetSel.addEventListener('change',
-      () => engine.updateTrack(track.id, { presetId: presetSel.value }));
+    // Preset (de fábrica o del usuario; "(editado)" si hay copia de trabajo).
+    const presetOpts = presetsForTipo(track.tipo).slice();
+    let selected = track.presetId;
+    if (track.customPreset) {
+      presetOpts.unshift({ id: '__custom', nombre: '(editado)' });
+      selected = '__custom';
+    }
+    const presetSel = makeSelect('track-preset', presetOpts, selected);
+    presetSel.addEventListener('change', () => {
+      if (presetSel.value === '__custom') return;
+      engine.updateTrack(track.id, { presetId: presetSel.value });
+      if (editing && editing.trackId === track.id) closeEditor();
+    });
     row.appendChild(presetSel);
 
     const ptipo = PATTERN_TIPO[track.tipo];
@@ -260,13 +285,24 @@
       () => engine.updateTrack(track.id, { volumen: Number(vol.value) / 100 }));
     row.appendChild(vol);
 
+    // Editar sonido (solo pistas melódicas).
+    if (MELODIC_TIPOS.indexOf(track.tipo) >= 0) {
+      const gear = mkBtn('track-btn', '⚙', () => openEditor(track.id));
+      gear.title = 'Editar sonido';
+      row.appendChild(gear);
+    }
+
     const up = mkBtn('track-btn', '▲', () => { engine.moveTrack(track.id, -1); renderTracks(); });
     up.title = 'Subir';
     row.appendChild(up);
     const down = mkBtn('track-btn', '▼', () => { engine.moveTrack(track.id, 1); renderTracks(); });
     down.title = 'Bajar';
     row.appendChild(down);
-    const rm = mkBtn('track-btn', '✕', () => { engine.removeTrack(track.id); renderTracks(); });
+    const rm = mkBtn('track-btn', '✕', () => {
+      engine.removeTrack(track.id);
+      if (editing && editing.trackId === track.id) closeEditor();
+      renderTracks();
+    });
     rm.title = 'Quitar';
     row.appendChild(rm);
 
@@ -289,6 +325,227 @@
       down.disabled = (i === tracks.length - 1);
       tracksEl.appendChild(row);
     });
+  }
+
+  // ─── Panel de edición de presets (niveles 2 y 3) ───
+  let editing = null;   // { trackId, preset }
+
+  function blankPreset(tipo) {
+    return {
+      id: 'desde-cero', nombre: 'Nuevo sonido', tipo: tipo, motor: 'synth',
+      config: {
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 0.3 },
+        filter: { type: 'lowpass', Q: 1 },
+        filterEnvelope: { attack: 0.02, decay: 0.2, sustain: 0.3,
+          baseFrequency: 200, octaves: 3 },
+      },
+      efectos: [],
+    };
+  }
+
+  function openEditor(trackId) {
+    const preset = engine.getTrackPreset(trackId);
+    if (!preset) return;
+    if (!preset.config) preset.config = blankPreset('acordes').config;
+    editing = { trackId: trackId, preset: preset };
+    renderPresetEditor();
+  }
+  function closeEditor() {
+    editing = null;
+    presetEditorEl.hidden = true;
+    presetEditorEl.innerHTML = '';
+  }
+
+  // Aplica la copia de trabajo al motor (preview en vivo).
+  function applyEditing() {
+    if (editing) engine.applyTrackPreset(editing.trackId, editing.preset);
+  }
+
+  function peParamRow(labelText, min, max, step, value, fmt, onInput) {
+    const row = document.createElement('div');
+    row.className = 'pe-row';
+    const lbl = document.createElement('label');
+    lbl.textContent = labelText;
+    const range = document.createElement('input');
+    range.type = 'range';
+    range.min = String(min); range.max = String(max); range.step = String(step);
+    range.value = String(value);
+    const valEl = document.createElement('span');
+    valEl.className = 'pe-val';
+    valEl.textContent = fmt(value);
+    range.addEventListener('input', () => {
+      const v = Number(range.value);
+      valEl.textContent = fmt(v);
+      onInput(v);
+      applyEditing();
+    });
+    row.appendChild(lbl); row.appendChild(range); row.appendChild(valEl);
+    return row;
+  }
+
+  function peSelectRow(labelText, options, value, onChange) {
+    const row = document.createElement('div');
+    row.className = 'pe-row';
+    const lbl = document.createElement('label');
+    lbl.textContent = labelText;
+    const sel = document.createElement('select');
+    fillSelect(sel, options);
+    sel.value = value;
+    sel.addEventListener('change', () => { onChange(sel.value); applyEditing(); });
+    row.appendChild(lbl); row.appendChild(sel);
+    return row;
+  }
+
+  function peGroupLabel(text) {
+    const d = document.createElement('div');
+    d.className = 'pe-group-label';
+    d.textContent = text;
+    return d;
+  }
+
+  function renderPresetEditor() {
+    if (!editing) { closeEditor(); return; }
+    const track = engine.getTracks().find(t => t.id === editing.trackId);
+    if (!track) { closeEditor(); return; }
+    const cfg = editing.preset.config;
+    const env = cfg.envelope || (cfg.envelope = {});
+    presetEditorEl.hidden = false;
+    presetEditorEl.innerHTML = '';
+
+    const title = document.createElement('div');
+    title.className = 'pe-title';
+    title.textContent = 'Editar sonido — ' + (TIPO_LABEL[track.tipo] || track.tipo);
+    presetEditorEl.appendChild(title);
+    const sub = document.createElement('div');
+    sub.className = 'pe-sub';
+    sub.textContent = 'Base: ' + (editing.preset.nombre || '—') +
+      '. Los cambios afectan solo a esta pista hasta que guardes.';
+    presetEditorEl.appendChild(sub);
+
+    // Oscilador
+    presetEditorEl.appendChild(peGroupLabel('Oscilador'));
+    presetEditorEl.appendChild(peSelectRow('Forma de onda', OSC_TYPES,
+      (cfg.oscillator && cfg.oscillator.type) || 'sine', v => {
+        cfg.oscillator = { type: v };
+      }));
+
+    // Envolvente ADSR
+    presetEditorEl.appendChild(peGroupLabel('Envolvente (ADSR)'));
+    const secs = v => v.toFixed(2) + ' s';
+    presetEditorEl.appendChild(peParamRow('Attack', 0, 2, 0.01,
+      env.attack != null ? env.attack : 0.01, secs, v => { env.attack = v; }));
+    presetEditorEl.appendChild(peParamRow('Decay', 0, 2, 0.01,
+      env.decay != null ? env.decay : 0.2, secs, v => { env.decay = v; }));
+    presetEditorEl.appendChild(peParamRow('Sustain', 0, 1, 0.01,
+      env.sustain != null ? env.sustain : 0.5,
+      v => Math.round(v * 100) + '%', v => { env.sustain = v; }));
+    presetEditorEl.appendChild(peParamRow('Release', 0, 4, 0.01,
+      env.release != null ? env.release : 0.3, secs, v => { env.release = v; }));
+
+    // Filtro (solo el bajo es MonoSynth con filtro propio)
+    if (track.tipo === 'bajo') {
+      const filt = cfg.filter || (cfg.filter = { type: 'lowpass', Q: 1 });
+      const fenv = cfg.filterEnvelope || (cfg.filterEnvelope = {});
+      presetEditorEl.appendChild(peGroupLabel('Filtro'));
+      presetEditorEl.appendChild(peSelectRow('Tipo', FILTER_TYPES,
+        filt.type || 'lowpass', v => { filt.type = v; }));
+      presetEditorEl.appendChild(peParamRow('Resonancia (Q)', 0, 12, 0.1,
+        filt.Q != null ? filt.Q : 1, v => v.toFixed(1), v => { filt.Q = v; }));
+      presetEditorEl.appendChild(peParamRow('Frecuencia base', 40, 1200, 10,
+        fenv.baseFrequency != null ? fenv.baseFrequency : 200,
+        v => Math.round(v) + ' Hz', v => { fenv.baseFrequency = v; }));
+      presetEditorEl.appendChild(peParamRow('Octavas', 0, 6, 0.1,
+        fenv.octaves != null ? fenv.octaves : 3, v => v.toFixed(1),
+        v => { fenv.octaves = v; }));
+    }
+
+    // Efectos
+    presetEditorEl.appendChild(peGroupLabel('Efectos'));
+    EFFECTS.forEach(fx => {
+      const current = (editing.preset.efectos || []).find(e => e.tipo === fx.tipo);
+      const row = document.createElement('div');
+      row.className = 'pe-row';
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.checked = !!current;
+      const lbl = document.createElement('label');
+      lbl.textContent = fx.label;
+      lbl.style.minWidth = '80px';
+      const range = document.createElement('input');
+      range.type = 'range';
+      range.min = '0'; range.max = '1'; range.step = '0.01';
+      range.value = String(current ? current.cantidad : 0.3);
+      range.disabled = !current;
+      const valEl = document.createElement('span');
+      valEl.className = 'pe-val';
+      valEl.textContent = Math.round(Number(range.value) * 100) + '%';
+
+      function rebuildEffects() {
+        const list = [];
+        Array.prototype.forEach.call(presetEditorEl.querySelectorAll('.pe-fx'), fxRow => {
+          if (fxRow.dataset.on === '1') {
+            list.push({ tipo: fxRow.dataset.tipo, cantidad: Number(fxRow.dataset.amt) });
+          }
+        });
+        editing.preset.efectos = list;
+        applyEditing();
+      }
+      row.className = 'pe-row pe-fx';
+      row.dataset.tipo = fx.tipo;
+      row.dataset.on = current ? '1' : '0';
+      row.dataset.amt = String(current ? current.cantidad : 0.3);
+
+      chk.addEventListener('change', () => {
+        row.dataset.on = chk.checked ? '1' : '0';
+        range.disabled = !chk.checked;
+        rebuildEffects();
+      });
+      range.addEventListener('input', () => {
+        row.dataset.amt = range.value;
+        valEl.textContent = Math.round(Number(range.value) * 100) + '%';
+        rebuildEffects();
+      });
+
+      row.appendChild(chk);
+      row.appendChild(lbl);
+      row.appendChild(range);
+      row.appendChild(valEl);
+      presetEditorEl.appendChild(row);
+    });
+
+    // Acciones: diseñar desde cero / guardar / cerrar
+    const actions = document.createElement('div');
+    actions.className = 'pe-actions';
+
+    const scratch = mkBtn('btn secondary', 'Desde cero', () => {
+      editing.preset = blankPreset(track.tipo);
+      applyEditing();
+      renderPresetEditor();
+    });
+    actions.appendChild(scratch);
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.placeholder = 'Nombre del preset';
+    nameInput.value = '';
+    actions.appendChild(nameInput);
+
+    const save = mkBtn('btn', 'Guardar como nuevo', () => {
+      const nombre = nameInput.value.trim() || 'Mi sonido';
+      const toSave = JSON.parse(JSON.stringify(editing.preset));
+      toSave.nombre = nombre;
+      toSave.tipo = track.tipo;
+      const newId = BT.userLibrary.add(toSave);
+      // La pista pasa a referenciar el preset guardado (deja de ser "editado").
+      engine.updateTrack(editing.trackId, { presetId: newId });
+      closeEditor();
+      renderTracks();
+    });
+    actions.appendChild(save);
+
+    actions.appendChild(mkBtn('btn secondary', 'Cerrar', closeEditor));
+    presetEditorEl.appendChild(actions);
   }
 
   // ─── Sincronizar controles de transporte ───
@@ -331,10 +588,8 @@
     valVolume.textContent = v + '%';
   });
 
-  ctlLoop.addEventListener('change',
-    () => engine.setLoop(ctlLoop.checked));
+  ctlLoop.addEventListener('change', () => engine.setLoop(ctlLoop.checked));
 
-  // Progresión: cargar una de fábrica.
   progSelect.addEventListener('change', function () {
     const id = progSelect.value;
     if (!id) return;
@@ -345,11 +600,10 @@
     syncControls();
   });
 
-  // Constructor de acordes.
   btnAddChord.addEventListener('click', function () {
     model.addChord({ root: newRoot.value, quality: newQuality.value, bars: 1 });
     model.setActiveChord(model.progression.length - 1);
-    progSelect.value = '';   // pasó a ser personalizada
+    progSelect.value = '';
   });
   btnClearProg.addEventListener('click', function () {
     model.clear();
@@ -369,6 +623,8 @@
       setStatus('Detenido');
     }
   });
+  // Si cambia la librería del usuario, refrescar los dropdowns de preset.
+  BT.userLibrary.onChange(renderTracks);
 
   // ─── Arranque ───
   initProgSelect();

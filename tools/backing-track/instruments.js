@@ -135,6 +135,8 @@
     const effects = buildEffectChain(preset.efectos);
     inputBus.chain.apply(inputBus, effects.concat([outputGain]));
 
+    const isSampler = (preset.motor === 'sampler');
+
     return {
       kind: 'melodic',
       output: outputGain,
@@ -145,6 +147,17 @@
         instrument.triggerAttackRelease(payload, duration, time, velocity);
       },
       triggerHit: function () { /* no aplica a instrumentos melódicos */ },
+      // setConfig — actualiza en vivo los parámetros de síntesis sin
+      // reconstruir el instrumento (oscilador, envolvente, filtro).
+      setConfig: function (config) {
+        if (!config || isSampler) return;
+        const opts = {};
+        if (config.oscillator) opts.oscillator = config.oscillator;
+        if (config.envelope) opts.envelope = config.envelope;
+        if (isMono && config.filter) opts.filter = config.filter;
+        if (isMono && config.filterEnvelope) opts.filterEnvelope = config.filterEnvelope;
+        try { instrument.set(opts); } catch (e) {}
+      },
       dispose: function () {
         try { instrument.dispose(); } catch (e) {}
         effects.forEach(fx => { try { fx.dispose(); } catch (e) {} });
@@ -193,6 +206,7 @@
       kind: 'drumkit',
       output: outputGain,
       triggerNote: function () { /* no aplica a un kit de batería */ },
+      setConfig: function () { /* la edición de kit no aplica en v1 */ },
       triggerHit: function (lane, time, velocity) {
         const v = voices[lane];
         if (!v) return;   // lane sin pieza registrada: se ignora

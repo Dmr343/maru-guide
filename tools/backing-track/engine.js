@@ -75,15 +75,21 @@
     }
 
     // ─── Instrumentos ───
+    // El preset efectivo de una pista: su copia de trabajo editada
+    // (customPreset) si existe, o el preset de fábrica por id.
+    function effectivePreset(track) {
+      return track.customPreset || resolvePreset(track.presetId);
+    }
+
     function buildInstrument(track) {
-      const preset = resolvePreset(track.presetId);
+      const preset = effectivePreset(track);
       if (!preset) return null;
       const instrument = BT().instruments.createInstrument(preset);
       const gain = new (Tone().Gain)(
         Number.isFinite(track.volumen) ? track.volumen : 0.8);
       instrument.output.connect(gain);
       gain.connect(masterGain);
-      return { instrument, gain, presetId: track.presetId };
+      return { instrument, gain, preset: preset, sig: JSON.stringify(preset) };
     }
 
     function disposeRuntime(id) {
@@ -102,7 +108,8 @@
       });
       tracks.forEach(track => {
         const rt = runtime[track.id];
-        if (rt && rt.presetId === track.presetId) {
+        const preset = effectivePreset(track);
+        if (rt && preset && rt.sig === JSON.stringify(preset)) {
           rt.gain.gain.value = Number.isFinite(track.volumen) ? track.volumen : 0.8;
           return;
         }
@@ -110,6 +117,39 @@
         const built = buildInstrument(track);
         if (built) runtime[track.id] = built;
       });
+    }
+
+    // applyTrackPreset — instala una copia de trabajo del preset en la
+    // pista. Si solo cambió la config de síntesis (mismo motor, mismos
+    // efectos) y el instrumento ya existe, lo actualiza en vivo sin
+    // reconstruir. Si cambió la estructura (efectos / motor), reconstruye.
+    function applyTrackPreset(id, preset) {
+      const track = tracks.find(t => t.id === id);
+      if (!track || !preset) return;
+      track.customPreset = preset;
+      const rt = runtime[id];
+      const fxSame = rt &&
+        JSON.stringify(rt.preset.efectos || []) === JSON.stringify(preset.efectos || []);
+      if (rt && rt.instrument.kind === 'melodic' &&
+          rt.preset.motor === preset.motor && fxSame) {
+        rt.instrument.setConfig(preset.config);   // actualización en vivo
+        rt.preset = preset;
+        rt.sig = JSON.stringify(preset);
+      } else if (rt) {
+        disposeRuntime(id);
+        const built = buildInstrument(track);
+        if (built) runtime[id] = built;
+      }
+      emit('state');
+    }
+
+    // getTrackPreset — copia del preset efectivo de una pista, como
+    // punto de partida para editarlo.
+    function getTrackPreset(id) {
+      const track = tracks.find(t => t.id === id);
+      if (!track) return null;
+      const p = effectivePreset(track);
+      return p ? JSON.parse(JSON.stringify(p)) : null;
     }
 
     // ─── Scheduling ───
@@ -258,6 +298,8 @@
     function updateTrack(id, patch) {
       const track = tracks.find(t => t.id === id);
       if (!track || !patch) return;
+      // Elegir un preset de fábrica descarta la copia de trabajo editada.
+      if ('presetId' in patch) delete track.customPreset;
       Object.keys(patch).forEach(k => { track[k] = patch[k]; });
       // Cambio de volumen en vivo sin reprogramar.
       const rt = runtime[id];
@@ -370,6 +412,7 @@
       loadProgression, getProgression,
       setTempo, getTempo,
       addTrack, removeTrack, updateTrack, moveTrack, getTracks,
+      applyTrackPreset, getTrackPreset,
       setMasterVolume, getMasterVolume,
       setLoop, getLoop,
       setMode, getMode,

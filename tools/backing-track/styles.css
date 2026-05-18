@@ -349,6 +349,82 @@ body {
   padding: 8px 2px;
 }
 
+/* ─── Panel de edición de presets ─── */
+.preset-editor {
+  margin-top: 10px;
+  padding: 14px;
+  background: var(--surface2);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+}
+.preset-editor .pe-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+.preset-editor .pe-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.pe-group-label {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 12px 0 4px;
+}
+.pe-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 5px 0;
+  font-size: 11px;
+  color: var(--text-mid);
+}
+.pe-row label { min-width: 96px; letter-spacing: 0.03em; }
+.pe-row input[type="range"] { flex: 1; accent-color: var(--accent); cursor: pointer; }
+.pe-row input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
+.pe-row .pe-val {
+  min-width: 46px;
+  text-align: right;
+  color: var(--gold);
+  font-weight: 700;
+}
+.pe-row select {
+  flex: 1;
+  font-family: var(--font);
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.pe-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.pe-actions input[type="text"] {
+  flex: 1;
+  min-width: 110px;
+  font-family: var(--font);
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.pe-actions .btn { padding: 6px 12px; font-size: 11px; }
+
 /* ─── Pulso visual ─── */
 .beat-dot {
   width: 14px;
