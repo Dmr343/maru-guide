@@ -128,14 +128,17 @@
   }
 
   // ─── Proyecto por defecto ───
+  function setupDefaultTracks() {
+    engine.addTrack({ tipo: 'bajo' });
+    engine.addTrack({ tipo: 'acordes' });
+    engine.addTrack({ tipo: 'bateria' });
+  }
   function loadDefaultProject() {
     const prog = BT.factoryProgressions.byId('blues12A');
     model.loadProgression(BT.factoryProgressions.chordsOf('blues12A'));
     engine.setTempo(prog ? prog.tempo : 100);
     progSelect.value = 'blues12A';
-    engine.addTrack({ tipo: 'bajo' });
-    engine.addTrack({ tipo: 'acordes' });
-    engine.addTrack({ tipo: 'bateria' });
+    setupDefaultTracks();
   }
 
   // ─── Tira de acordes ───
@@ -730,8 +733,15 @@
   fillSelect(newQuality, QUALITIES, 'v', it => it.label);
 
   storage.loadLibrary();              // librería de presets del usuario
+  const handoff = BT.integration && BT.integration.readHandoff();
   const session = storage.loadSession();
-  if (session && Array.isArray(session.tracks) && session.tracks.length) {
+  if (handoff) {
+    // Progresión enviada desde el Intervalic Atlas: pistas por
+    // defecto + la progresión recibida.
+    setupDefaultTracks();
+    model.loadProgression(handoff);
+    progSelect.value = '';
+  } else if (session && Array.isArray(session.tracks) && session.tracks.length) {
     restoreSnapshot(session);         // reabrir donde se dejó
   } else {
     loadDefaultProject();
@@ -741,5 +751,5 @@
   renderEditor();
   renderTracks();
   syncControls();
-  setStatus('Detenido');
+  setStatus(handoff ? 'Progresión recibida del Intervalic Atlas' : 'Detenido');
 })(typeof window !== 'undefined' ? window : globalThis);
