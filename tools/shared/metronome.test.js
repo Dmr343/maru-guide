@@ -148,6 +148,24 @@
     });
   });
 
+  T.describe('Metronome — silenciar subdivisiones', () => {
+    T.it('por defecto las subdivisiones no están silenciadas', () => {
+      const { m } = makeMetro();
+      T.assertEq(m.subdivisionsMuted, false);
+    });
+    T.it('subdivisionsMuted=true en constructor se respeta', () => {
+      const { m } = makeMetro({ subdivisionsMuted: true });
+      T.assertEq(m.subdivisionsMuted, true);
+    });
+    T.it('setSubdivisionsMuted togglea el flag', () => {
+      const { m } = makeMetro();
+      m.setSubdivisionsMuted(true);
+      T.assertEq(m.subdivisionsMuted, true);
+      m.setSubdivisionsMuted(false);
+      T.assertEq(m.subdivisionsMuted, false);
+    });
+  });
+
   T.describe('Metronome — niveles de click', () => {
     T.it('downbeat suena más fuerte que beat, y beat más que subdivisión', () => {
       function peakOf(level) {

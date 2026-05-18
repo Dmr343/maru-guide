@@ -22,6 +22,7 @@
       beatsPerChord = 4,
       beatsPerCompas = 4,
       subdivision = 1,
+      subdivisionsMuted = false,
       onBeat,
       onTick,
       onChordChange,
@@ -31,6 +32,7 @@
       this._beatsPerChord  = beatsPerChord;
       this._beatsPerCompas = beatsPerCompas;
       this._subdivision    = Math.max(1, Math.floor(subdivision) || 1);
+      this._subMuted       = !!subdivisionsMuted;
       this._onBeat         = onBeat        || (() => {});
       this._onTick         = onTick        || (() => {});
       this._onChordChange  = onChordChange || (() => {});
@@ -49,8 +51,9 @@
     get chordIdx()       { return this._chordIdx; }
     get bpm()            { return this._bpm; }
     get muted()          { return this._muted; }
-    get beatsPerCompas() { return this._beatsPerCompas; }
-    get subdivision()    { return this._subdivision; }
+    get beatsPerCompas()    { return this._beatsPerCompas; }
+    get subdivision()       { return this._subdivision; }
+    get subdivisionsMuted() { return this._subMuted; }
 
     setMuted(b) { this._muted = !!b; }
 
@@ -108,7 +111,11 @@
           isDownbeat = ((this._beats - 1) % Math.max(1, this._beatsPerCompas)) === 0;
           level = isDownbeat ? 2 : 1;
         }
-        this._scheduleClick(noteTime, level);
+        // Silenciar subdivisiones deja sonar solo el pulso (beat/downbeat);
+        // onTick igual se dispara, así la visualización sigue mostrándolas.
+        if (!(level === 0 && this._subMuted)) {
+          this._scheduleClick(noteTime, level);
+        }
 
         // Disparar onBeat / onTick / onChordChange en wall-clock alineado al audio
         const delayMs   = Math.max(0, (noteTime - ctx.currentTime) * 1000);
@@ -175,6 +182,11 @@
     setSubdivision(n) {
       this._subdivision = Math.max(1, Math.min(16, Math.floor(n) || 1));
       if (this._tickInBeat >= this._subdivision) this._tickInBeat = 0;
+    }
+
+    // Silencia los clicks de subdivisión: suena solo el pulso (los tiempos).
+    setSubdivisionsMuted(b) {
+      this._subMuted = !!b;
     }
 
     // Resetea el contador interno de beats. El próximo beat scheduled será

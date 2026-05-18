@@ -232,6 +232,9 @@
       <option value="8">Fusas</option>
     </select>
   </label>
+  <label class="metro-lbl" title="Silencia las subdivisiones: suena solo el pulso de cada tiempo">
+    <input type="checkbox" id="metro-submute"> Solo pulso
+  </label>
   <div class="metro-viz" id="metro-viz">
     <div class="metro-beats" id="metro-beats"></div>
     <div class="metro-subs" id="metro-subs"></div>
@@ -360,6 +363,7 @@ const state = {
   metroBpm: 80,
   metroCompas: 4,        // numerador del compás (2..7)
   metroSub: 1,           // subdivisiones por tiempo (1,2,3,4,5,6,8)
+  metroSubMuted: false,  // true = suena solo el pulso, sin subdivisiones
 };
 
 // ─── Scale formulas ──────────────────────────────────────────────────
@@ -1167,12 +1171,14 @@ function metroLoadSettings(){
     if(s.bpm)    state.metroBpm    = Math.max(40, Math.min(220, s.bpm));
     if(s.compas) state.metroCompas = Math.max(2, Math.min(7, s.compas));
     if(s.sub)    state.metroSub    = Math.max(1, Math.min(8, s.sub));
+    if(typeof s.subMuted === 'boolean') state.metroSubMuted = s.subMuted;
   }catch(e){}
 }
 function metroSaveSettings(){
   try{
     localStorage.setItem(METRO_LS_KEY, JSON.stringify({
-      bpm: state.metroBpm, compas: state.metroCompas, sub: state.metroSub,
+      bpm: state.metroBpm, compas: state.metroCompas,
+      sub: state.metroSub, subMuted: state.metroSubMuted,
     }));
   }catch(e){}
 }
@@ -1185,6 +1191,7 @@ function metroEnsure(){
     bpm: state.metroBpm,
     beatsPerCompas: state.metroCompas,
     subdivision: state.metroSub,
+    subdivisionsMuted: state.metroSubMuted,
     onTick: metroOnTick,
   });
   return metro;
@@ -1247,6 +1254,7 @@ function startMetro(){
   m.setBPM(state.metroBpm);
   m.setBeatsPerCompas(state.metroCompas);
   m.setSubdivision(state.metroSub);
+  m.setSubdivisionsMuted(state.metroSubMuted);
   m.start();
   state.metroPlaying = true;
   const btn = document.getElementById('metro-play');
@@ -1266,6 +1274,7 @@ metroLoadSettings();
 document.getElementById('metro-bpm-val').value = state.metroBpm;
 document.getElementById('metro-compas').value = String(state.metroCompas);
 document.getElementById('metro-sub').value = String(state.metroSub);
+document.getElementById('metro-submute').checked = state.metroSubMuted;
 metroRenderViz();
 
 document.getElementById('metro-play').addEventListener('click',()=>{ state.metroPlaying ? stopMetro() : startMetro(); });
@@ -1285,6 +1294,11 @@ document.getElementById('metro-sub').addEventListener('change',e=>{
   state.metroSub = Number(e.target.value) || 1;
   if(metro) metro.setSubdivision(state.metroSub);
   metroRenderViz();
+  metroSaveSettings();
+});
+document.getElementById('metro-submute').addEventListener('change',e=>{
+  state.metroSubMuted = e.target.checked;
+  if(metro) metro.setSubdivisionsMuted(state.metroSubMuted);
   metroSaveSettings();
 });
 
