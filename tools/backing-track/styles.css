@@ -1,0 +1,564 @@
+/* ─────────────────────────────────────────────────────────────
+   Backing Track — estilos base
+   Paleta y tipografía coherentes con el resto del repo (ver
+   tools/index.html / tools/intervallic.html).
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  --bg:        #0e0e0e;
+  --surface:   #141414;
+  --surface2:  #1a1a1a;
+  --border:    #222;
+  --text:      #e8d5b0;
+  --text-dim:  #666;
+  --text-mid:  #999;
+  --gold:      #d4a847;
+  --gold-dim:  #3a2e0a;
+  --accent:    #e07a5f;   /* color propio del módulo de backing tracks */
+
+  --radius: 12px;
+  --font: 'Trebuchet MS', 'Segoe UI', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { zoom: 1.4; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+  padding: 24px 16px 40px;
+}
+
+/* ─── Header ─── */
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.header-label {
+  font-size: 10px;
+  letter-spacing: 0.35em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.header h1 {
+  font-size: clamp(20px, 5vw, 32px);
+  font-weight: 300;
+  color: var(--gold);
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.header p {
+  font-size: 13px;
+  color: var(--text-mid);
+  max-width: 420px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 20px;
+  font-size: 12px;
+  color: var(--text-dim);
+  text-decoration: none;
+  letter-spacing: 0.05em;
+}
+.back-link:hover { color: var(--gold); }
+
+/* ─── Panel ─── */
+.panel {
+  max-width: 720px;
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+}
+
+/* ─── Transporte ─── */
+.transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.btn {
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--bg);
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  padding: 12px 28px;
+  cursor: pointer;
+  transition: transform 0.12s, opacity 0.2s, box-shadow 0.2s;
+}
+.btn:hover { box-shadow: 0 6px 18px rgba(224,122,95,0.3); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.btn.secondary {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.tempo {
+  font-size: 13px;
+  color: var(--text-mid);
+  letter-spacing: 0.05em;
+}
+.tempo strong {
+  color: var(--gold);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* ─── Estado ─── */
+.status {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  min-height: 1.4em;
+}
+.status.playing { color: var(--accent); }
+.status.error   { color: #e74c3c; }
+
+/* ─── Filas de control (slider + valor) ─── */
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+  font-size: 12px;
+  color: var(--text-mid);
+}
+.control-row label {
+  min-width: 88px;
+  letter-spacing: 0.04em;
+}
+.control-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.control-row .value {
+  min-width: 56px;
+  text-align: right;
+  color: var(--gold);
+  font-weight: 700;
+}
+.control-row input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+.control-row input[type="text"] {
+  flex: 1;
+  font-family: var(--font);
+  font-size: 12px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.control-row select {
+  font-family: var(--font);
+  font-size: 12px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 7px;
+  cursor: pointer;
+}
+.control-row .btn { padding: 6px 12px; font-size: 11px; }
+
+/* ─── Tira de acordes (indicador de progresión) ─── */
+.chord-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.chord-chip {
+  padding: 5px 11px 3px;
+  border-radius: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-mid);
+  transition: all 0.12s;
+  cursor: pointer;
+  text-align: center;
+}
+.chord-chip.selected { border-color: var(--gold); color: var(--text); }
+.chord-chip.active {
+  background: var(--gold-dim);
+  border-color: var(--accent);
+  color: var(--gold);
+  box-shadow: 0 0 12px rgba(224,122,95,0.25);
+}
+.chip-bars {
+  display: block;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+.chord-chip.active .chip-bars { color: var(--accent); }
+
+/* ─── Constructor de acordes ─── */
+.builder {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.builder select {
+  font-family: var(--font);
+  font-size: 12px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 7px;
+  cursor: pointer;
+}
+.builder .btn { padding: 6px 14px; font-size: 12px; }
+
+.chord-editor {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  padding: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 11px;
+}
+.chord-editor select {
+  font-family: var(--font);
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.chord-editor .editor-label {
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
+.bars-stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.bars-stepper .value { min-width: 16px; text-align: center; color: var(--gold); }
+
+/* ─── Sección ─── */
+.section-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 22px 0 8px;
+}
+
+/* ─── Pistas ─── */
+.track {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 11px;
+}
+.track.disabled { opacity: 0.45; }
+.track-mute {
+  width: 22px; height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+}
+.track.enabled .track-mute {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+.track-tipo {
+  min-width: 64px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.03em;
+}
+.track select {
+  font-family: var(--font);
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 5px;
+  cursor: pointer;
+}
+.track-preset { flex: 1; min-width: 90px; }
+.track-pattern { flex: 1; min-width: 80px; }
+.track-vol { width: 70px; accent-color: var(--accent); cursor: pointer; }
+.track-btn {
+  width: 22px; height: 22px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-mid);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 1;
+}
+.track-btn:hover { color: var(--accent); border-color: var(--accent); }
+.track-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+.add-track {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.add-track select {
+  font-family: var(--font);
+  font-size: 12px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+.add-track .btn { padding: 8px 16px; font-size: 12px; }
+
+.empty-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 8px 2px;
+}
+
+/* ─── Panel de edición de presets ─── */
+.preset-editor {
+  margin-top: 10px;
+  padding: 14px;
+  background: var(--surface2);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+}
+.preset-editor .pe-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+.preset-editor .pe-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.pe-group-label {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 12px 0 4px;
+}
+.pe-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 5px 0;
+  font-size: 11px;
+  color: var(--text-mid);
+}
+.pe-row label { min-width: 96px; letter-spacing: 0.03em; }
+.pe-row input[type="range"] { flex: 1; accent-color: var(--accent); cursor: pointer; }
+.pe-row input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
+.pe-row .pe-val {
+  min-width: 46px;
+  text-align: right;
+  color: var(--gold);
+  font-weight: 700;
+}
+.pe-row select {
+  flex: 1;
+  font-family: var(--font);
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.pe-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.pe-actions input[type="text"] {
+  flex: 1;
+  min-width: 110px;
+  font-family: var(--font);
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.pe-actions .btn { padding: 6px 12px; font-size: 11px; }
+
+/* ─── Toggle de modo ─── */
+.mode-toggle {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+.mode-btn {
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 6px 18px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.mode-btn:first-child { border-radius: 8px 0 0 8px; }
+.mode-btn:last-child { border-radius: 0 8px 8px 0; }
+.mode-btn.active {
+  background: var(--gold-dim);
+  border-color: var(--accent);
+  color: var(--gold);
+}
+
+/* ─── Panel de modo arreglo ─── */
+.arrange-panel { margin-top: 10px; }
+.arrange-track {
+  margin-bottom: 10px;
+  padding: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.arrange-track-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+.arrange-track-head .track-tipo { min-width: 0; }
+.arrange-track-head select {
+  font-family: var(--font);
+  font-size: 10px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 5px;
+  cursor: pointer;
+}
+.variant-toggle { display: flex; gap: 2px; }
+.variant-btn {
+  width: 22px; height: 20px;
+  font-size: 10px; font-weight: 700;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.variant-btn:first-child { border-radius: 5px 0 0 5px; }
+.variant-btn:last-child { border-radius: 0 5px 5px 0; }
+.variant-btn.active {
+  background: var(--accent); color: var(--bg); border-color: var(--accent);
+}
+
+/* ─── Step sequencer ─── */
+.seq-lane {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 3px 0;
+}
+.seq-lane-label {
+  min-width: 56px;
+  font-size: 9px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.seq-cells { display: flex; gap: 2px; flex: 1; }
+.seq-cell {
+  flex: 1;
+  height: 22px;
+  min-width: 9px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0;
+}
+.seq-cell.beat { border-left: 1px solid var(--text-dim); }
+.seq-cell.v1 { background: #5a3a30; }
+.seq-cell.v2 { background: #a85a42; }
+.seq-cell.v3 { background: var(--accent); }
+.seq-cell.playhead { outline: 1px solid var(--gold); }
+
+.chord-strip.hidden-indicator { display: none; }
+
+/* ─── Pulso visual ─── */
+.beat-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--border);
+  margin: 18px auto 0;
+  transition: background 0.05s, transform 0.05s;
+}
+.beat-dot.on {
+  background: var(--accent);
+  transform: scale(1.4);
+}

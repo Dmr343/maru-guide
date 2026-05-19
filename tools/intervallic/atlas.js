@@ -823,6 +823,18 @@
     if (nxt) nxt.addEventListener('click', () => setActiveChord((state.activeIdx + 1) % state.progression.length));
     const clearProg = $('atlas-clear-prog');
     if (clearProg) clearProg.addEventListener('click', clearProgression);
+    // Hook opcional: enviar la progresión al módulo de backing tracks.
+    // Acoplamiento mínimo — solo escribe un JSON en una clave conocida.
+    const sendBT = $('atlas-send-bt');
+    if (sendBT) sendBT.addEventListener('click', () => {
+      try {
+        const prog = state.progression.map(c =>
+          ({ root: c.root, quality: c.quality, bars: c.bars }));
+        localStorage.setItem('backing_track_handoff',
+          JSON.stringify({ progression: prog }));
+      } catch (e) {}
+      window.open('backing-track/index.html', '_blank');
+    });
     document.addEventListener('keydown', handleKeydown);
 
     // Transporte

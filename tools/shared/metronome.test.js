@@ -127,5 +127,76 @@
     });
   });
 
+  T.describe('Metronome — subdivisión', () => {
+    T.it('subdivisión por defecto es 1 (negra)', () => {
+      const { m } = makeMetro();
+      T.assertEq(m.subdivision, 1);
+    });
+    T.it('subdivision del constructor se respeta', () => {
+      const { m } = makeMetro({ subdivision: 4 });
+      T.assertEq(m.subdivision, 4);
+    });
+    T.it('setSubdivision clampea a [1, 16]', () => {
+      const { m } = makeMetro();
+      m.setSubdivision(0);  T.assertEq(m.subdivision, 1);
+      m.setSubdivision(99); T.assertEq(m.subdivision, 16);
+      m.setSubdivision(3);  T.assertEq(m.subdivision, 3);
+    });
+    T.it('subdivisión inválida en constructor cae a 1', () => {
+      const { m } = makeMetro({ subdivision: 0 });
+      T.assertEq(m.subdivision, 1);
+    });
+  });
+
+  T.describe('Metronome — silenciar subdivisiones', () => {
+    T.it('por defecto las subdivisiones no están silenciadas', () => {
+      const { m } = makeMetro();
+      T.assertEq(m.subdivisionsMuted, false);
+    });
+    T.it('subdivisionsMuted=true en constructor se respeta', () => {
+      const { m } = makeMetro({ subdivisionsMuted: true });
+      T.assertEq(m.subdivisionsMuted, true);
+    });
+    T.it('setSubdivisionsMuted togglea el flag', () => {
+      const { m } = makeMetro();
+      m.setSubdivisionsMuted(true);
+      T.assertEq(m.subdivisionsMuted, true);
+      m.setSubdivisionsMuted(false);
+      T.assertEq(m.subdivisionsMuted, false);
+    });
+  });
+
+  T.describe('Metronome — niveles de click', () => {
+    T.it('downbeat suena más fuerte que beat, y beat más que subdivisión', () => {
+      function peakOf(level) {
+        const { m, events } = makeMetro();
+        m._scheduleClick(0, level);
+        return Math.max(...events.filter(e => e.type === 'gain:ramp:lin').map(e => e.value));
+      }
+      const sub = peakOf(0), beat = peakOf(1), down = peakOf(2);
+      T.assert(sub < beat && beat < down, 'sub < beat < downbeat, fue ' + [sub, beat, down].join(','));
+    });
+    T.it('los tres niveles usan frecuencias distintas', () => {
+      const { m, events } = makeMetro();
+      m._scheduleClick(0, 0);
+      m._scheduleClick(0, 1);
+      m._scheduleClick(0, 2);
+      const f = events.filter(e => e.type === 'osc:start').map(e => e.freq);
+      T.assertEq(new Set(f).size, 3, 'tres frecuencias distintas, fue ' + f.join(','));
+    });
+    T.it('el click de subdivisión es el más suave', () => {
+      const { m, events } = makeMetro();
+      m._scheduleClick(0, 0);
+      const ramps = events.filter(e => e.type === 'gain:ramp:lin').map(e => e.value);
+      T.assert(ramps[0] < 0.025, 'peak de subdivisión < 0.025, fue ' + ramps[0]);
+    });
+    T.it('_scheduleClick acepta booleano por compat (true=downbeat)', () => {
+      const { m, events } = makeMetro();
+      m._scheduleClick(0, true);
+      const o = events.filter(e => e.type === 'osc:start')[0];
+      T.assert(o.freq >= 1000, 'booleano true → downbeat agudo');
+    });
+  });
+
 })((typeof window !== 'undefined' ? window : globalThis).GuitarShared,
    typeof window !== 'undefined' ? window : globalThis);

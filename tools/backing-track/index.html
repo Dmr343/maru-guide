@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backing Track — Guitarra con Maru</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+  <a href="../index.html" class="back-link">← Herramientas</a>
+
+  <div class="header">
+    <div class="header-label">Práctica de improvisación</div>
+    <h1>Backing Track</h1>
+    <p>Acompañamiento en loop para improvisar sobre los cambios de acorde.</p>
+  </div>
+
+  <div class="panel">
+    <div class="transport">
+      <button id="btn-play" class="btn">▶ Play</button>
+      <button id="btn-stop" class="btn secondary" disabled>■ Stop</button>
+    </div>
+
+    <div class="mode-toggle">
+      <button id="mode-practica" class="mode-btn active">Práctica</button>
+      <button id="mode-arreglo" class="mode-btn">Arreglo</button>
+    </div>
+
+    <div class="control-row">
+      <label for="ctl-tempo">Tempo</label>
+      <input type="range" id="ctl-tempo" min="40" max="240" step="1">
+      <span class="value" id="val-tempo">100 BPM</span>
+    </div>
+    <div class="control-row">
+      <label for="ctl-volume">Volumen</label>
+      <input type="range" id="ctl-volume" min="0" max="100" step="1">
+      <span class="value" id="val-volume">85%</span>
+    </div>
+    <div class="control-row">
+      <label for="ctl-loop">Loop</label>
+      <input type="checkbox" id="ctl-loop" checked>
+      <span style="flex:1"></span>
+    </div>
+
+    <div id="status" class="status">Detenido</div>
+
+    <div class="section-label">Progresión</div>
+    <div class="control-row">
+      <label for="prog-select">De fábrica</label>
+      <select id="prog-select" style="flex:1"></select>
+    </div>
+    <div id="chord-strip" class="chord-strip"></div>
+    <div class="builder">
+      <select id="new-root"></select>
+      <select id="new-quality"></select>
+      <button id="btn-add-chord" class="btn secondary">+ Acorde</button>
+      <button id="btn-clear-prog" class="btn secondary" title="Limpiar progresión">Limpiar</button>
+    </div>
+    <div id="chord-editor" class="chord-editor" hidden></div>
+
+    <div class="section-label">Pistas</div>
+    <div id="tracks"></div>
+    <div class="add-track">
+      <select id="add-tipo">
+        <option value="bajo">Bajo</option>
+        <option value="acordes">Acordes</option>
+        <option value="bateria">Batería</option>
+        <option value="percusion">Percusión</option>
+        <option value="pad">Pad</option>
+        <option value="lead">Lead</option>
+      </select>
+      <button id="btn-add" class="btn secondary">+ Agregar instrumento</button>
+    </div>
+
+    <div id="preset-editor" class="preset-editor" hidden></div>
+
+    <div id="arrange-panel" class="arrange-panel" hidden></div>
+
+    <div class="section-label">Proyecto</div>
+    <div class="control-row">
+      <input type="text" id="proj-name" placeholder="Nombre del proyecto">
+      <button id="btn-save-proj" class="btn secondary">Guardar</button>
+    </div>
+    <div class="control-row">
+      <select id="proj-select" style="flex:1"></select>
+      <button id="btn-load-proj" class="btn secondary">Cargar</button>
+      <button id="btn-del-proj" class="btn secondary">Borrar</button>
+    </div>
+    <div class="control-row">
+      <button id="btn-export" class="btn secondary">Exportar JSON</button>
+      <button id="btn-import" class="btn secondary">Importar JSON</button>
+      <input type="file" id="import-file" accept="application/json" hidden>
+    </div>
+  </div>
+
+  <!-- Tone.js vendorizado (file:// safe, sin internet). Ver vendor/README.md -->
+  <script src="./vendor/Tone.js"></script>
+
+  <!-- Dependencias compartidas del repo -->
+  <script src="../shared/theory.js"></script>
+  <!-- Modelo de progresión reutilizado del Intervalic Atlas (read-only) -->
+  <script src="../intervallic/progression-model.js"></script>
+
+  <!-- Módulos del backing track (orden = dependencias) -->
+  <script src="./voicing.js"></script>
+  <script src="./step-grid.js"></script>
+  <script src="./scheduler.js"></script>
+  <script src="./humanize.js"></script>
+  <script src="./instruments.js"></script>
+  <script src="./presets.js"></script>
+  <script src="./patterns.js"></script>
+  <script src="./progressions.js"></script>
+  <script src="./user-library.js"></script>
+  <script src="./storage.js"></script>
+  <script src="./integration.js"></script>
+  <script src="./engine.js"></script>
+  <script src="./app.js"></script>
+
+</body>
+</html>

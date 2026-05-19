@@ -144,16 +144,28 @@
     .calc-mode-btn.active .mode-sound{color:#777;}
 
     /* Metronome */
-    .metro-bar{display:flex;align-items:center;gap:10px;justify-content:center;margin:12px auto 0;max-width:360px;padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);}
+    .metro-bar{display:flex;align-items:center;gap:10px 14px;justify-content:center;flex-wrap:wrap;margin:12px auto 0;max-width:620px;padding:12px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);}
     .metro-btn{padding:6px 14px;border-radius:6px;border:1px solid #333;background:#1a1a1a;color:#555;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
     .metro-btn:hover{color:#bbb;border-color:#555;}
     .metro-btn.metro-on{border-color:#2ecc71;color:#2ecc71;background:#0a2a10;}
-    .metro-bpm-row{display:flex;align-items:center;gap:6px;}
-    .metro-bpm-btn{padding:4px 9px;border-radius:6px;border:1px solid #2a2a2a;background:#141414;color:#666;font-size:12px;cursor:pointer;transition:all .15s;}
-    .metro-bpm-btn:hover{color:#aaa;}
-    .metro-bpm-val{font-size:16px;font-weight:700;color:var(--gold);min-width:36px;text-align:center;}
-    .metro-beat-dot{width:10px;height:10px;border-radius:50%;background:#222;transition:background .05s,box-shadow .05s;}
-    .metro-beat-dot.on{background:#2ecc71;box-shadow:0 0 8px #2ecc71;}
+    .metro-bpm-row{display:flex;align-items:center;gap:5px;}
+    .metro-bpm-btn{padding:4px 8px;border-radius:6px;border:1px solid #2a2a2a;background:#141414;color:#888;font-size:12px;font-weight:700;cursor:pointer;transition:all .12s;}
+    .metro-bpm-btn:hover{color:#ddd;border-color:#555;}
+    .metro-bpm-btn.tap-pulse{transform:scale(1.14);border-color:var(--gold);color:var(--gold);}
+    .metro-bpm-input{width:54px;font-size:16px;font-weight:700;color:var(--gold);text-align:center;background:#141414;border:1px solid #2a2a2a;border-radius:6px;padding:3px 2px;font-family:inherit;}
+    .metro-bpm-input::-webkit-inner-spin-button,.metro-bpm-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+    .metro-lbl{font-size:10px;color:var(--text-dim);letter-spacing:.06em;display:inline-flex;align-items:center;gap:5px;}
+    .metro-sel{background:#141414;border:1px solid #2a2a2a;color:#ddd;font-family:inherit;font-size:11px;padding:4px 6px;border-radius:6px;cursor:pointer;}
+    .metro-viz{display:flex;flex-direction:column;align-items:center;gap:5px;width:100%;}
+    .metro-beats{display:flex;gap:9px;align-items:center;}
+    .metro-beat-dot{width:13px;height:13px;border-radius:50%;background:#222;border:1px solid #333;transition:background .05s,box-shadow .05s,transform .05s;}
+    .metro-beat-dot.downbeat{border-color:#3a2e0a;}
+    .metro-beat-dot.on{background:#2ecc71;box-shadow:0 0 8px #2ecc71;transform:scale(1.15);}
+    .metro-beat-dot.downbeat.on{background:var(--gold);box-shadow:0 0 9px var(--gold);}
+    .metro-subs{display:flex;gap:6px;align-items:center;min-height:8px;}
+    .metro-sub-pip{width:6px;height:6px;border-radius:50%;background:#1c1c1c;transition:background .04s,box-shadow .04s;}
+    .metro-sub-pip.on{background:#888;box-shadow:0 0 5px #888;}
+    .metro-sub-pip:first-child.on{background:#2ecc71;box-shadow:0 0 5px #2ecc71;}
 
     footer{text-align:center;margin-top:28px;font-size:10px;color:#333;letter-spacing:.08em;}
     footer a{color:var(--accent);text-decoration:none;opacity:.5;}
@@ -191,12 +203,42 @@
 <div class="metro-bar" id="metro-bar">
   <button class="metro-btn" id="metro-play">▶ Metro</button>
   <div class="metro-bpm-row">
-    <button class="metro-bpm-btn" id="metro-down">−5</button>
-    <div class="metro-bpm-val" id="metro-bpm-val">80</div>
-    <button class="metro-bpm-btn" id="metro-up">+5</button>
-    <span style="font-size:10px;color:var(--text-dim);letter-spacing:.1em;">BPM</span>
+    <button class="metro-bpm-btn" id="metro-down5" title="−5 BPM">−5</button>
+    <button class="metro-bpm-btn" id="metro-down1" title="−1 BPM">−</button>
+    <input class="metro-bpm-input" id="metro-bpm-val" type="number" min="40" max="220" value="80" aria-label="BPM">
+    <button class="metro-bpm-btn" id="metro-up1" title="+1 BPM">+</button>
+    <button class="metro-bpm-btn" id="metro-up5" title="+5 BPM">+5</button>
+    <span class="metro-lbl">BPM</span>
   </div>
-  <div class="metro-beat-dot" id="metro-beat-dot"></div>
+  <button class="metro-bpm-btn" id="metro-tap" title="Tocá al ritmo para fijar el tempo">TAP</button>
+  <label class="metro-lbl">Compás
+    <select class="metro-sel" id="metro-compas">
+      <option value="2">2/4</option>
+      <option value="3">3/4</option>
+      <option value="4" selected>4/4</option>
+      <option value="5">5/4</option>
+      <option value="6">6/8</option>
+      <option value="7">7/8</option>
+    </select>
+  </label>
+  <label class="metro-lbl">Figura
+    <select class="metro-sel" id="metro-sub">
+      <option value="1">Negras</option>
+      <option value="2">Corcheas</option>
+      <option value="3">Tresillo</option>
+      <option value="4">Semicorcheas</option>
+      <option value="5">Cinquillo</option>
+      <option value="6">Sextillo</option>
+      <option value="8">Fusas</option>
+    </select>
+  </label>
+  <label class="metro-lbl" title="Silencia las subdivisiones: suena solo el pulso de cada tiempo">
+    <input type="checkbox" id="metro-submute"> Solo pulso
+  </label>
+  <div class="metro-viz" id="metro-viz">
+    <div class="metro-beats" id="metro-beats"></div>
+    <div class="metro-subs" id="metro-subs"></div>
+  </div>
 </div>
 
 <div class="scale-info" id="scale-info" style="display:none;"></div>
@@ -206,6 +248,7 @@
 
 <footer>Afinación estándar · E A D G B e · Trastes 0–12 · <a href="index.html">← Hub</a></footer>
 
+<script src="./shared/metronome.js"></script>
 <script>
 // ─── Data ────────────────────────────────────────────────────────────
 const CHROMATIC = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
@@ -318,6 +361,9 @@ const state = {
   // metronome
   metroPlaying: false,
   metroBpm: 80,
+  metroCompas: 4,        // numerador del compás (2..7)
+  metroSub: 1,           // subdivisiones por tiempo (1,2,3,4,5,6,8)
+  metroSubMuted: false,  // true = suena solo el pulso, sin subdivisiones
 };
 
 // ─── Scale formulas ──────────────────────────────────────────────────
@@ -1113,58 +1159,148 @@ function buildScaleButtons(){
 }
 
 // ─── Metronome ────────────────────────────────────────────────────────
-let metroAudioCtx = null;
-let metroInterval = null;
-let metroTick = 0;
-let metroStartTime = 0;
+// Usa GuitarShared.metronome (scheduler Web Audio con lookahead, sin jitter).
+const METRO_LS_KEY = 'maru_metro_escalas';
+let metro = null;
+let metroTapTimes = [];
+let metroTapTimer = null;
 
-function getMetroCtx(){
-  if(!metroAudioCtx) metroAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  return metroAudioCtx;
+function metroLoadSettings(){
+  try{
+    const s = JSON.parse(localStorage.getItem(METRO_LS_KEY) || '{}');
+    if(s.bpm)    state.metroBpm    = Math.max(40, Math.min(220, s.bpm));
+    if(s.compas) state.metroCompas = Math.max(2, Math.min(7, s.compas));
+    if(s.sub)    state.metroSub    = Math.max(1, Math.min(8, s.sub));
+    if(typeof s.subMuted === 'boolean') state.metroSubMuted = s.subMuted;
+  }catch(e){}
+}
+function metroSaveSettings(){
+  try{
+    localStorage.setItem(METRO_LS_KEY, JSON.stringify({
+      bpm: state.metroBpm, compas: state.metroCompas,
+      sub: state.metroSub, subMuted: state.metroSubMuted,
+    }));
+  }catch(e){}
 }
 
-function metroClick(accent){
-  const ctx = getMetroCtx();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain); gain.connect(ctx.destination);
-  osc.frequency.value = accent ? 880 : 660;
-  gain.gain.setValueAtTime(accent ? 0.14 : 0.09, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
-  osc.start(); osc.stop(ctx.currentTime + 0.06);
+function metroEnsure(){
+  if(metro) return metro;
+  const NS = window.GuitarShared && window.GuitarShared.metronome;
+  if(!NS) return null;
+  metro = new NS.Metronome({
+    bpm: state.metroBpm,
+    beatsPerCompas: state.metroCompas,
+    subdivision: state.metroSub,
+    subdivisionsMuted: state.metroSubMuted,
+    onTick: metroOnTick,
+  });
+  return metro;
 }
 
-function metroStep(){
-  if(!state.metroPlaying) return;
-  const interval = 60000 / state.metroBpm;
-  metroTick++;
-  metroClick(metroTick % 4 === 1); // accent on beat 1
-  document.getElementById('metro-beat-dot').classList.toggle('on', metroTick % 2 === 0);
-  const elapsed = performance.now() - metroStartTime;
-  const nextDelay = interval * metroTick - elapsed;
-  metroInterval = setTimeout(metroStep, Math.max(0, nextDelay));
+// Reconstruye la fila de tiempos (compás) y la de sub-pips (subdivisión).
+function metroRenderViz(){
+  const beats = document.getElementById('metro-beats');
+  beats.innerHTML = '';
+  for(let i=0;i<state.metroCompas;i++){
+    const d = document.createElement('div');
+    d.className = 'metro-beat-dot' + (i===0 ? ' downbeat' : '');
+    beats.appendChild(d);
+  }
+  const subs = document.getElementById('metro-subs');
+  subs.innerHTML = '';
+  for(let i=0;i<state.metroSub;i++){
+    const p = document.createElement('div');
+    p.className = 'metro-sub-pip';
+    subs.appendChild(p);
+  }
+}
+function metroClearViz(){
+  document.querySelectorAll('#metro-viz .on').forEach(el=>el.classList.remove('on'));
+}
+function metroOnTick(e){
+  const beats = document.querySelectorAll('#metro-beats .metro-beat-dot');
+  beats.forEach((d,i)=> d.classList.toggle('on', i===e.beatInBar));
+  const subs = document.querySelectorAll('#metro-subs .metro-sub-pip');
+  subs.forEach((p,i)=> p.classList.toggle('on', i===e.tickInBeat));
+}
+
+function metroSetBpm(bpm){
+  state.metroBpm = Math.max(40, Math.min(220, Math.round(bpm) || 80));
+  document.getElementById('metro-bpm-val').value = state.metroBpm;
+  if(metro) metro.setBPM(state.metroBpm);
+  metroSaveSettings();
+}
+
+// Tap tempo: promedia los intervalos de los últimos taps.
+function metroTap(){
+  const now = performance.now();
+  metroTapTimes.push(now);
+  if(metroTapTimes.length > 5) metroTapTimes.shift();
+  if(metroTapTimes.length >= 2){
+    let sum = 0;
+    for(let i=1;i<metroTapTimes.length;i++) sum += metroTapTimes[i]-metroTapTimes[i-1];
+    metroSetBpm(60000 / (sum / (metroTapTimes.length-1)));
+  }
+  const btn = document.getElementById('metro-tap');
+  btn.classList.add('tap-pulse');
+  setTimeout(()=>btn.classList.remove('tap-pulse'), 110);
+  clearTimeout(metroTapTimer);
+  metroTapTimer = setTimeout(()=>{ metroTapTimes = []; }, 2000);
 }
 
 function startMetro(){
+  const m = metroEnsure();
+  if(!m) return;
+  m.setBPM(state.metroBpm);
+  m.setBeatsPerCompas(state.metroCompas);
+  m.setSubdivision(state.metroSub);
+  m.setSubdivisionsMuted(state.metroSubMuted);
+  m.start();
   state.metroPlaying = true;
-  metroTick = 0;
-  metroStartTime = performance.now();
-  document.getElementById('metro-play').className = 'metro-btn metro-on';
-  document.getElementById('metro-play').textContent = '⏹ Metro';
-  metroStep();
+  const btn = document.getElementById('metro-play');
+  btn.className = 'metro-btn metro-on';
+  btn.textContent = '⏹ Metro';
 }
-
 function stopMetro(){
+  if(metro) metro.stop();
   state.metroPlaying = false;
-  clearTimeout(metroInterval);
-  document.getElementById('metro-play').className = 'metro-btn';
-  document.getElementById('metro-play').textContent = '▶ Metro';
-  document.getElementById('metro-beat-dot').classList.remove('on');
+  const btn = document.getElementById('metro-play');
+  btn.className = 'metro-btn';
+  btn.textContent = '▶ Metro';
+  metroClearViz();
 }
 
-document.getElementById('metro-play').addEventListener('click',()=>{ if(state.metroPlaying) stopMetro(); else startMetro(); });
-document.getElementById('metro-down').addEventListener('click',()=>{ state.metroBpm=Math.max(20,state.metroBpm-5); document.getElementById('metro-bpm-val').textContent=state.metroBpm; });
-document.getElementById('metro-up').addEventListener('click',()=>{ state.metroBpm=Math.min(200,state.metroBpm+5); document.getElementById('metro-bpm-val').textContent=state.metroBpm; });
+metroLoadSettings();
+document.getElementById('metro-bpm-val').value = state.metroBpm;
+document.getElementById('metro-compas').value = String(state.metroCompas);
+document.getElementById('metro-sub').value = String(state.metroSub);
+document.getElementById('metro-submute').checked = state.metroSubMuted;
+metroRenderViz();
+
+document.getElementById('metro-play').addEventListener('click',()=>{ state.metroPlaying ? stopMetro() : startMetro(); });
+document.getElementById('metro-down5').addEventListener('click',()=> metroSetBpm(state.metroBpm-5));
+document.getElementById('metro-down1').addEventListener('click',()=> metroSetBpm(state.metroBpm-1));
+document.getElementById('metro-up1').addEventListener('click',()=> metroSetBpm(state.metroBpm+1));
+document.getElementById('metro-up5').addEventListener('click',()=> metroSetBpm(state.metroBpm+5));
+document.getElementById('metro-bpm-val').addEventListener('change',e=> metroSetBpm(Number(e.target.value)));
+document.getElementById('metro-tap').addEventListener('click', metroTap);
+document.getElementById('metro-compas').addEventListener('change',e=>{
+  state.metroCompas = Number(e.target.value) || 4;
+  if(metro) metro.setBeatsPerCompas(state.metroCompas);
+  metroRenderViz();
+  metroSaveSettings();
+});
+document.getElementById('metro-sub').addEventListener('change',e=>{
+  state.metroSub = Number(e.target.value) || 1;
+  if(metro) metro.setSubdivision(state.metroSub);
+  metroRenderViz();
+  metroSaveSettings();
+});
+document.getElementById('metro-submute').addEventListener('change',e=>{
+  state.metroSubMuted = e.target.checked;
+  if(metro) metro.setSubdivisionsMuted(state.metroSubMuted);
+  metroSaveSettings();
+});
 
 // ─── Mode tabs ───────────────────────────────────────────────────────
 document.querySelectorAll('.tab').forEach(tab=>{
