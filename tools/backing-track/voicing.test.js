@@ -21,6 +21,11 @@
         voicing.resolveChord({ root: 'C', quality: 'min7' }, { octave: 3 }),
         ['C3', 'D#3', 'G3', 'A#3']);
     });
+    T.it('Bm7b5 — semidisminuido (1 b3 b5 b7)', () => {
+      T.assertArrayEq(
+        voicing.resolveChord({ root: 'B', quality: 'm7b5' }, { octave: 3 }),
+        ['B3', 'D4', 'F4', 'A4']);
+    });
     T.it('Gmaj7 cruza el límite de octava correctamente', () => {
       T.assertArrayEq(
         voicing.resolveChord({ root: 'G', quality: 'maj7' }, { octave: 3 }),

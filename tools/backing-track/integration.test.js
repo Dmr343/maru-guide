@@ -18,13 +18,13 @@
       T.assertEq(out[0].quality, 'maj7');
       T.assertEq(out[2].quality, 'dom7');
     });
-    T.it('mapea dim7 y m7b5 a la aproximación soportada (min7)', () => {
+    T.it('m7b5 pasa directo; dim7 (no soportado) se aproxima a m7b5', () => {
       const out = tr([
         { root: 'C', quality: 'dim7', bars: 1 },
         { root: 'E', quality: 'm7b5', bars: 1 },
       ]);
-      T.assertEq(out[0].quality, 'min7');
-      T.assertEq(out[1].quality, 'min7');
+      T.assertEq(out[0].quality, 'm7b5');
+      T.assertEq(out[1].quality, 'm7b5');
     });
     T.it('acota los compases al rango 1..8', () => {
       const out = tr([

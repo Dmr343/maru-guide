@@ -11,7 +11,7 @@
   }
 
   const TIPOS = ['bajo', 'acordes', 'bateria', 'percusion', 'pad', 'lead'];
-  const QUALITIES = ['major', 'minor', 'dom7', 'maj7', 'min7'];
+  const QUALITIES = ['major', 'minor', 'dom7', 'maj7', 'min7', 'm7b5'];
 
   T.describe('factoryPresets — forma y cobertura', () => {
     T.it('cada preset tiene id, nombre, tipo, motor y config', () => {

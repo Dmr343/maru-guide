@@ -21,8 +21,8 @@
   // m7b5). Se mapean a la aproximación soportada más cercana.
   const QUALITY_MAP = {
     major: 'major', minor: 'minor',
-    maj7: 'maj7', min7: 'min7', dom7: 'dom7',
-    dim7: 'min7', m7b5: 'min7',
+    maj7: 'maj7', min7: 'min7', dom7: 'dom7', m7b5: 'm7b5',
+    dim7: 'm7b5',   // dim7 puro no está soportado: m7b5 es lo más cercano
   };
   const VALID_ROOT = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 

@@ -53,6 +53,19 @@
       ],
     },
     {
+      id: 'armonizacionCmaj', nombre: 'Armonización de Do mayor', genero: 'estudio',
+      tempo: 100,
+      chords: [
+        { root: 'C', quality: 'maj7', bars: 1 },
+        { root: 'D', quality: 'min7', bars: 1 },
+        { root: 'E', quality: 'min7', bars: 1 },
+        { root: 'F', quality: 'maj7', bars: 1 },
+        { root: 'G', quality: 'dom7', bars: 1 },
+        { root: 'A', quality: 'min7', bars: 1 },
+        { root: 'B', quality: 'm7b5', bars: 1 },
+      ],
+    },
+    {
       id: 'metalEmin', nombre: 'Metal en Em', genero: 'metal',
       tempo: 140,
       chords: [
