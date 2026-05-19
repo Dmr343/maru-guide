@@ -108,12 +108,35 @@
     return b;
   }
 
-  // Presets disponibles para un tipo: de fábrica + de la librería del usuario.
-  function presetsForTipo(tipo) {
-    const fac = BT.factoryPresets.byTipo(tipo);
-    const usr = BT.userLibrary.byTipo(tipo)
-      .map(p => ({ id: p.id, nombre: '★ ' + p.nombre }));
-    return fac.concat(usr);
+  // Dropdown de preset de una pista, agrupado por origen: presets
+  // sintetizados, presets con samples (requieren internet) y los del
+  // usuario. Incluye "(editado)" si la pista tiene copia de trabajo.
+  function makePresetSelect(track) {
+    const sel = document.createElement('select');
+    sel.className = 'track-preset';
+    const selId = track.customPreset ? '__custom' : track.presetId;
+
+    function addOption(parent, id, nombre) {
+      const o = document.createElement('option');
+      o.value = id;
+      o.textContent = nombre;
+      if (id === selId) o.selected = true;
+      parent.appendChild(o);
+    }
+    function addGroup(label, items) {
+      if (!items.length) return;
+      const g = document.createElement('optgroup');
+      g.label = label;
+      items.forEach(p => addOption(g, p.id, p.nombre));
+      sel.appendChild(g);
+    }
+
+    if (track.customPreset) addOption(sel, '__custom', '(editado)');
+    const fac = BT.factoryPresets.byTipo(track.tipo);
+    addGroup('Sintetizados', fac.filter(p => p.motor !== 'sampler'));
+    addGroup('Con samples (internet)', fac.filter(p => p.motor === 'sampler'));
+    addGroup('Mis presets', BT.userLibrary.byTipo(track.tipo));
+    return sel;
   }
 
   function initProgSelect() {
@@ -260,18 +283,13 @@
     tipo.textContent = TIPO_LABEL[track.tipo] || track.tipo;
     row.appendChild(tipo);
 
-    // Preset (de fábrica o del usuario; "(editado)" si hay copia de trabajo).
-    const presetOpts = presetsForTipo(track.tipo).slice();
-    let selected = track.presetId;
-    if (track.customPreset) {
-      presetOpts.unshift({ id: '__custom', nombre: '(editado)' });
-      selected = '__custom';
-    }
-    const presetSel = makeSelect('track-preset', presetOpts, selected);
+    // Preset, agrupado por origen (synth / samples / usuario).
+    const presetSel = makePresetSelect(track);
     presetSel.addEventListener('change', () => {
       if (presetSel.value === '__custom') return;
       engine.updateTrack(track.id, { presetId: presetSel.value });
       if (editing && editing.trackId === track.id) closeEditor();
+      refreshTracks();
     });
     row.appendChild(presetSel);
 
