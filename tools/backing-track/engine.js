@@ -53,6 +53,8 @@
 
   function createEngine() {
     const transport = Tone().getTransport();
+    // En cada vuelta del loop se aplican las ediciones en vivo pendientes.
+    transport.on('loop', function () { onTransportLoop(); });
     // El grafo de audio se crea recién en el primer Play (tras el
     // gesto del usuario / Tone.start), para no tocar el AudioContext
     // antes de tiempo — eso disparaba warnings al cargar la página.
@@ -100,6 +102,7 @@
     let playing = false;
     let activeChordIndex = -1;
     let loopStartBBS = '0:0:0';    // posición de inicio del loop (tiempo musical)
+    let pendingRebuild = false;    // hay una edición esperando el próximo límite de loop
 
     // ─── Listeners ───
     const listeners = { chord: [], state: [], transport: [], tick: [] };
@@ -124,12 +127,17 @@
       return track.customPreset || resolvePreset(track.presetId);
     }
 
+    // Ganancia efectiva de una pista: 0 si está muteada, su volumen si no.
+    function trackGainValue(track) {
+      if (track.enabled === false) return 0;
+      return Number.isFinite(track.volumen) ? track.volumen : 0.8;
+    }
+
     function buildInstrument(track) {
       const preset = effectivePreset(track);
       if (!preset) return null;
       const instrument = BT().instruments.createInstrument(preset);
-      const gain = new (Tone().Gain)(
-        Number.isFinite(track.volumen) ? track.volumen : 0.8);
+      const gain = new (Tone().Gain)(trackGainValue(track));
       instrument.output.connect(gain);
       gain.connect(masterGain);
       // Envío al bus de reverb compartido, con el nivel del preset.
@@ -161,7 +169,7 @@
         const rt = runtime[track.id];
         const preset = effectivePreset(track);
         if (rt && preset && rt.sig === JSON.stringify(preset)) {
-          rt.gain.gain.value = Number.isFinite(track.volumen) ? track.volumen : 0.8;
+          rt.gain.gain.value = trackGainValue(track);
           return;
         }
         if (rt) disposeRuntime(track.id);
@@ -280,10 +288,12 @@
       const patterns = {};
       const schedTracks = tracks.map(t => {
         const pat = effectivePattern(t);
-        if (!pat) return t;
+        // enabled:true siempre — el mute se hace por ganancia (instantáneo),
+        // no quitando la pista del scheduling.
+        if (!pat) return Object.assign({}, t, { enabled: true });
         const pid = '__p_' + t.id;
         patterns[pid] = pat;
-        return Object.assign({}, t, { patternId: pid });
+        return Object.assign({}, t, { patternId: pid, enabled: true });
       });
 
       const result = BT().scheduler.schedule({
@@ -351,18 +361,7 @@
       transport.loopStart = loopStartBBS;
       transport.loopEnd = stepToBBS(endStep);
 
-      // Si esto fue una reprogramación en vivo (una edición mientras
-      // sonaba), saltamos al inicio del acorde con foco: así el cambio
-      // entra desde el compás 1 de ESE acorde y no a mitad de otro.
-      if (playing) {
-        let restart = startStep;
-        if (focusChordIndex >= 0 && focusChordIndex < result.chords.length) {
-          const cs = result.chords[focusChordIndex].startStep;
-          if (cs >= startStep && cs < endStep) restart = cs;
-        }
-        transport.position = stepToBBS(restart);
-        tickCounter = -1;            // el indicador reinicia en el pulso 1
-      }
+      tickCounter = -1;            // el indicador reinicia en el pulso 1
       return totalBars;
     }
 
@@ -370,9 +369,20 @@
       transport.bpm.value = tempo;
     }
 
-    // Si está sonando, reconstruye instrumentos y scheduling en vivo.
+    // Edición en vivo: en vez de reprogramar al instante (lo que cortaría
+    // el audio a mitad de loop), se marca un pedido pendiente; la
+    // reprogramación entra limpia en el próximo límite de loop. El flag
+    // booleano hace el coalescing: varios cambios → una sola reconstrucción.
     function refreshIfPlaying() {
-      if (!playing) return;
+      if (playing) pendingRebuild = true;
+    }
+
+    // Se dispara en cada vuelta del loop: si hay una edición pendiente,
+    // reconstruye instrumentos y scheduling con el transporte ya en el
+    // inicio del loop (sin cortes).
+    function onTransportLoop() {
+      if (!pendingRebuild) return;
+      pendingRebuild = false;
       ensureInstruments();
       rebuildSchedule();
     }
@@ -396,8 +406,8 @@
       tempo = Math.max(40, Math.min(240, bpm));
       applyTransport();           // cambio en vivo, sin reprogramar
       // Con humanización los eventos van en segundos: hay que
-      // reprogramarlos al cambiar el tempo.
-      if (playing && humanizeAmount > 0) rebuildSchedule();
+      // reprogramarlos al cambiar el tempo (cuantizado al loop).
+      if (playing && humanizeAmount > 0) refreshIfPlaying();
       emit('state');
     }
     function getTempo() { return tempo; }
@@ -462,16 +472,17 @@
       // Elegir otro patrón de fábrica descarta las variantes editadas.
       if ('patternId' in patch) { delete track.patterns; track.variant = 'A'; }
       Object.keys(patch).forEach(k => { track[k] = patch[k]; });
-      // Cambio de volumen en vivo sin reprogramar.
+      // Volumen y mute → instantáneos sobre la ganancia de la pista,
+      // sin reprogramar (reconstruir en cada tick del slider traba el audio).
       const rt = runtime[id];
-      if (rt && 'volumen' in patch) {
-        rt.gain.gain.value = Number.isFinite(track.volumen) ? track.volumen : 0.8;
+      if (rt && ('volumen' in patch || 'enabled' in patch)) {
+        rt.gain.gain.value = trackGainValue(track);
       }
-      // El volumen solo ajusta una ganancia: no hace falta reprogramar
-      // el scheduling (reconstruirlo en cada tick del slider traba el
-      // audio). El resto de los cambios sí requieren reprogramar.
-      const onlyVolume = Object.keys(patch).every(k => k === 'volumen');
-      if (!onlyVolume) refreshIfPlaying();
+      // Patrón, preset, voicing, etc. → cambian el scheduling: se
+      // reprograman cuantizados al próximo límite de loop.
+      const structural = Object.keys(patch).some(
+        k => k !== 'volumen' && k !== 'enabled');
+      if (structural) refreshIfPlaying();
       emit('state');
     }
 
@@ -556,6 +567,7 @@
       transport.position = loopStartBBS;
       disposeParts();
       silenceAll();          // corta las notas que sigan sonando
+      pendingRebuild = false;
       playing = false;
       activeChordIndex = -1;
       emit('chord', -1);
