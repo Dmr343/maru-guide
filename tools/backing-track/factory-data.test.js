@@ -115,6 +115,28 @@
     });
   });
 
+  T.describe('factoryGrooves — forma y referencias', () => {
+    const grooves = BT.factoryGrooves;
+    T.it('cada groove tiene id, nombre y patterns', () => {
+      grooves.GROOVES.forEach(g => {
+        T.assert(!!g.id && !!g.nombre && !!g.patterns,
+          'groove incompleto: ' + JSON.stringify(g.id));
+      });
+    });
+    T.it('todos los patrones que referencia un groove existen', () => {
+      grooves.GROOVES.forEach(g => {
+        Object.keys(g.patterns).forEach(k => {
+          T.assert(patterns.byId(g.patterns[k]) !== null,
+            'patrón inexistente en groove ' + g.id + ': ' + g.patterns[k]);
+        });
+      });
+    });
+    T.it('byId encuentra un groove y devuelve null si no existe', () => {
+      T.assertEq(grooves.byId('bluesShuffle').genero, 'blues');
+      T.assertEq(grooves.byId('noExiste'), null);
+    });
+  });
+
 })(
   (typeof window !== 'undefined' ? window : globalThis).GuitarShared,
   (typeof window !== 'undefined' ? window : globalThis)

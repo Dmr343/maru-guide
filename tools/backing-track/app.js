@@ -897,6 +897,35 @@
 
     arrangePanel.innerHTML = '';
 
+    // Groove de estilo — aplica patrones + tempo a todas las pistas.
+    const grLabel0 = document.createElement('div');
+    grLabel0.className = 'section-label';
+    grLabel0.textContent = 'Groove de estilo';
+    arrangePanel.appendChild(grLabel0);
+    const grRow = document.createElement('div');
+    grRow.className = 'control-row';
+    const grCap = document.createElement('label');
+    grCap.textContent = 'Aplicar';
+    const grSel = fld('select');
+    const grPlaceholder = document.createElement('option');
+    grPlaceholder.value = '';
+    grPlaceholder.textContent = '(elegir un groove…)';
+    grSel.appendChild(grPlaceholder);
+    (BT.factoryGrooves ? BT.factoryGrooves.GROOVES : []).forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g.id;
+      opt.textContent = g.nombre;
+      grSel.appendChild(opt);
+    });
+    grSel.addEventListener('change', function () {
+      if (grSel.value) applyGroove(grSel.value);
+      // Es una acción, no un estado: vuelve al placeholder.
+      grSel.value = '';
+    });
+    grRow.appendChild(grCap);
+    grRow.appendChild(grSel);
+    arrangePanel.appendChild(grRow);
+
     // Humanización (intensidad global).
     const humLabel = document.createElement('div');
     humLabel.className = 'section-label';
@@ -960,6 +989,21 @@
   function refreshTracks() {
     renderTracks();
     renderArrange();
+  }
+
+  // Aplica un groove de estilo: pone el patrón que le corresponde a
+  // cada pista y el tempo sugerido, de un solo paso.
+  function applyGroove(grooveId) {
+    const groove = BT.factoryGrooves && BT.factoryGrooves.byId(grooveId);
+    if (!groove) return;
+    engine.getTracks().forEach(track => {
+      const pt = PATTERN_TIPO[track.tipo];
+      const pid = pt && groove.patterns[pt];
+      if (pid) engine.updateTrack(track.id, { patternId: pid });
+    });
+    if (groove.tempo) engine.setTempo(groove.tempo);
+    syncControls();
+    refreshTracks();
   }
 
   // ─── Proyectos y persistencia ───

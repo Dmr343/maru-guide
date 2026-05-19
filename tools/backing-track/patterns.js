@@ -124,6 +124,32 @@
     { id: 'bajoSemicorcheas', nombre: 'Semicorcheas', tipo: 'bass',
       steps: 16, lanes: ['main'],
       hits: mono([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], 0.72) },
+
+    // ─── Patrones de estilo (usados por los grooves) ───
+    // Blues: feel de shuffle aproximado en la grilla de 16 (cada
+    // pulso = paso 0 y 3, "largo-corto").
+    { id: 'bluesShuffleDrums', nombre: 'Shuffle de blues', tipo: 'drums',
+      steps: 16, lanes: KIT_LANES, hits: [].concat(
+        lane('kick',  [0, 8], 0.9),
+        lane('snare', [4, 12], 0.82),
+        lane('hat',   [0, 3, 4, 7, 8, 11, 12, 15], 0.5)) },
+    { id: 'bluesBass', nombre: 'Bajo de blues', tipo: 'bass',
+      steps: 16, lanes: ['main'], hits: mono([0, 3, 8, 11], 0.85) },
+    { id: 'bluesComp', nombre: 'Comping de blues', tipo: 'chord',
+      steps: 16, lanes: ['main'], hits: mono([0, 6, 8, 14], 0.6) },
+    // Metal: galope (pulso = negra + dos semicorcheas → pasos 0,2,3).
+    { id: 'metalGalopeBass', nombre: 'Galope', tipo: 'bass',
+      steps: 16, lanes: ['main'],
+      hits: mono([0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15], 0.85) },
+    { id: 'metalChug', nombre: 'Chug (galope)', tipo: 'chord',
+      steps: 16, lanes: ['main'],
+      hits: mono([0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15], 0.7) },
+    // Modal: groove abierto y relajado.
+    { id: 'modalGroove', nombre: 'Modal abierto', tipo: 'drums',
+      steps: 16, lanes: KIT_LANES, hits: [].concat(
+        lane('kick',  [0, 6, 10], 0.82),
+        lane('snare', [4, 12], 0.7),
+        lane('hat',   [0, 2, 4, 6, 8, 10, 12, 14], 0.45)) },
   ];
 
   function byId(id) {
