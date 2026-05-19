@@ -45,6 +45,8 @@
   const modePractica = el('mode-practica');
   const modeArreglo = el('mode-arreglo');
   const arrangePanel = el('arrange-panel');
+  const subdivSelect = el('subdiv-select');
+  const beatMeter = el('beat-meter');
 
   const TIPO_LABEL = {
     bajo: 'Bajo', acordes: 'Acordes', bateria: 'Batería',
@@ -53,6 +55,10 @@
   const PATTERN_TIPO = {
     bajo: 'bass', acordes: 'chord', lead: 'chord',
     bateria: 'drums', percusion: 'perc',
+  };
+  // Cuántas subdivisiones entran por compás de 4/4.
+  const SUBDIV_COUNT = {
+    redonda: 1, blanca: 2, negra: 4, corchea: 8, tresillo: 12, semicorchea: 16,
   };
   const MELODIC_TIPOS = ['bajo', 'acordes', 'pad', 'lead'];
   // Tipos polifónicos: comparten todos los presets entre sí (un sitar,
@@ -88,7 +94,11 @@
   // ─── Modelo de progresión (reutilizado del Atlas) ───
   const model = new ProgressionModel({
     onChange: function () {
+      // El acorde con foco es el punto de reinicio al editar en vivo.
+      engine.setFocusChord(model.activeIdx);
       engine.loadProgression(model.progression);
+      const lr = model.loopRange;
+      engine.setLoopRange(lr ? lr[0] : null, lr ? lr[1] : null);
       renderChords();
       renderEditor();
     },
@@ -111,12 +121,20 @@
     b.addEventListener('click', onClick);
     return b;
   }
+  // Crea un campo de formulario (select/input) con un name único —
+  // los elementos sin id/name disparan un aviso de autofill del navegador.
+  let _fldCount = 0;
+  function fld(tag) {
+    const e = document.createElement(tag);
+    e.name = 'bt-' + tag + '-' + (++_fldCount);
+    return e;
+  }
 
   // Dropdown de preset de una pista, agrupado por origen: presets
   // sintetizados, presets con samples (requieren internet) y los del
   // usuario. Incluye "(editado)" si la pista tiene copia de trabajo.
   function makePresetSelect(track) {
-    const sel = document.createElement('select');
+    const sel = fld('select');
     sel.className = 'track-preset';
     const selId = track.customPreset ? '__custom' : track.presetId;
 
@@ -183,12 +201,26 @@
     if (theory && theory.chordName) return theory.chordName(c.root, c.quality);
     return c.root + (c.quality === 'major' ? '' : ' ' + c.quality);
   }
+  // Shift+clic en un acorde marca / extiende / limpia el rango de loop
+  // (mismo comportamiento que el Intervalic Atlas).
+  function handleLoopClick(i) {
+    const lr = model.loopRange;
+    if (!lr) model.setLoopRange(i, i);
+    else if (lr[0] === lr[1] && lr[0] !== i) model.setLoopRange(lr[0], i);
+    else model.setLoopRange(null);
+  }
+
   function renderChords() {
     const prog = model.progression;
+    const lr = model.loopRange;
+    const lo = lr ? Math.min(lr[0], lr[1]) : -1;
+    const hi = lr ? Math.max(lr[0], lr[1]) : -1;
     chordStrip.innerHTML = '';
     prog.forEach((c, i) => {
       const chip = document.createElement('div');
-      chip.className = 'chord-chip' + (i === model.activeIdx ? ' selected' : '');
+      chip.className = 'chord-chip' +
+        (i === model.activeIdx ? ' selected' : '') +
+        (lr && i >= lo && i <= hi ? ' in-loop' : '');
       chip.dataset.idx = String(i);
       const name = document.createElement('span');
       name.textContent = chordLabel(c);
@@ -197,7 +229,11 @@
       bars.textContent = '●'.repeat(c.bars);
       chip.appendChild(name);
       chip.appendChild(bars);
-      chip.addEventListener('click', () => model.setActiveChord(i));
+      chip.title = 'Clic: seleccionar · Shift+clic: marcar loop';
+      chip.addEventListener('click', (e) => {
+        if (e.shiftKey) handleLoopClick(i);
+        else model.setActiveChord(i);
+      });
       chordStrip.appendChild(chip);
     });
   }
@@ -205,6 +241,45 @@
     Array.prototype.forEach.call(chordStrip.children, chip => {
       chip.classList.toggle('active', Number(chip.dataset.idx) === idx);
     });
+  }
+
+  // ─── Indicador de compás (metrónomo) ───
+  // Agrupa los puntos en los 4 pulsos del compás de 4/4: cada grupo
+  // tiene las subdivisiones de ese pulso.
+  function buildBeatMeter(count) {
+    beatMeter.innerHTML = '';
+    const groups = (count >= 4 && count % 4 === 0) ? 4 : 1;
+    const perGroup = count / groups;
+    for (let g = 0; g < groups; g++) {
+      const grp = document.createElement('div');
+      grp.className = 'beat-group';
+      for (let j = 0; j < perGroup; j++) {
+        const globalIdx = g * perGroup + j;
+        const isBeat = (groups === 1) || (j === 0);
+        const dot = document.createElement('div');
+        dot.className = 'beat-dot' +
+          (globalIdx === 0 ? ' downbeat' : '') +
+          (isBeat ? '' : ' sub');
+        dot.textContent = isBeat
+          ? String(groups === 1 ? globalIdx + 1 : g + 1) : '';
+        grp.appendChild(dot);
+      }
+      beatMeter.appendChild(grp);
+    }
+  }
+  // Recibe el 'tick' del motor (o null al detenerse): enciende el punto
+  // de la subdivisión actual.
+  function updateBarIndicator(tick) {
+    let dots = beatMeter.querySelectorAll('.beat-dot');
+    if (!tick) {
+      dots.forEach(d => d.classList.remove('on'));
+      return;
+    }
+    if (dots.length !== tick.count) {
+      buildBeatMeter(tick.count);
+      dots = beatMeter.querySelectorAll('.beat-dot');
+    }
+    dots.forEach((d, i) => d.classList.toggle('on', i === tick.index));
   }
 
   // ─── Editor del acorde activo ───
@@ -220,14 +295,14 @@
     lbl.textContent = 'Editar acorde ' + (idx + 1) + ':';
     chordEditor.appendChild(lbl);
 
-    const rootSel = document.createElement('select');
+    const rootSel = fld('select');
     fillSelect(rootSel, ROOTS);
     rootSel.value = chord.root;
     rootSel.addEventListener('change',
       () => model.editChordAt(idx, { root: rootSel.value }));
     chordEditor.appendChild(rootSel);
 
-    const qSel = document.createElement('select');
+    const qSel = fld('select');
     fillSelect(qSel, QUALITIES, 'v', it => it.label);
     qSel.value = chord.quality;
     qSel.addEventListener('change',
@@ -260,7 +335,7 @@
 
   // ─── Gestión de pistas ───
   function makeSelect(cls, options, selectedId) {
-    const sel = document.createElement('select');
+    const sel = fld('select');
     sel.className = cls;
     options.forEach(o => {
       const opt = document.createElement('option');
@@ -319,7 +394,7 @@
       row.appendChild(spacer);
     }
 
-    const vol = document.createElement('input');
+    const vol = fld('input');
     vol.type = 'range';
     vol.className = 'track-vol';
     vol.min = '0'; vol.max = '100'; vol.step = '1';
@@ -411,7 +486,7 @@
     row.className = 'pe-row';
     const lbl = document.createElement('label');
     lbl.textContent = labelText;
-    const range = document.createElement('input');
+    const range = fld('input');
     range.type = 'range';
     range.min = String(min); range.max = String(max); range.step = String(step);
     range.value = String(value);
@@ -433,7 +508,7 @@
     row.className = 'pe-row';
     const lbl = document.createElement('label');
     lbl.textContent = labelText;
-    const sel = document.createElement('select');
+    const sel = fld('select');
     fillSelect(sel, options);
     sel.value = value;
     sel.addEventListener('change', () => { onChange(sel.value); applyEditing(); });
@@ -510,13 +585,13 @@
       const current = (editing.preset.efectos || []).find(e => e.tipo === fx.tipo);
       const row = document.createElement('div');
       row.className = 'pe-row';
-      const chk = document.createElement('input');
+      const chk = fld('input');
       chk.type = 'checkbox';
       chk.checked = !!current;
       const lbl = document.createElement('label');
       lbl.textContent = fx.label;
       lbl.style.minWidth = '80px';
-      const range = document.createElement('input');
+      const range = fld('input');
       range.type = 'range';
       range.min = '0'; range.max = '1'; range.step = '0.01';
       range.value = String(current ? current.cantidad : 0.3);
@@ -569,7 +644,7 @@
     });
     actions.appendChild(scratch);
 
-    const nameInput = document.createElement('input');
+    const nameInput = fld('input');
     nameInput.type = 'text';
     nameInput.placeholder = 'Nombre del preset';
     nameInput.value = '';
@@ -717,7 +792,7 @@
   }
 
   function makeArrangeSelect(options, value, onChange) {
-    const sel = document.createElement('select');
+    const sel = fld('select');
     options.forEach(o => {
       const opt = document.createElement('option');
       opt.value = o.id;
@@ -748,7 +823,7 @@
     humRow.className = 'control-row';
     const humCap = document.createElement('label');
     humCap.textContent = 'Intensidad';
-    const humSlider = document.createElement('input');
+    const humSlider = fld('input');
     humSlider.type = 'range';
     humSlider.min = '0'; humSlider.max = '100'; humSlider.step = '1';
     humSlider.value = String(Math.round(engine.getHumanize() * 100));
@@ -769,7 +844,7 @@
     hideRow.className = 'control-row';
     const hideCap = document.createElement('label');
     hideCap.textContent = 'Ocultar acorde';
-    const hideChk = document.createElement('input');
+    const hideChk = fld('input');
     hideChk.type = 'checkbox';
     hideChk.checked = hideIndicator;
     hideChk.addEventListener('change', function () {
@@ -810,6 +885,10 @@
     if (editing) closeEditor();
     engine.restore(snap);
     model.loadProgression(snap.progression || []);
+    // loadProgression resetea el loop; reponemos el rango guardado.
+    if (Array.isArray(snap.loopRange)) {
+      model.setLoopRange(snap.loopRange[0], snap.loopRange[1]);
+    }
     syncControls();
     refreshTracks();
   }
@@ -886,9 +965,27 @@
 
   ctlLoop.addEventListener('change', () => engine.setLoop(ctlLoop.checked));
 
-  // Tecla Esc: detener la reproducción.
+  subdivSelect.addEventListener('change', function () {
+    engine.setSubdivision(subdivSelect.value);
+    buildBeatMeter(SUBDIV_COUNT[subdivSelect.value] || 4);
+  });
+
+  // Teclado: navegar acordes con ←→, ajustar compases con ↑↓, Esc detiene.
+  function navChord(dir) {
+    const n = model.progression.length;
+    if (!n) return;
+    model.setActiveChord((model.activeIdx + dir + n) % n);
+  }
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && engine.isPlaying()) engine.stop();
+    const tag = e.target && e.target.tagName;
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+    switch (e.key) {
+      case 'Escape': if (engine.isPlaying()) engine.stop(); break;
+      case 'ArrowLeft':  navChord(-1); e.preventDefault(); break;
+      case 'ArrowRight': navChord(1);  e.preventDefault(); break;
+      case 'ArrowUp':    model.changeActiveBars(1);  e.preventDefault(); break;
+      case 'ArrowDown':  model.changeActiveBars(-1); e.preventDefault(); break;
+    }
   });
 
   progSelect.addEventListener('change', function () {
@@ -971,6 +1068,7 @@
   });
 
   engine.onChordChange(highlightChord);
+  engine.onTick(updateBarIndicator);
   // Autoguardado de la sesión: debounced, para no escribir en
   // localStorage en cada tick de un slider (eso traba el audio).
   let saveTimer = null;
@@ -1018,5 +1116,7 @@
   renderEditor();
   refreshTracks();
   syncControls();
+  subdivSelect.value = engine.getSubdivision();
+  buildBeatMeter(SUBDIV_COUNT[engine.getSubdivision()] || 4);
   setStatus(handoff ? 'Progresión recibida del Intervalic Atlas' : 'Detenido');
 })(typeof window !== 'undefined' ? window : globalThis);
