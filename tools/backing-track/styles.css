@@ -465,10 +465,15 @@ body {
 }
 .beat-meter {
   display: flex;
-  gap: 4px;
+  gap: 14px;            /* separación entre los 4 pulsos */
   flex-wrap: wrap;
   align-items: center;
   flex: 1;
+}
+.beat-group {
+  display: flex;
+  gap: 3px;
+  align-items: center;
 }
 .beat-dot {
   display: inline-flex;
@@ -484,6 +489,8 @@ body {
   color: var(--text-dim);
   transition: background 0.07s, transform 0.07s, color 0.07s;
 }
+/* Subdivisiones intermedias (no son pulso): más chicas */
+.beat-dot.sub { min-width: 12px; height: 12px; }
 .beat-dot.downbeat { color: var(--gold); border-color: var(--gold-dim); }
 .beat-dot.on { background: var(--text); color: #000; transform: scale(1.18); }
 .beat-dot.downbeat.on { background: var(--gold); color: #000; }

@@ -94,6 +94,8 @@
   // ─── Modelo de progresión (reutilizado del Atlas) ───
   const model = new ProgressionModel({
     onChange: function () {
+      // El acorde con foco es el punto de reinicio al editar en vivo.
+      engine.setFocusChord(model.activeIdx);
       engine.loadProgression(model.progression);
       const lr = model.loopRange;
       engine.setLoopRange(lr ? lr[0] : null, lr ? lr[1] : null);
@@ -242,27 +244,42 @@
   }
 
   // ─── Indicador de compás (metrónomo) ───
+  // Agrupa los puntos en los 4 pulsos del compás de 4/4: cada grupo
+  // tiene las subdivisiones de ese pulso.
   function buildBeatMeter(count) {
     beatMeter.innerHTML = '';
-    for (let i = 0; i < count; i++) {
-      const dot = document.createElement('div');
-      dot.className = 'beat-dot' + (i === 0 ? ' downbeat' : '');
-      dot.textContent = String(i + 1);
-      beatMeter.appendChild(dot);
+    const groups = (count >= 4 && count % 4 === 0) ? 4 : 1;
+    const perGroup = count / groups;
+    for (let g = 0; g < groups; g++) {
+      const grp = document.createElement('div');
+      grp.className = 'beat-group';
+      for (let j = 0; j < perGroup; j++) {
+        const globalIdx = g * perGroup + j;
+        const isBeat = (groups === 1) || (j === 0);
+        const dot = document.createElement('div');
+        dot.className = 'beat-dot' +
+          (globalIdx === 0 ? ' downbeat' : '') +
+          (isBeat ? '' : ' sub');
+        dot.textContent = isBeat
+          ? String(groups === 1 ? globalIdx + 1 : g + 1) : '';
+        grp.appendChild(dot);
+      }
+      beatMeter.appendChild(grp);
     }
   }
   // Recibe el 'tick' del motor (o null al detenerse): enciende el punto
   // de la subdivisión actual.
   function updateBarIndicator(tick) {
+    let dots = beatMeter.querySelectorAll('.beat-dot');
     if (!tick) {
-      Array.prototype.forEach.call(beatMeter.children,
-        d => d.classList.remove('on'));
+      dots.forEach(d => d.classList.remove('on'));
       return;
     }
-    if (beatMeter.children.length !== tick.count) buildBeatMeter(tick.count);
-    Array.prototype.forEach.call(beatMeter.children, (d, i) => {
-      d.classList.toggle('on', i === tick.index);
-    });
+    if (dots.length !== tick.count) {
+      buildBeatMeter(tick.count);
+      dots = beatMeter.querySelectorAll('.beat-dot');
+    }
+    dots.forEach((d, i) => d.classList.toggle('on', i === tick.index));
   }
 
   // ─── Editor del acorde activo ───

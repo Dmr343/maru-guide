@@ -87,6 +87,7 @@
     let mode = 'practica';
     let humanizeAmount = 0;        // 0..1 — intensidad de humanización
     let loopRangeIdx = null;       // [a,b] índices de acorde, o null (loop completo)
+    let focusChordIndex = 0;       // acorde con foco — punto de reinicio al editar en vivo
     let subdivision = 'negra';     // subdivisión del indicador de compás
     let trackCounter = 0;
     let tickCounter = -1;          // cuenta de subdivisiones del indicador
@@ -350,12 +351,12 @@
       transport.loopEnd = stepToBBS(endStep);
 
       // Si esto fue una reprogramación en vivo (una edición mientras
-      // sonaba), saltamos al inicio del acorde en curso: así el cambio
-      // entra siempre desde el compás 1 y no a mitad de acorde.
+      // sonaba), saltamos al inicio del acorde con foco: así el cambio
+      // entra desde el compás 1 de ESE acorde y no a mitad de otro.
       if (playing) {
         let restart = startStep;
-        if (activeChordIndex >= 0 && activeChordIndex < result.chords.length) {
-          const cs = result.chords[activeChordIndex].startStep;
+        if (focusChordIndex >= 0 && focusChordIndex < result.chords.length) {
+          const cs = result.chords[focusChordIndex].startStep;
           if (cs >= startStep && cs < endStep) restart = cs;
         }
         transport.position = stepToBBS(restart);
@@ -521,6 +522,13 @@
     }
     function getSubdivision() { return subdivision; }
 
+    // setFocusChord — índice del acorde con foco. Al editar en vivo, la
+    // reproducción reinicia desde este acorde. No reprograma por sí solo.
+    function setFocusChord(idx) {
+      idx = Math.round(Number(idx));
+      focusChordIndex = Number.isFinite(idx) && idx >= 0 ? idx : 0;
+    }
+
     function setMode(m) {
       mode = (m === 'arreglo') ? 'arreglo' : 'practica';
       emit('state');
@@ -615,6 +623,7 @@
       setLoop, getLoop,
       setLoopRange, getLoopRange,
       setSubdivision, getSubdivision,
+      setFocusChord,
       setMode, getMode,
       play, stop, isPlaying, getActiveChordIndex,
       snapshot, restore, dispose,
