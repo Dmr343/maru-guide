@@ -70,7 +70,7 @@ body {
 
 /* ─── Panel ─── */
 .panel {
-  max-width: 480px;
+  max-width: 720px;
   margin: 0 auto;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -290,6 +290,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
   padding: 8px 10px;
   margin-bottom: 6px;
   background: var(--surface2);

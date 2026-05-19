@@ -937,8 +937,16 @@
   });
 
   engine.onChordChange(highlightChord);
-  // Autoguardado de la sesión actual en cada cambio de estado.
-  engine.onStateChange(function () { storage.saveSession(engine.snapshot()); });
+  // Autoguardado de la sesión: debounced, para no escribir en
+  // localStorage en cada tick de un slider (eso traba el audio).
+  let saveTimer = null;
+  engine.onStateChange(function () {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      saveTimer = null;
+      storage.saveSession(engine.snapshot());
+    }, 400);
+  });
   engine.onTransport(function (ev) {
     if (ev === 'stop') {
       btnPlay.disabled = false;

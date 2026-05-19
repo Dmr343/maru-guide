@@ -368,7 +368,11 @@
       if (rt && 'volumen' in patch) {
         rt.gain.gain.value = Number.isFinite(track.volumen) ? track.volumen : 0.8;
       }
-      refreshIfPlaying();
+      // El volumen solo ajusta una ganancia: no hace falta reprogramar
+      // el scheduling (reconstruirlo en cada tick del slider traba el
+      // audio). El resto de los cambios sí requieren reprogramar.
+      const onlyVolume = Object.keys(patch).every(k => k === 'volumen');
+      if (!onlyVolume) refreshIfPlaying();
       emit('state');
     }
 
