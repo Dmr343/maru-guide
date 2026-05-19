@@ -447,37 +447,46 @@ body {
 }
 .pe-actions .btn { padding: 6px 12px; font-size: 11px; }
 
-/* ─── Indicador de compás / subdivisiones ─── */
+/* ─── Indicador de compás / metrónomo ─── */
 .bar-indicator {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
-.bar-count {
-  min-width: 92px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--gold);
-  letter-spacing: 0.04em;
+.subdiv-select {
+  font-family: var(--font);
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 7px;
+  cursor: pointer;
 }
-.beat-cells {
+.beat-meter {
   display: flex;
-  gap: 2px;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
   flex: 1;
 }
-.beat-cell {
-  flex: 1;
-  height: 18px;
-  min-width: 8px;
+.beat-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 50%;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 2px;
-  transition: background 0.04s;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-dim);
+  transition: background 0.07s, transform 0.07s, color 0.07s;
 }
-/* Inicio de cada pulso (negra): borde más marcado */
-.beat-cell.beat { border-left: 2px solid var(--text-dim); }
-.beat-cell.playhead { background: var(--accent); }
-.beat-cell.playhead.beat-start { background: var(--gold); }
+.beat-dot.downbeat { color: var(--gold); border-color: var(--gold-dim); }
+.beat-dot.on { background: var(--text); color: #000; transform: scale(1.18); }
+.beat-dot.downbeat.on { background: var(--gold); color: #000; }
 
 /* ─── Toggle de modo ─── */
 .mode-toggle {

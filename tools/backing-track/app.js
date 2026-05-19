@@ -45,8 +45,8 @@
   const modePractica = el('mode-practica');
   const modeArreglo = el('mode-arreglo');
   const arrangePanel = el('arrange-panel');
-  const barCount = el('bar-count');
-  const beatCells = el('beat-cells');
+  const subdivSelect = el('subdiv-select');
+  const beatMeter = el('beat-meter');
 
   const TIPO_LABEL = {
     bajo: 'Bajo', acordes: 'Acordes', bateria: 'Batería',
@@ -55,6 +55,10 @@
   const PATTERN_TIPO = {
     bajo: 'bass', acordes: 'chord', lead: 'chord',
     bateria: 'drums', percusion: 'perc',
+  };
+  // Cuántas subdivisiones entran por compás de 4/4.
+  const SUBDIV_COUNT = {
+    redonda: 1, blanca: 2, negra: 4, corchea: 8, tresillo: 12, semicorchea: 16,
   };
   const MELODIC_TIPOS = ['bajo', 'acordes', 'pad', 'lead'];
   // Tipos polifónicos: comparten todos los presets entre sí (un sitar,
@@ -237,31 +241,28 @@
     });
   }
 
-  // ─── Indicador de compás / subdivisiones ───
-  function buildBeatCells() {
-    beatCells.innerHTML = '';
-    for (let s = 0; s < 16; s++) {
-      const cell = document.createElement('div');
-      cell.className = 'beat-cell' + (s % 4 === 0 ? ' beat' : '');
-      beatCells.appendChild(cell);
+  // ─── Indicador de compás (metrónomo) ───
+  function buildBeatMeter(count) {
+    beatMeter.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'beat-dot' + (i === 0 ? ' downbeat' : '');
+      dot.textContent = String(i + 1);
+      beatMeter.appendChild(dot);
     }
   }
-  // Recibe el 'tick' del motor (o null al detenerse). Mueve el cursor
-  // por las 16 subdivisiones y muestra el compás dentro del acorde —
-  // que vuelve a 1 cuando empieza un acorde nuevo.
+  // Recibe el 'tick' del motor (o null al detenerse): enciende el punto
+  // de la subdivisión actual.
   function updateBarIndicator(tick) {
-    const cells = beatCells.children;
-    for (let i = 0; i < cells.length; i++) {
-      cells[i].classList.remove('playhead', 'beat-start');
+    if (!tick) {
+      Array.prototype.forEach.call(beatMeter.children,
+        d => d.classList.remove('on'));
+      return;
     }
-    if (!tick) { barCount.textContent = '—'; return; }
-    barCount.textContent =
-      'Compás ' + (tick.barInChord + 1) + ' / ' + tick.barsInChord;
-    const cell = cells[tick.stepInBar];
-    if (cell) {
-      cell.classList.add('playhead');
-      if (tick.stepInBar % 4 === 0) cell.classList.add('beat-start');
-    }
+    if (beatMeter.children.length !== tick.count) buildBeatMeter(tick.count);
+    Array.prototype.forEach.call(beatMeter.children, (d, i) => {
+      d.classList.toggle('on', i === tick.index);
+    });
   }
 
   // ─── Editor del acorde activo ───
@@ -947,6 +948,11 @@
 
   ctlLoop.addEventListener('change', () => engine.setLoop(ctlLoop.checked));
 
+  subdivSelect.addEventListener('change', function () {
+    engine.setSubdivision(subdivSelect.value);
+    buildBeatMeter(SUBDIV_COUNT[subdivSelect.value] || 4);
+  });
+
   // Teclado: navegar acordes con ←→, ajustar compases con ↑↓, Esc detiene.
   function navChord(dir) {
     const n = model.progression.length;
@@ -1071,7 +1077,6 @@
 
   // ─── Arranque ───
   initProgSelect();
-  buildBeatCells();
   fillSelect(newRoot, ROOTS);
   fillSelect(newQuality, QUALITIES, 'v', it => it.label);
 
@@ -1094,5 +1099,7 @@
   renderEditor();
   refreshTracks();
   syncControls();
+  subdivSelect.value = engine.getSubdivision();
+  buildBeatMeter(SUBDIV_COUNT[engine.getSubdivision()] || 4);
   setStatus(handoff ? 'Progresión recibida del Intervalic Atlas' : 'Detenido');
 })(typeof window !== 'undefined' ? window : globalThis);

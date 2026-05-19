@@ -47,8 +47,15 @@
 
     <div class="section-label">Compás</div>
     <div class="bar-indicator">
-      <span id="bar-count" class="bar-count">—</span>
-      <div id="beat-cells" class="beat-cells"></div>
+      <select id="subdiv-select" class="subdiv-select" title="Subdivisión del metrónomo">
+        <option value="redonda">Redonda</option>
+        <option value="blanca">Blanca</option>
+        <option value="negra" selected>Negra</option>
+        <option value="corchea">Corchea</option>
+        <option value="tresillo">Tresillo</option>
+        <option value="semicorchea">Semicorchea</option>
+      </select>
+      <div id="beat-meter" class="beat-meter"></div>
     </div>
 
     <div class="section-label">Progresión</div>

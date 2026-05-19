@@ -26,6 +26,18 @@
   const STEPS_PER_BAR = 16;
   const DEFAULT_TEMPO = 100;
 
+  // Subdivisiones del metrónomo (indicador de compás). interval es la
+  // notación de Tone para el Tone.Loop; count es cuántas entran por
+  // compás de 4/4.
+  const SUBDIVISIONS = {
+    redonda:     { interval: '1n', count: 1 },
+    blanca:      { interval: '2n', count: 2 },
+    negra:       { interval: '4n', count: 4 },
+    corchea:     { interval: '8n', count: 8 },
+    tresillo:    { interval: '8t', count: 12 },
+    semicorchea: { interval: '16n', count: 16 },
+  };
+
   // step (semicorcheas absolutas) → "compás:pulso:semicorchea" de Tone.
   function stepToBBS(step) {
     const bar = Math.floor(step / STEPS_PER_BAR);
@@ -75,16 +87,17 @@
     let mode = 'practica';
     let humanizeAmount = 0;        // 0..1 — intensidad de humanización
     let loopRangeIdx = null;       // [a,b] índices de acorde, o null (loop completo)
+    let subdivision = 'negra';     // subdivisión del indicador de compás
     let trackCounter = 0;
+    let tickCounter = -1;          // cuenta de subdivisiones del indicador
 
     // ─── Runtime (audio) ───
     const runtime = {};            // trackId → { instrument, gain, presetId }
     let notePart = null;
     let chordPart = null;
-    let tickLoop = null;           // Tone.Loop a 16n para el indicador de compás
+    let tickLoop = null;           // Tone.Loop por pulso para el indicador
     let playing = false;
     let activeChordIndex = -1;
-    let chordLayout = [];          // [{index,startStep,lengthSteps}] del último schedule
     let loopStartBBS = '0:0:0';    // posición de inicio del loop (tiempo musical)
 
     // ─── Listeners ───
@@ -232,33 +245,6 @@
       if (tickLoop) { try { tickLoop.dispose(); } catch (e) {} tickLoop = null; }
     }
 
-    // Posición del transporte (compás:pulso:semicorchea) → paso global.
-    function positionToStep() {
-      const parts = String(transport.position).split(':');
-      const bars = parseInt(parts[0], 10) || 0;
-      const beats = parseInt(parts[1], 10) || 0;
-      const six = Math.round(parseFloat(parts[2]) || 0);
-      return bars * STEPS_PER_BAR + beats * 4 + six;
-    }
-
-    // El acorde que contiene un paso global, y el compás dentro de él.
-    function locateStep(step) {
-      for (let i = 0; i < chordLayout.length; i++) {
-        const c = chordLayout[i];
-        if (step >= c.startStep && step < c.startStep + c.lengthSteps) {
-          return {
-            step: step,
-            stepInBar: step % STEPS_PER_BAR,
-            beatInBar: Math.floor((step % STEPS_PER_BAR) / 4),
-            chordIndex: c.index,
-            barInChord: Math.floor((step - c.startStep) / STEPS_PER_BAR),
-            barsInChord: c.lengthSteps / STEPS_PER_BAR,
-          };
-        }
-      }
-      return null;
-    }
-
     // silenceAll — corta las notas que estén sonando en todos los
     // instrumentos. Evita que notas largas (pad, bajo sostenido) sigan
     // sonando tras un Stop o se apilen al reconstruir el scheduling.
@@ -335,16 +321,16 @@
       }, chordEvents);
       chordPart.start(0);
 
-      // Layout de acordes para el indicador de compás.
-      chordLayout = result.chords;
-
-      // Loop a 16n: cada semicorchea emite un 'tick' con la posición
-      // (compás dentro del acorde, subdivisión) para el indicador.
+      // Loop del indicador de compás, a la subdivisión elegida. Usa un
+      // contador (no lee la posición) → no se saltea pulsos.
+      const sub = SUBDIVISIONS[subdivision] || SUBDIVISIONS.negra;
       tickLoop = new T.Loop(function (time) {
+        tickCounter++;
+        const idx = ((tickCounter % sub.count) + sub.count) % sub.count;
         T.getDraw().schedule(function () {
-          emit('tick', locateStep(positionToStep()));
+          emit('tick', { index: idx, count: sub.count });
         }, time);
-      }, '16n');
+      }, sub.interval);
       tickLoop.start(0);
 
       // Ventana de loop: rango de acordes [a,b] o el loop completo.
@@ -513,6 +499,15 @@
       return loopRangeIdx ? loopRangeIdx.slice() : null;
     }
 
+    // setSubdivision — subdivisión del indicador de compás
+    // ('redonda' | 'blanca' | 'negra' | 'corchea' | 'tresillo' | 'semicorchea').
+    function setSubdivision(id) {
+      if (SUBDIVISIONS[id]) subdivision = id;
+      refreshIfPlaying();
+      emit('state');
+    }
+    function getSubdivision() { return subdivision; }
+
     function setMode(m) {
       mode = (m === 'arreglo') ? 'arreglo' : 'practica';
       emit('state');
@@ -527,6 +522,7 @@
       rebuildSchedule();
       applyTransport();
       transport.position = loopStartBBS;   // arranca al inicio del loop
+      tickCounter = -1;                    // el indicador arranca en el pulso 1
       transport.start();
       playing = true;
       emit('transport', 'play');
@@ -557,6 +553,7 @@
         mode: mode,
         humanize: humanizeAmount,
         loopRange: getLoopRange(),
+        subdivision: subdivision,
         tracks: getTracks(),
       };
     }
@@ -572,6 +569,7 @@
       mode = state.mode === 'arreglo' ? 'arreglo' : 'practica';
       humanizeAmount = Number.isFinite(state.humanize) ? state.humanize : 0;
       loopRangeIdx = Array.isArray(state.loopRange) ? state.loopRange.slice() : null;
+      subdivision = SUBDIVISIONS[state.subdivision] ? state.subdivision : 'negra';
       Object.keys(runtime).forEach(disposeRuntime);
       tracks = Array.isArray(state.tracks)
         ? state.tracks.map(t => Object.assign({}, t)) : [];
@@ -603,6 +601,7 @@
       setMasterVolume, getMasterVolume,
       setLoop, getLoop,
       setLoopRange, getLoopRange,
+      setSubdivision, getSubdivision,
       setMode, getMode,
       play, stop, isPlaying, getActiveChordIndex,
       snapshot, restore, dispose,
