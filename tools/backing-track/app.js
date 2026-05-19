@@ -475,7 +475,10 @@
 
     const ptipo = PATTERN_TIPO[track.tipo];
     if (ptipo) {
-      const pats = BT.factoryPatterns.byTipo(ptipo);
+      // Patrones ordenados de figura más lenta a más rápida (por
+      // cantidad de golpes: menos golpes = figura más larga).
+      const pats = BT.factoryPatterns.byTipo(ptipo)
+        .slice().sort((a, b) => a.hits.length - b.hits.length);
       const patSel = makeSelect('track-pattern', pats, track.patternId);
       patSel.addEventListener('change',
         () => engine.updateTrack(track.id, { patternId: patSel.value }));

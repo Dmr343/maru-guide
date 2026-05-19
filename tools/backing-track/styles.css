@@ -542,11 +542,11 @@ body.playing .beat-dot.sub    { width: 16px; height: 16px; }
 .track-btn.danger { color: var(--danger); }
 .track-btn.danger:hover { color: var(--danger); border-color: var(--danger); }
 
-/* Variante compacta de "mixer en vivo": mientras suena se ocultan los
-   controles de edición estructural; quedan mute, nombre, patrón, volumen. */
+/* Variante compacta de "mixer en vivo": mientras suena se ocultan el
+   asa de arrastre y los botones de editar/quitar; quedan mute, nombre,
+   preset, patrón y volumen — lo que se ajusta tocando. */
 body.playing .track-drag,
-body.playing .track .track-btn,
-body.playing .track-preset { display: none; }
+body.playing .track .track-btn { display: none; }
 
 .add-track { display: flex; gap: 8px; flex-wrap: wrap; }
 .add-track select {

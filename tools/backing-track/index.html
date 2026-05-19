@@ -64,11 +64,24 @@
 
       <div id="chord-strip" class="chord-strip"></div>
 
-      <!-- Mixer en vivo: las pistas quedan accesibles aunque la
-           configuración esté colapsada. -->
+      <!-- Mixer en vivo: las pistas, el alta de instrumentos y el
+           editor de sonido quedan accesibles aunque la configuración
+           esté colapsada. -->
       <div class="mixer">
         <div class="section-label">Pistas</div>
         <div id="tracks"></div>
+        <div class="add-track">
+          <select id="add-tipo">
+            <option value="bajo">Bajo</option>
+            <option value="acordes">Acordes</option>
+            <option value="bateria">Batería</option>
+            <option value="percusion">Percusión</option>
+            <option value="pad">Pad</option>
+            <option value="lead">Lead</option>
+          </select>
+          <button id="btn-add" class="btn btn-secondary">+ Agregar instrumento</button>
+        </div>
+        <div id="preset-editor" class="preset-editor" hidden></div>
       </div>
 
       <div id="diag-voices" class="diag" hidden>Voces activas: —</div>
@@ -81,7 +94,7 @@
               aria-expanded="true">
         <span class="config-title">
           <span class="config-title-main">Configuración</span>
-          <span class="config-title-sub">progresión · instrumentos · proyecto</span>
+          <span class="config-title-sub">progresión · arreglo · proyecto</span>
         </span>
         <span class="chevron" id="config-chevron">▾</span>
       </button>
@@ -107,22 +120,6 @@
                     title="Limpiar progresión">Limpiar</button>
           </div>
           <div id="chord-editor" class="chord-editor" hidden></div>
-        </div>
-
-        <div class="cfg-section">
-          <div class="section-label">Instrumentos</div>
-          <div class="add-track">
-            <select id="add-tipo">
-              <option value="bajo">Bajo</option>
-              <option value="acordes">Acordes</option>
-              <option value="bateria">Batería</option>
-              <option value="percusion">Percusión</option>
-              <option value="pad">Pad</option>
-              <option value="lead">Lead</option>
-            </select>
-            <button id="btn-add" class="btn btn-secondary">+ Agregar instrumento</button>
-          </div>
-          <div id="preset-editor" class="preset-editor" hidden></div>
         </div>
 
         <div id="arrange-panel" class="arrange-panel" hidden></div>
