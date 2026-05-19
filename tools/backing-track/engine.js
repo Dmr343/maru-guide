@@ -348,6 +348,19 @@
       transport.loop = loopEnabled;
       transport.loopStart = loopStartBBS;
       transport.loopEnd = stepToBBS(endStep);
+
+      // Si esto fue una reprogramación en vivo (una edición mientras
+      // sonaba), saltamos al inicio del acorde en curso: así el cambio
+      // entra siempre desde el compás 1 y no a mitad de acorde.
+      if (playing) {
+        let restart = startStep;
+        if (activeChordIndex >= 0 && activeChordIndex < result.chords.length) {
+          const cs = result.chords[activeChordIndex].startStep;
+          if (cs >= startStep && cs < endStep) restart = cs;
+        }
+        transport.position = stepToBBS(restart);
+        tickCounter = -1;            // el indicador reinicia en el pulso 1
+      }
       return totalBars;
     }
 
