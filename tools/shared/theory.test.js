@@ -75,6 +75,11 @@
       T.assertArrayEq(c.notes, ['E','G','B','D']);
       T.assertArrayEq(c.intervals, ['1','b3','5','b7']);
     });
+    T.it('B m7b5 — notas (semidisminuido)', () => {
+      const c = buildChord('B', 'm7b5');
+      T.assertArrayEq(c.notes, ['B','D','F','A']);
+      T.assertArrayEq(c.intervals, ['1','b3','b5','b7']);
+    });
     T.it('root / quality preservados', () => {
       const c = buildChord('A', 'minor');
       T.assertEq(c.root, 'A');

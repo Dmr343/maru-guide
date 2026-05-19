@@ -49,6 +49,7 @@
     dom7:  [0, 4, 7, 10],
     maj7:  [0, 4, 7, 11],
     min7:  [0, 3, 7, 10],
+    m7b5:  [0, 3, 6, 10],
   };
 
   const CHORD_INTERVALS = {
@@ -57,6 +58,7 @@
     dom7:  ['1', '3', '5', 'b7'],
     maj7:  ['1', '3', '5', '7'],
     min7:  ['1', 'b3', '5', 'b7'],
+    m7b5:  ['1', 'b3', 'b5', 'b7'],
   };
 
   function buildChord(root, quality) {
@@ -119,10 +121,12 @@
 
   const QUALITY_LABELS = {
     major: 'Mayor', minor: 'Menor', dom7: '7', maj7: 'maj7', min7: 'm7',
+    m7b5: 'm7b5',
   };
 
   const QUALITY_SUFFIX = {
     major: '', minor: 'm', dom7: '7', maj7: 'maj7', min7: 'm7',
+    m7b5: 'm7b5',
   };
 
   function chordName(root, quality) {
@@ -144,6 +148,7 @@
     dom7:  'mixolydian',
     maj7:  'major',
     min7:  'minor',
+    m7b5:  'minor',
   };
 
   // Picks the scale to overlay over a chord. When opts.scaleAuto is true

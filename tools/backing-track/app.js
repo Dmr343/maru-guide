@@ -64,6 +64,7 @@
     { v: 'dom7',  label: 'Dominante 7' },
     { v: 'maj7',  label: 'Mayor 7' },
     { v: 'min7',  label: 'menor 7' },
+    { v: 'm7b5',  label: 'Semidisminuido (m7♭5)' },
   ];
   const ROOTS = (theory && theory.CHROMATIC) ||
     ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
