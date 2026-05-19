@@ -12,7 +12,6 @@
       --gold:#d4a847;--radius:10px;--font:'Trebuchet MS','Segoe UI',sans-serif;
     }
     *{box-sizing:border-box;margin:0;padding:0;}
-    html{zoom:1.4;}
     body{background:var(--bg);color:var(--text);font-family:var(--font);padding:16px 12px 40px;min-height:100vh;}
     .back{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--text-dim);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;transition:color .15s;}
     .back:hover{color:var(--accent);}
@@ -173,10 +172,10 @@
 </head>
 <body>
 
-<a href="index.html" class="back">← Hub</a>
+<a href="index.html" class="back">← Herramientas</a>
 
 <div class="header">
-  <div class="header-label">Guitarra con Maru · Fases 1 y 4</div>
+  <div class="header-label">Escalas</div>
   <h1>Escalas</h1>
 </div>
 
@@ -246,7 +245,7 @@
 <div class="editor-panel" id="editor-panel" style="display:none;"></div>
 <div class="calc-panel" id="calc-panel" style="display:none;"></div>
 
-<footer>Afinación estándar · E A D G B e · Trastes 0–12 · <a href="index.html">← Hub</a></footer>
+<footer>Afinación estándar · E A D G B e · Trastes 0–12 · <a href="index.html">← Herramientas</a></footer>
 
 <script src="./shared/metronome.js"></script>
 <script>
@@ -268,7 +267,6 @@ let SCALES = {
     desc: 'La escala mayor. El punto de partida de todo. 7 notas, patrón W-W-H-W-W-W-H. Usala para improvisar sobre backing tracks en Sol Mayor.',
     root: 'G', color: '#3498db',
     notes: ['G','A','B','C','D','E','F#'],
-    fase: 'Fase 0',
     positions: [[
       {si:5,fret:3,d:1},{si:5,fret:5,d:2},
       {si:4,fret:2,d:3},{si:4,fret:3,d:4},{si:4,fret:5,d:5},
@@ -284,7 +282,6 @@ let SCALES = {
     desc: 'La escala del rock, blues y todo lo que suena "intuitivo". Solo 5 notas, 2 por cuerda. Casi cualquier combinación sobre un backing track en Am suena bien.',
     root: 'A', color: '#e74c3c',
     notes: ['A','C','D','E','G'],
-    fase: 'Fase 1',
     positions: [
       [ // Pos 1
         {si:5,fret:5,d:1},{si:5,fret:8,d:4},
@@ -306,11 +303,10 @@ let SCALES = {
   },
   'penta_major_G_ladder': {
     name: 'Sol Mayor Pentatónica',
-    sub: 'Escalera diagonal · Maru',
-    desc: 'La escalera pentatónica de Maru. Tocás las mismas notas que la posición vertical pero en diagonal, usando slides. Conecta todo el mástil. Usá dedos 1 y 3.',
+    sub: 'Escalera diagonal',
+    desc: 'La escalera pentatónica diagonal. Tocás las mismas notas que la posición vertical pero en diagonal, usando slides. Conecta todo el mástil. Usá dedos 1 y 3.',
     root: 'G', color: '#2ecc71',
     notes: ['G','A','B','D','E'],
-    fase: 'Fase 1',
     positions: [[
       {si:5,fret:3,d:1,slide:true},{si:5,fret:5,d:2},
       {si:4,fret:5,d:3,slide:true},{si:4,fret:7,d:5},
@@ -326,7 +322,6 @@ let SCALES = {
     desc: 'La pentatónica menor en Sol. Usala para improvisar sobre backing tracks en Gm. Mismo patrón que Am, desplazado 2 trastes.',
     root: 'G', color: '#e67e22',
     notes: ['G','Bb','C','D','F'],
-    fase: 'Fase 1',
     positions: [[
       {si:5,fret:3,d:1},{si:5,fret:6,d:4},
       {si:4,fret:3,d:5},{si:4,fret:5,d:7},
