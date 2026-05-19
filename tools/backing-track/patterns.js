@@ -107,6 +107,23 @@
         lane('kick',  [0, 8, 10], 0.9),
         lane('snare', [4, 12], 0.8),
         lane('hat',   [0, 2, 4, 6, 8, 10, 12, 14], 0.55)) },
+
+    // ─── Figuras rítmicas (golpes parejos: elegí cómo suena el voicing) ───
+    // Acordes: redonda / blanca / negra / corchea / semicorchea.
+    { id: 'acordesRedonda', nombre: 'Redonda', tipo: 'chord',
+      steps: 16, lanes: ['main'], hits: mono([0], 0.65) },
+    { id: 'acordesCorcheas', nombre: 'Corcheas', tipo: 'chord',
+      steps: 16, lanes: ['main'], hits: mono([0,2,4,6,8,10,12,14], 0.6) },
+    { id: 'acordesSemicorcheas', nombre: 'Semicorcheas', tipo: 'chord',
+      steps: 16, lanes: ['main'],
+      hits: mono([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], 0.5) },
+    // Bajo: corchea y semicorchea (redonda/blanca/negra ya existen como
+    // Raíz / Octavas / Negras).
+    { id: 'bajoCorcheas', nombre: 'Corcheas', tipo: 'bass',
+      steps: 16, lanes: ['main'], hits: mono([0,2,4,6,8,10,12,14], 0.8) },
+    { id: 'bajoSemicorcheas', nombre: 'Semicorcheas', tipo: 'bass',
+      steps: 16, lanes: ['main'],
+      hits: mono([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], 0.72) },
   ];
 
   function byId(id) {
