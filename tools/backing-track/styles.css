@@ -135,6 +135,16 @@ body {
 .status.playing { color: var(--accent); }
 .status.error   { color: #e74c3c; }
 
+/* Diagnóstico: contador de voces activas */
+.diag {
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  margin-top: 4px;
+  min-height: 1.2em;
+}
+
 /* ─── Filas de control (slider + valor) ─── */
 .control-row {
   display: flex;

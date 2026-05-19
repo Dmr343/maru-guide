@@ -47,6 +47,7 @@
   const arrangePanel = el('arrange-panel');
   const subdivSelect = el('subdiv-select');
   const beatMeter = el('beat-meter');
+  const diagVoices = el('diag-voices');
 
   const TIPO_LABEL = {
     bajo: 'Bajo', acordes: 'Acordes', bateria: 'Batería',
@@ -1070,6 +1071,16 @@
 
   engine.onChordChange(highlightChord);
   engine.onTick(updateBarIndicator);
+  // Diagnóstico: muestra cuántas voces suenan y el máximo de la
+  // sesión. Si el máximo trepa sin parar loop tras loop, hay
+  // acumulación; si se estabiliza, está sano.
+  let voiceMax = 0;
+  engine.onTick(function (tick) {
+    if (!tick) { diagVoices.textContent = 'Voces activas: —'; voiceMax = 0; return; }
+    const n = engine.getActiveVoices();
+    if (n > voiceMax) voiceMax = n;
+    diagVoices.textContent = 'Voces activas: ' + n + ' · máx ' + voiceMax;
+  });
   // Autoguardado de la sesión: debounced, para no escribir en
   // localStorage en cada tick de un slider (eso traba el audio).
   let saveTimer = null;

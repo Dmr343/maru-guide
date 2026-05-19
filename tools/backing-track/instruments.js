@@ -154,6 +154,10 @@
         instrument.triggerAttackRelease(payload, duration, time, velocity);
       },
       triggerHit: function () { /* no aplica a instrumentos melódicos */ },
+      voiceCount: function () {
+        return (typeof instrument.activeVoices === 'number')
+          ? instrument.activeVoices : 0;
+      },
       // silence — corta las notas que estén sonando (release inmediato).
       // Evita que las notas largas (p. ej. del pad) sigan sonando tras
       // un Stop o se apilen al reconstruir el scheduling.
@@ -233,6 +237,7 @@
       output: outputGain,
       triggerNote: function () { /* no aplica a un kit de batería */ },
       setConfig: function () { /* la edición de kit no aplica en v1 */ },
+      voiceCount: function () { return 0; },   // golpes one-shot cortos
       silence: function () { /* los golpes de batería son one-shots cortos */ },
       triggerHit: function (lane, time, velocity) {
         const v = voices[lane];
@@ -308,6 +313,14 @@
       }
     }
 
+    // Descarta del registro las voces que ya terminaron.
+    function pruneVoices() {
+      const now = rawCtx.currentTime;
+      voices = voices.filter(function (env) {
+        return env && (env.when + env.duration + 0.1 > now);
+      });
+    }
+
     // Corta de forma definitiva todas las voces activas: detiene el
     // buffer source y baja la ganancia a cero. cancelQueue por sí solo
     // no garantiza que las notas dejen de sonar.
@@ -338,11 +351,7 @@
         let durSec = Number(duration);          // ya viene en segundos
         if (!(durSec > 0)) durSec = 0.5;         // nunca duración inválida
         const vol = Number.isFinite(velocity) ? velocity : 0.8;
-        // Descartar del registro las voces que ya terminaron.
-        const now = rawCtx.currentTime;
-        voices = voices.filter(function (env) {
-          return env && (env.when + env.duration + 0.1 > now);
-        });
+        pruneVoices();
         notes.forEach(function (n) {
           const env = player.queueWaveTable(rawCtx, inputBus.input,
             presetData, time, noteToMidi(n), durSec, vol);
@@ -351,6 +360,7 @@
       },
       triggerHit: function () { /* no aplica */ },
       setConfig: function () { /* WAF no se edita con sliders en v1 */ },
+      voiceCount: function () { pruneVoices(); return voices.length; },
       silence: function () {
         try { player.cancelQueue(rawCtx); } catch (e) {}
         stopAllVoices();
