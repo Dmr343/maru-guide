@@ -185,6 +185,16 @@
         return new T.MembraneSynth(spec.options || {});
       case 'metal':
         return new T.MetalSynth(spec.options || {});
+      case 'sample':
+        // Pieza de kit basada en un sample real (Sampler con una nota).
+        return new T.Sampler({
+          urls: { C3: spec.file },
+          baseUrl: spec.baseUrl || '',
+          onerror: function (err) {
+            console.warn('[backing-track] sample de batería no cargó: ' +
+              (err && err.message ? err.message : err));
+          },
+        });
       case 'noise':
       default:
         return new T.NoiseSynth(Object.assign(
@@ -220,8 +230,9 @@
       triggerHit: function (lane, time, velocity) {
         const v = voices[lane];
         if (!v) return;   // lane sin pieza registrada: se ignora
-        if (v.spec.engine === 'membrane') {
-          v.voice.triggerAttackRelease(v.spec.note || 'C2', '16n', time, velocity);
+        if (v.spec.engine === 'membrane' || v.spec.engine === 'sample') {
+          // MembraneSynth y Sampler disparan con altura (nota fija).
+          v.voice.triggerAttackRelease(v.spec.note || 'C3', '16n', time, velocity);
         } else {
           // NoiseSynth / MetalSynth: sin altura.
           v.voice.triggerAttackRelease('16n', time, velocity);

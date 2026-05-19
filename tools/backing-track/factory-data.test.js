@@ -42,7 +42,7 @@
       presets.byTipo('bateria').concat(presets.byTipo('percusion')).forEach(p => {
         const pieces = p.config.pieces || {};
         Object.keys(pieces).forEach(lane => {
-          T.assert(['membrane', 'noise', 'metal'].indexOf(pieces[lane].engine) >= 0,
+          T.assert(['membrane', 'noise', 'metal', 'sample'].indexOf(pieces[lane].engine) >= 0,
             'engine inválido en ' + p.id + '/' + lane);
         });
       });

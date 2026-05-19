@@ -355,6 +355,113 @@
       },
       efectos: [{ tipo: 'reverb', cantidad: 0.35 }],
     },
+
+    // ─── Presets con samples reales (motor 'sampler', requieren
+    //     internet — se cargan por CDN libre, no se vendorizan) ───
+    {
+      id: 'pianoReal', nombre: 'Piano real', tipo: 'acordes', motor: 'sampler',
+      config: {
+        baseUrl: 'https://nbrosowsky.github.io/tonejs-instruments/samples/piano/',
+        urls: { 'C2': 'C2.mp3', 'C3': 'C3.mp3', 'C4': 'C4.mp3',
+                'A4': 'A4.mp3', 'C5': 'C5.mp3' },
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.2 }],
+    },
+    {
+      id: 'bajoElectricoReal', nombre: 'Bajo eléctrico real', tipo: 'bajo', motor: 'sampler',
+      config: {
+        baseUrl: 'https://nbrosowsky.github.io/tonejs-instruments/samples/bass-electric/',
+        urls: { 'E1': 'E1.mp3', 'G1': 'G1.mp3', 'C#2': 'Cs2.mp3',
+                'E2': 'E2.mp3', 'G2': 'G2.mp3', 'A#2': 'As2.mp3' },
+      },
+      efectos: [],
+    },
+    {
+      id: 'bansuriReal', nombre: 'Bansuri real (flauta)', tipo: 'lead', motor: 'sampler',
+      config: {
+        baseUrl: 'https://nbrosowsky.github.io/tonejs-instruments/samples/flute/',
+        urls: { 'C4': 'C4.mp3', 'E4': 'E4.mp3', 'A4': 'A4.mp3',
+                'C5': 'C5.mp3', 'A5': 'A5.mp3', 'C6': 'C6.mp3' },
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.4 }],
+    },
+    {
+      id: 'bateriaAcusticaReal', nombre: 'Batería acústica real', tipo: 'bateria', motor: 'sampler',
+      config: {
+        pieces: {
+          kick:   { engine: 'sample',
+                    baseUrl: 'https://tonejs.github.io/audio/drum-samples/acoustic-kit/',
+                    file: 'kick.mp3' },
+          snare:  { engine: 'sample',
+                    baseUrl: 'https://tonejs.github.io/audio/drum-samples/acoustic-kit/',
+                    file: 'snare.mp3' },
+          hat:    { engine: 'sample',
+                    baseUrl: 'https://tonejs.github.io/audio/drum-samples/acoustic-kit/',
+                    file: 'hihat.mp3' },
+          cymbal: { engine: 'metal',
+                    options: { envelope: { attack: 0.001, decay: 0.8, release: 0.3 } } },
+        },
+      },
+      efectos: [],
+    },
+    {
+      id: 'bateriaTechnoReal', nombre: 'Batería techno real', tipo: 'bateria', motor: 'sampler',
+      config: {
+        pieces: {
+          kick:   { engine: 'sample',
+                    baseUrl: 'https://tonejs.github.io/audio/drum-samples/Techno/',
+                    file: 'kick.mp3' },
+          snare:  { engine: 'sample',
+                    baseUrl: 'https://tonejs.github.io/audio/drum-samples/Techno/',
+                    file: 'snare.mp3' },
+          hat:    { engine: 'sample',
+                    baseUrl: 'https://tonejs.github.io/audio/drum-samples/Techno/',
+                    file: 'hihat.mp3' },
+          cymbal: { engine: 'metal',
+                    options: { envelope: { attack: 0.001, decay: 0.4, release: 0.2 } } },
+        },
+      },
+      efectos: [],
+    },
+    {
+      id: 'bateriaCR78Real', nombre: 'Batería CR-78 real (vintage)', tipo: 'bateria', motor: 'sampler',
+      config: {
+        pieces: {
+          kick:   { engine: 'sample',
+                    baseUrl: 'https://tonejs.github.io/audio/drum-samples/CR78/',
+                    file: 'kick.mp3' },
+          snare:  { engine: 'sample',
+                    baseUrl: 'https://tonejs.github.io/audio/drum-samples/CR78/',
+                    file: 'snare.mp3' },
+          hat:    { engine: 'sample',
+                    baseUrl: 'https://tonejs.github.io/audio/drum-samples/CR78/',
+                    file: 'hihat.mp3' },
+          cymbal: { engine: 'metal',
+                    options: { envelope: { attack: 0.001, decay: 0.5, release: 0.2 } } },
+        },
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.12 }],
+    },
+    {
+      id: 'percBongosReal', nombre: 'Percusión bongós real', tipo: 'percusion', motor: 'sampler',
+      config: {
+        pieces: {
+          bongo_hi: { engine: 'sample',
+                      baseUrl: 'https://tonejs.github.io/audio/drum-samples/Bongos/',
+                      file: 'tom1.mp3' },
+          bongo_lo: { engine: 'sample',
+                      baseUrl: 'https://tonejs.github.io/audio/drum-samples/Bongos/',
+                      file: 'tom2.mp3' },
+          conga:    { engine: 'sample',
+                      baseUrl: 'https://tonejs.github.io/audio/drum-samples/Bongos/',
+                      file: 'tom3.mp3' },
+          shaker:   { engine: 'sample',
+                      baseUrl: 'https://tonejs.github.io/audio/drum-samples/Bongos/',
+                      file: 'hihat.mp3' },
+        },
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.15 }],
+    },
   ];
 
   function byId(id) {
