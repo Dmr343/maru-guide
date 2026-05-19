@@ -10,102 +10,141 @@
 
   <a href="../index.html" class="back-link">← Herramientas</a>
 
-  <div class="header">
+  <header class="header">
     <div class="header-label">Práctica de improvisación</div>
     <h1>Backing Track</h1>
-    <p>Acompañamiento en loop para improvisar sobre los cambios de acorde.</p>
-  </div>
+  </header>
 
-  <div class="panel">
-    <div class="transport">
-      <button id="btn-play" class="btn">▶ Play</button>
-      <button id="btn-stop" class="btn secondary" disabled>■ Stop</button>
-    </div>
+  <div class="app">
 
-    <div class="mode-toggle">
-      <button id="mode-practica" class="mode-btn active">Práctica</button>
-      <button id="mode-arreglo" class="mode-btn">Arreglo</button>
-    </div>
+    <!-- ═══════════ ZONA DE TOQUE ═══════════ -->
+    <section class="play-zone">
 
-    <div class="control-row">
-      <label for="ctl-tempo">Tempo</label>
-      <input type="range" id="ctl-tempo" min="40" max="240" step="1">
-      <span class="value" id="val-tempo">100 BPM</span>
-    </div>
-    <div class="control-row">
-      <label for="ctl-volume">Volumen</label>
-      <input type="range" id="ctl-volume" min="0" max="100" step="1">
-      <span class="value" id="val-volume">85%</span>
-    </div>
-    <div class="control-row">
-      <label for="ctl-loop">Loop</label>
-      <input type="checkbox" id="ctl-loop" checked>
-      <span style="flex:1"></span>
-    </div>
+      <div class="transport">
+        <button id="btn-play" class="btn btn-primary btn-play">▶&nbsp; Play</button>
+        <div class="transport-ctls">
+          <div class="ctl">
+            <label for="ctl-tempo">Tempo</label>
+            <input type="range" id="ctl-tempo" min="40" max="240" step="1">
+            <span class="value" id="val-tempo">100 BPM</span>
+          </div>
+          <div class="ctl">
+            <label for="ctl-volume">Volumen</label>
+            <input type="range" id="ctl-volume" min="0" max="100" step="1">
+            <span class="value" id="val-volume">85%</span>
+          </div>
+          <label class="ctl-loop">
+            <input type="checkbox" id="ctl-loop" checked>
+            <span>Loop</span>
+          </label>
+        </div>
+      </div>
 
-    <div id="status" class="status">Detenido</div>
-    <div id="diag-voices" class="diag">Voces activas: —</div>
+      <div class="now-playing">
+        <div class="chord-now">
+          <span class="chord-cap">Acorde</span>
+          <span id="now-chord" class="chord-now-name">—</span>
+        </div>
+        <div class="chord-next">
+          <span class="chord-cap">Sigue</span>
+          <span id="next-chord" class="chord-next-name">—</span>
+        </div>
+        <div class="metro">
+          <select id="subdiv-select" class="subdiv-select" title="Subdivisión del metrónomo">
+            <option value="redonda">Redonda</option>
+            <option value="blanca">Blanca</option>
+            <option value="negra" selected>Negra</option>
+            <option value="corchea">Corchea</option>
+            <option value="tresillo">Tresillo</option>
+            <option value="semicorchea">Semicorchea</option>
+          </select>
+          <div id="beat-meter" class="beat-meter"></div>
+        </div>
+      </div>
 
-    <div class="section-label">Compás</div>
-    <div class="bar-indicator">
-      <select id="subdiv-select" class="subdiv-select" title="Subdivisión del metrónomo">
-        <option value="redonda">Redonda</option>
-        <option value="blanca">Blanca</option>
-        <option value="negra" selected>Negra</option>
-        <option value="corchea">Corchea</option>
-        <option value="tresillo">Tresillo</option>
-        <option value="semicorchea">Semicorchea</option>
-      </select>
-      <div id="beat-meter" class="beat-meter"></div>
-    </div>
+      <div id="chord-strip" class="chord-strip"></div>
 
-    <div class="section-label">Progresión</div>
-    <div class="control-row">
-      <label for="prog-select">De fábrica</label>
-      <select id="prog-select" style="flex:1"></select>
-    </div>
-    <div id="chord-strip" class="chord-strip"></div>
-    <div class="builder">
-      <select id="new-root"></select>
-      <select id="new-quality"></select>
-      <button id="btn-add-chord" class="btn secondary">+ Acorde</button>
-      <button id="btn-clear-prog" class="btn secondary" title="Limpiar progresión">Limpiar</button>
-    </div>
-    <div id="chord-editor" class="chord-editor" hidden></div>
+      <div class="play-status">
+        <span id="status" class="status">Detenido</span>
+        <span id="diag-voices" class="diag">Voces activas: —</span>
+      </div>
 
-    <div class="section-label">Pistas</div>
-    <div id="tracks"></div>
-    <div class="add-track">
-      <select id="add-tipo">
-        <option value="bajo">Bajo</option>
-        <option value="acordes">Acordes</option>
-        <option value="bateria">Batería</option>
-        <option value="percusion">Percusión</option>
-        <option value="pad">Pad</option>
-        <option value="lead">Lead</option>
-      </select>
-      <button id="btn-add" class="btn secondary">+ Agregar instrumento</button>
-    </div>
+    </section>
 
-    <div id="preset-editor" class="preset-editor" hidden></div>
+    <!-- ═══════════ CONFIGURACIÓN (colapsable) ═══════════ -->
+    <section class="config" id="config">
+      <button type="button" class="config-header" id="config-toggle"
+              aria-expanded="true">
+        <span>Configuración</span>
+        <span class="chevron" id="config-chevron">▾</span>
+      </button>
 
-    <div id="arrange-panel" class="arrange-panel" hidden></div>
+      <div class="config-body" id="config-body">
 
-    <div class="section-label">Proyecto</div>
-    <div class="control-row">
-      <input type="text" id="proj-name" placeholder="Nombre del proyecto">
-      <button id="btn-save-proj" class="btn secondary">Guardar</button>
-    </div>
-    <div class="control-row">
-      <select id="proj-select" style="flex:1"></select>
-      <button id="btn-load-proj" class="btn secondary">Cargar</button>
-      <button id="btn-del-proj" class="btn secondary">Borrar</button>
-    </div>
-    <div class="control-row">
-      <button id="btn-export" class="btn secondary">Exportar JSON</button>
-      <button id="btn-import" class="btn secondary">Importar JSON</button>
-      <input type="file" id="import-file" accept="application/json" hidden>
-    </div>
+        <div class="mode-toggle">
+          <button id="mode-practica" class="mode-btn active">Práctica</button>
+          <button id="mode-arreglo" class="mode-btn">Arreglo</button>
+        </div>
+
+        <div class="cfg-section">
+          <div class="section-label">Progresión</div>
+          <div class="control-row">
+            <label for="prog-select">De fábrica</label>
+            <select id="prog-select"></select>
+          </div>
+          <div class="builder">
+            <select id="new-root"></select>
+            <select id="new-quality"></select>
+            <button id="btn-add-chord" class="btn btn-secondary">+ Acorde</button>
+            <button id="btn-clear-prog" class="btn btn-danger"
+                    title="Limpiar progresión">Limpiar</button>
+          </div>
+          <div id="chord-editor" class="chord-editor" hidden></div>
+        </div>
+
+        <div class="cfg-section">
+          <div class="section-label">Pistas</div>
+          <div id="tracks"></div>
+          <div class="add-track">
+            <select id="add-tipo">
+              <option value="bajo">Bajo</option>
+              <option value="acordes">Acordes</option>
+              <option value="bateria">Batería</option>
+              <option value="percusion">Percusión</option>
+              <option value="pad">Pad</option>
+              <option value="lead">Lead</option>
+            </select>
+            <button id="btn-add" class="btn btn-secondary">+ Agregar instrumento</button>
+          </div>
+          <div id="preset-editor" class="preset-editor" hidden></div>
+        </div>
+
+        <div id="arrange-panel" class="arrange-panel" hidden></div>
+
+        <div class="cfg-section">
+          <div class="section-label">Proyecto</div>
+          <div class="control-row">
+            <input type="text" id="proj-name" placeholder="Nombre del proyecto">
+            <button id="btn-save-proj" class="btn btn-primary">Guardar</button>
+          </div>
+          <div class="control-row">
+            <select id="proj-select"></select>
+            <button id="btn-load-proj" class="btn btn-secondary">Cargar</button>
+            <button id="btn-del-proj" class="btn btn-danger icon-btn"
+                    title="Borrar proyecto seleccionado">🗑</button>
+          </div>
+          <div class="control-row project-io">
+            <button id="btn-export" class="btn btn-secondary icon-btn"
+                    title="Exportar respaldo JSON">⭳ JSON</button>
+            <button id="btn-import" class="btn btn-secondary icon-btn"
+                    title="Importar respaldo JSON">⭱ JSON</button>
+            <input type="file" id="import-file" accept="application/json" hidden>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
   </div>
 
   <!-- Tone.js vendorizado (file:// safe, sin internet). Ver vendor/README.md -->

@@ -16,7 +16,6 @@
 
   const el = id => document.getElementById(id);
   const btnPlay = el('btn-play');
-  const btnStop = el('btn-stop');
   const ctlTempo = el('ctl-tempo');
   const valTempo = el('val-tempo');
   const ctlVolume = el('ctl-volume');
@@ -48,6 +47,10 @@
   const subdivSelect = el('subdiv-select');
   const beatMeter = el('beat-meter');
   const diagVoices = el('diag-voices');
+  const nowChord = el('now-chord');
+  const nextChord = el('next-chord');
+  const configEl = el('config');
+  const configToggle = el('config-toggle');
 
   const TIPO_LABEL = {
     bajo: 'Bajo', acordes: 'Acordes', bateria: 'Batería',
@@ -102,6 +105,7 @@
       engine.setLoopRange(lr ? lr[0] : null, lr ? lr[1] : null);
       renderChords();
       renderEditor();
+      renderHeroChords(engine.getActiveChordIndex());
     },
   });
 
@@ -212,6 +216,8 @@
     else model.setLoopRange(null);
   }
 
+  let dragChordSrc = null;   // índice del acorde que se está arrastrando
+
   function renderChords() {
     const prog = model.progression;
     const lr = model.loopRange;
@@ -224,6 +230,7 @@
         (i === model.activeIdx ? ' selected' : '') +
         (lr && i >= lo && i <= hi ? ' in-loop' : '');
       chip.dataset.idx = String(i);
+      chip.draggable = true;
       const name = document.createElement('span');
       name.textContent = chordLabel(c);
       const bars = document.createElement('span');
@@ -231,18 +238,58 @@
       bars.textContent = '●'.repeat(c.bars);
       chip.appendChild(name);
       chip.appendChild(bars);
-      chip.title = 'Clic: seleccionar · Shift+clic: marcar loop';
+      chip.title = 'Clic: seleccionar · Shift+clic: marcar loop · arrastrar: reordenar';
       chip.addEventListener('click', (e) => {
         if (e.shiftKey) handleLoopClick(i);
         else model.setActiveChord(i);
       });
+      // Reordenar por arrastre → model.moveChord(origen, destino).
+      chip.addEventListener('dragstart', (e) => {
+        dragChordSrc = i;
+        chip.classList.add('dragging');
+        if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+      });
+      chip.addEventListener('dragend', () => {
+        chip.classList.remove('dragging');
+        Array.prototype.forEach.call(chordStrip.children,
+          ch => ch.classList.remove('drag-over'));
+        dragChordSrc = null;
+      });
+      chip.addEventListener('dragover', (e) => {
+        if (dragChordSrc === null) return;
+        e.preventDefault();
+        chip.classList.add('drag-over');
+      });
+      chip.addEventListener('dragleave', () => chip.classList.remove('drag-over'));
+      chip.addEventListener('drop', (e) => {
+        e.preventDefault();
+        chip.classList.remove('drag-over');
+        if (dragChordSrc !== null && dragChordSrc !== i) {
+          model.moveChord(dragChordSrc, i);
+        }
+      });
       chordStrip.appendChild(chip);
     });
   }
+  // Indicador del acorde sonando (callback de engine.onChordChange) +
+  // actualización del acorde actual/siguiente del panel de toque.
   function highlightChord(idx) {
     Array.prototype.forEach.call(chordStrip.children, chip => {
       chip.classList.toggle('active', Number(chip.dataset.idx) === idx);
     });
+    renderHeroChords(idx);
+  }
+  // Acorde grande "actual" + "siguiente" del panel de toque.
+  function renderHeroChords(idx) {
+    const prog = model.progression;
+    if (!prog.length) {
+      nowChord.textContent = '—';
+      nextChord.textContent = '—';
+      return;
+    }
+    const cur = (idx != null && idx >= 0) ? idx : (model.activeIdx || 0);
+    nowChord.textContent = chordLabel(prog[cur % prog.length]);
+    nextChord.textContent = chordLabel(prog[(cur + 1) % prog.length]);
   }
 
   // ─── Indicador de compás (metrónomo) ───
@@ -326,13 +373,10 @@
     stepper.appendChild(mkBtn('track-btn', '+', () => model.changeActiveBars(1)));
     chordEditor.appendChild(stepper);
 
-    chordEditor.appendChild(mkBtn('track-btn', '◀', () => {
-      if (idx > 0) model.moveChord(idx, idx - 1);
-    }));
-    chordEditor.appendChild(mkBtn('track-btn', '▶', () => {
-      if (idx < model.progression.length - 1) model.moveChord(idx, idx + 1);
-    }));
-    chordEditor.appendChild(mkBtn('track-btn', '✕', () => model.removeChordAt(idx)));
+    // El reordenamiento de acordes se hace arrastrando los chips.
+    const rm = mkBtn('track-btn danger', '✕', () => model.removeChordAt(idx));
+    rm.title = 'Quitar acorde';
+    chordEditor.appendChild(rm);
   }
 
   // ─── Gestión de pistas ───
@@ -349,10 +393,58 @@
     return sel;
   }
 
+  let dragTrackSrc = null;   // id de la pista que se está arrastrando
+
+  // Mueve una pista al índice destino usando engine.moveTrack (±1) en
+  // bucle — así el reordenamiento por arrastre no requiere tocar engine.js.
+  function moveTrackTo(id, destIdx) {
+    const tracks = engine.getTracks();
+    const from = tracks.findIndex(t => t.id === id);
+    if (from < 0) return;
+    destIdx = Math.max(0, Math.min(destIdx, tracks.length - 1));
+    const dir = destIdx > from ? 1 : -1;
+    let steps = Math.abs(destIdx - from);
+    while (steps-- > 0) engine.moveTrack(id, dir);
+  }
+
   function makeTrackRow(track) {
     const row = document.createElement('div');
     row.className = 'track ' + (track.enabled ? 'enabled' : 'disabled');
     row.dataset.id = track.id;
+
+    // Asa de arrastre para reordenar. draggable se activa solo al tomar
+    // el asa, para no interferir con los sliders/selects de la fila.
+    const handle = document.createElement('span');
+    handle.className = 'track-drag';
+    handle.textContent = '⠿';
+    handle.title = 'Arrastrar para reordenar';
+    handle.addEventListener('mousedown', () => { row.draggable = true; });
+    row.addEventListener('dragstart', (e) => {
+      dragTrackSrc = track.id;
+      row.classList.add('dragging');
+      if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+    });
+    row.addEventListener('dragend', () => {
+      row.draggable = false;
+      row.classList.remove('dragging');
+      Array.prototype.forEach.call(tracksEl.children,
+        r => r.classList.remove('drag-over'));
+      dragTrackSrc = null;
+    });
+    row.addEventListener('dragover', (e) => {
+      if (dragTrackSrc === null) return;
+      e.preventDefault();
+      row.classList.add('drag-over');
+    });
+    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+    row.addEventListener('drop', (e) => {
+      e.preventDefault();
+      row.classList.remove('drag-over');
+      if (dragTrackSrc === null || dragTrackSrc === track.id) return;
+      const dest = engine.getTracks().findIndex(t => t.id === track.id);
+      if (dest >= 0) { moveTrackTo(dragTrackSrc, dest); refreshTracks(); }
+    });
+    row.appendChild(handle);
 
     const mute = document.createElement('button');
     mute.className = 'track-mute';
@@ -413,21 +505,15 @@
       row.appendChild(gear);
     }
 
-    const up = mkBtn('track-btn', '▲', () => { engine.moveTrack(track.id, -1); refreshTracks(); });
-    up.title = 'Subir';
-    row.appendChild(up);
-    const down = mkBtn('track-btn', '▼', () => { engine.moveTrack(track.id, 1); refreshTracks(); });
-    down.title = 'Bajar';
-    row.appendChild(down);
-    const rm = mkBtn('track-btn', '✕', () => {
+    const rm = mkBtn('track-btn danger', '✕', () => {
       engine.removeTrack(track.id);
       if (editing && editing.trackId === track.id) closeEditor();
       refreshTracks();
     });
-    rm.title = 'Quitar';
+    rm.title = 'Quitar pista';
     row.appendChild(rm);
 
-    return { row, up, down };
+    return row;
   }
 
   function renderTracks() {
@@ -440,12 +526,7 @@
       tracksEl.appendChild(hint);
       return;
     }
-    tracks.forEach((track, i) => {
-      const { row, up, down } = makeTrackRow(track);
-      up.disabled = (i === 0);
-      down.disabled = (i === tracks.length - 1);
-      tracksEl.appendChild(row);
-    });
+    tracks.forEach(track => tracksEl.appendChild(makeTrackRow(track)));
   }
 
   // ─── Panel de edición de presets (niveles 2 y 3) ───
@@ -639,7 +720,7 @@
     const actions = document.createElement('div');
     actions.className = 'pe-actions';
 
-    const scratch = mkBtn('btn secondary', 'Desde cero', () => {
+    const scratch = mkBtn('btn btn-secondary', 'Desde cero', () => {
       editing.preset = blankPreset(track.tipo);
       applyEditing();
       renderPresetEditor();
@@ -652,7 +733,7 @@
     nameInput.value = '';
     actions.appendChild(nameInput);
 
-    const save = mkBtn('btn', 'Guardar como nuevo', () => {
+    const save = mkBtn('btn btn-primary', 'Guardar como nuevo', () => {
       const nombre = nameInput.value.trim() || 'Mi sonido';
       const toSave = JSON.parse(JSON.stringify(editing.preset));
       toSave.nombre = nombre;
@@ -665,7 +746,7 @@
     });
     actions.appendChild(save);
 
-    actions.appendChild(mkBtn('btn secondary', 'Cerrar', closeEditor));
+    actions.appendChild(mkBtn('btn btn-secondary', 'Cerrar', closeEditor));
     presetEditorEl.appendChild(actions);
   }
 
@@ -935,23 +1016,31 @@
     ctlLoop.checked = engine.getLoop();
   }
 
-  // ─── Cableado de controles ───
+  // ─── Transporte: botón único Play / Detener ───
+  function setConfigCollapsed(collapsed) {
+    configEl.classList.toggle('collapsed', collapsed);
+    configToggle.setAttribute('aria-expanded', String(!collapsed));
+  }
+  // Refleja el estado de reproducción en la UI (lo dispara onTransport).
+  function setPlayUI(playing) {
+    btnPlay.textContent = playing ? '■  Detener' : '▶  Play';
+    btnPlay.classList.toggle('is-playing', playing);
+    setConfigCollapsed(playing);   // la configuración se pliega al tocar
+    if (playing) setStatus('Sonando — modo ' + engine.getMode(), 'playing');
+    else setStatus('Detenido');
+  }
+
   btnPlay.addEventListener('click', async function () {
+    if (engine.isPlaying()) { engine.stop(); return; }
     try {
       await engine.play();
-      btnPlay.disabled = true;
-      btnStop.disabled = false;
-      setStatus('Sonando — modo práctica', 'playing');
     } catch (err) {
       setStatus('Error al iniciar el audio: ' + err.message, 'error');
     }
   });
 
-  btnStop.addEventListener('click', function () {
-    engine.stop();
-    btnPlay.disabled = false;
-    btnStop.disabled = true;
-    setStatus('Detenido');
+  configToggle.addEventListener('click', function () {
+    setConfigCollapsed(!configEl.classList.contains('collapsed'));
   });
 
   ctlTempo.addEventListener('input', function () {
@@ -1092,11 +1181,8 @@
     }, 400);
   });
   engine.onTransport(function (ev) {
-    if (ev === 'stop') {
-      btnPlay.disabled = false;
-      btnStop.disabled = true;
-      setStatus('Detenido');
-    }
+    if (ev === 'play') setPlayUI(true);
+    else if (ev === 'stop') setPlayUI(false);
   });
   // Si cambia la librería del usuario, refrescar dropdowns y persistir.
   BT.userLibrary.onChange(function () {
@@ -1126,6 +1212,7 @@
   refreshProjects();
   renderChords();
   renderEditor();
+  renderHeroChords();
   refreshTracks();
   syncControls();
   subdivSelect.value = engine.getSubdivision();
