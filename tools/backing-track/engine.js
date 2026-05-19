@@ -262,8 +262,9 @@
       if (ev.type === 'hit') {
         rt.instrument.triggerHit(ev.lane, time, ev.velocity);
       } else {
-        rt.instrument.triggerNote(
-          ev.notes, ev.durationSteps + '*16n', time, ev.velocity);
+        // Duración en segundos (la calcula el scheduler) — sin texto
+        // musical: evita ambigüedad de parseo en synth y WebAudioFont.
+        rt.instrument.triggerNote(ev.notes, ev.duration, time, ev.velocity);
       }
     }
 

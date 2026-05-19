@@ -335,9 +335,8 @@
       output: outputGain,
       triggerNote: function (notes, duration, time, velocity) {
         if (!presetData || !notes || !notes.length) return;
-        let durSec = 0.5;
-        try { durSec = T.Time(duration).toSeconds(); } catch (e) {}
-        if (!(durSec > 0)) durSec = 0.5;   // nunca duración inválida
+        let durSec = Number(duration);          // ya viene en segundos
+        if (!(durSec > 0)) durSec = 0.5;         // nunca duración inválida
         const vol = Number.isFinite(velocity) ? velocity : 0.8;
         // Descartar del registro las voces que ya terminaron.
         const now = rawCtx.currentTime;
