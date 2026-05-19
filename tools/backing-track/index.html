@@ -8,11 +8,10 @@
 </head>
 <body>
 
-  <a href="../index.html" class="back-link">← Herramientas</a>
-
   <header class="header">
-    <div class="header-label">Práctica de improvisación</div>
+    <a href="../index.html" class="back-link">←</a>
     <h1>Backing Track</h1>
+    <span class="header-label">Práctica de improvisación</span>
   </header>
 
   <div class="app">
@@ -22,6 +21,7 @@
 
       <div class="transport">
         <button id="btn-play" class="btn btn-primary btn-play">▶&nbsp; Play</button>
+        <span id="status" class="status">Detenido</span>
         <div class="transport-ctls">
           <div class="ctl">
             <label for="ctl-tempo">Tempo</label>
@@ -50,6 +50,7 @@
           <span id="next-chord" class="chord-next-name">—</span>
         </div>
         <div class="metro">
+          <div id="beat-meter" class="beat-meter"></div>
           <select id="subdiv-select" class="subdiv-select" title="Subdivisión del metrónomo">
             <option value="redonda">Redonda</option>
             <option value="blanca">Blanca</option>
@@ -58,16 +59,19 @@
             <option value="tresillo">Tresillo</option>
             <option value="semicorchea">Semicorchea</option>
           </select>
-          <div id="beat-meter" class="beat-meter"></div>
         </div>
       </div>
 
       <div id="chord-strip" class="chord-strip"></div>
 
-      <div class="play-status">
-        <span id="status" class="status">Detenido</span>
-        <span id="diag-voices" class="diag">Voces activas: —</span>
+      <!-- Mixer en vivo: las pistas quedan accesibles aunque la
+           configuración esté colapsada. -->
+      <div class="mixer">
+        <div class="section-label">Pistas</div>
+        <div id="tracks"></div>
       </div>
+
+      <div id="diag-voices" class="diag" hidden>Voces activas: —</div>
 
     </section>
 
@@ -75,7 +79,10 @@
     <section class="config" id="config">
       <button type="button" class="config-header" id="config-toggle"
               aria-expanded="true">
-        <span>Configuración</span>
+        <span class="config-title">
+          <span class="config-title-main">Configuración</span>
+          <span class="config-title-sub">progresión · instrumentos · proyecto</span>
+        </span>
         <span class="chevron" id="config-chevron">▾</span>
       </button>
 
@@ -103,8 +110,7 @@
         </div>
 
         <div class="cfg-section">
-          <div class="section-label">Pistas</div>
-          <div id="tracks"></div>
+          <div class="section-label">Instrumentos</div>
           <div class="add-track">
             <select id="add-tipo">
               <option value="bajo">Bajo</option>

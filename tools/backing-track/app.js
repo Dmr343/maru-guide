@@ -1069,8 +1069,9 @@
   function setPlayUI(playing) {
     btnPlay.textContent = playing ? '■  Detener' : '▶  Play';
     btnPlay.classList.toggle('is-playing', playing);
+    document.body.classList.toggle('playing', playing);   // agranda el panel
     setConfigCollapsed(playing);   // la configuración se pliega al tocar
-    if (playing) setStatus('Sonando — modo ' + engine.getMode(), 'playing');
+    if (playing) setStatus('Sonando — ' + engine.getMode(), 'playing');
     else setStatus('Detenido');
   }
 
@@ -1235,6 +1236,8 @@
   });
 
   // ─── Arranque ───
+  // El diagnóstico de voces solo se muestra en modo debug (?debug).
+  if (/[?&]debug\b/.test(location.search)) diagVoices.hidden = false;
   initProgSelect();
   fillSelect(newRoot, ROOTS);
   fillSelect(newQuality, QUALITIES, 'v', it => it.label);
