@@ -162,8 +162,9 @@
       fac = fac.concat(BT.factoryPresets.byTipo(t));
       usr = usr.concat(BT.userLibrary.byTipo(t));
     });
-    addGroup('Sintetizados', fac.filter(p => p.motor !== 'sampler'));
-    addGroup('Con samples (internet)', fac.filter(p => p.motor === 'sampler'));
+    const online = p => (p.motor === 'sampler' || p.motor === 'webaudiofont');
+    addGroup('Sintetizados', fac.filter(p => !online(p)));
+    addGroup('Reales (internet)', fac.filter(online));
     addGroup('Mis presets', usr);
     return sel;
   }
