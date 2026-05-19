@@ -74,17 +74,21 @@
     let loopEnabled = true;
     let mode = 'practica';
     let humanizeAmount = 0;        // 0..1 — intensidad de humanización
+    let loopRangeIdx = null;       // [a,b] índices de acorde, o null (loop completo)
     let trackCounter = 0;
 
     // ─── Runtime (audio) ───
     const runtime = {};            // trackId → { instrument, gain, presetId }
     let notePart = null;
     let chordPart = null;
+    let tickLoop = null;           // Tone.Loop a 16n para el indicador de compás
     let playing = false;
     let activeChordIndex = -1;
+    let chordLayout = [];          // [{index,startStep,lengthSteps}] del último schedule
+    let loopStartBBS = '0:0:0';    // posición de inicio del loop (tiempo musical)
 
     // ─── Listeners ───
-    const listeners = { chord: [], state: [], transport: [] };
+    const listeners = { chord: [], state: [], transport: [], tick: [] };
     function emit(kind, payload) {
       listeners[kind].forEach(fn => { try { fn(payload); } catch (e) {} });
     }
@@ -225,6 +229,34 @@
     function disposeParts() {
       if (notePart) { try { notePart.dispose(); } catch (e) {} notePart = null; }
       if (chordPart) { try { chordPart.dispose(); } catch (e) {} chordPart = null; }
+      if (tickLoop) { try { tickLoop.dispose(); } catch (e) {} tickLoop = null; }
+    }
+
+    // Posición del transporte (compás:pulso:semicorchea) → paso global.
+    function positionToStep() {
+      const parts = String(transport.position).split(':');
+      const bars = parseInt(parts[0], 10) || 0;
+      const beats = parseInt(parts[1], 10) || 0;
+      const six = Math.round(parseFloat(parts[2]) || 0);
+      return bars * STEPS_PER_BAR + beats * 4 + six;
+    }
+
+    // El acorde que contiene un paso global, y el compás dentro de él.
+    function locateStep(step) {
+      for (let i = 0; i < chordLayout.length; i++) {
+        const c = chordLayout[i];
+        if (step >= c.startStep && step < c.startStep + c.lengthSteps) {
+          return {
+            step: step,
+            stepInBar: step % STEPS_PER_BAR,
+            beatInBar: Math.floor((step % STEPS_PER_BAR) / 4),
+            chordIndex: c.index,
+            barInChord: Math.floor((step - c.startStep) / STEPS_PER_BAR),
+            barsInChord: c.lengthSteps / STEPS_PER_BAR,
+          };
+        }
+      }
+      return null;
     }
 
     // silenceAll — corta las notas que estén sonando en todos los
@@ -303,10 +335,33 @@
       }, chordEvents);
       chordPart.start(0);
 
+      // Layout de acordes para el indicador de compás.
+      chordLayout = result.chords;
+
+      // Loop a 16n: cada semicorchea emite un 'tick' con la posición
+      // (compás dentro del acorde, subdivisión) para el indicador.
+      tickLoop = new T.Loop(function (time) {
+        T.getDraw().schedule(function () {
+          emit('tick', locateStep(positionToStep()));
+        }, time);
+      }, '16n');
+      tickLoop.start(0);
+
+      // Ventana de loop: rango de acordes [a,b] o el loop completo.
       const totalBars = result.loopSteps / STEPS_PER_BAR;
+      let startStep = 0, endStep = result.loopSteps;
+      if (loopRangeIdx && result.chords.length) {
+        const n = result.chords.length;
+        const a = Math.max(0, Math.min(loopRangeIdx[0], n - 1));
+        const b = Math.max(0, Math.min(loopRangeIdx[1], n - 1));
+        const lo = Math.min(a, b), hi = Math.max(a, b);
+        startStep = result.chords[lo].startStep;
+        endStep = result.chords[hi].startStep + result.chords[hi].lengthSteps;
+      }
+      loopStartBBS = stepToBBS(startStep);
       transport.loop = loopEnabled;
-      transport.loopStart = 0;
-      transport.loopEnd = totalBars + ':0:0';
+      transport.loopStart = loopStartBBS;
+      transport.loopEnd = stepToBBS(endStep);
       return totalBars;
     }
 
@@ -446,6 +501,18 @@
     }
     function getLoop() { return loopEnabled; }
 
+    // setLoopRange — acota el loop a un rango de acordes [a,b].
+    // setLoopRange(null) vuelve al loop completo.
+    function setLoopRange(a, b) {
+      if (a == null) loopRangeIdx = null;
+      else loopRangeIdx = [a, (b == null ? a : b)];
+      refreshIfPlaying();
+      emit('state');
+    }
+    function getLoopRange() {
+      return loopRangeIdx ? loopRangeIdx.slice() : null;
+    }
+
     function setMode(m) {
       mode = (m === 'arreglo') ? 'arreglo' : 'practica';
       emit('state');
@@ -459,7 +526,7 @@
       ensureInstruments();
       rebuildSchedule();
       applyTransport();
-      transport.position = 0;
+      transport.position = loopStartBBS;   // arranca al inicio del loop
       transport.start();
       playing = true;
       emit('transport', 'play');
@@ -468,12 +535,13 @@
     function stop() {
       if (!playing) return;
       transport.stop();
-      transport.position = 0;
+      transport.position = loopStartBBS;
       disposeParts();
       silenceAll();          // corta las notas que sigan sonando
       playing = false;
       activeChordIndex = -1;
       emit('chord', -1);
+      emit('tick', null);    // limpia el indicador de compás
       emit('transport', 'stop');
     }
 
@@ -488,6 +556,7 @@
         loopEnabled: loopEnabled,
         mode: mode,
         humanize: humanizeAmount,
+        loopRange: getLoopRange(),
         tracks: getTracks(),
       };
     }
@@ -502,6 +571,7 @@
       loopEnabled = state.loopEnabled !== false;
       mode = state.mode === 'arreglo' ? 'arreglo' : 'practica';
       humanizeAmount = Number.isFinite(state.humanize) ? state.humanize : 0;
+      loopRangeIdx = Array.isArray(state.loopRange) ? state.loopRange.slice() : null;
       Object.keys(runtime).forEach(disposeRuntime);
       tracks = Array.isArray(state.tracks)
         ? state.tracks.map(t => Object.assign({}, t)) : [];
@@ -532,12 +602,14 @@
       setHumanize, getHumanize,
       setMasterVolume, getMasterVolume,
       setLoop, getLoop,
+      setLoopRange, getLoopRange,
       setMode, getMode,
       play, stop, isPlaying, getActiveChordIndex,
       snapshot, restore, dispose,
       onChordChange: function (fn) { on('chord', fn); },
       onStateChange: function (fn) { on('state', fn); },
       onTransport: function (fn) { on('transport', fn); },
+      onTick: function (fn) { on('tick', fn); },
     };
   }
 

@@ -447,6 +447,38 @@ body {
 }
 .pe-actions .btn { padding: 6px 12px; font-size: 11px; }
 
+/* ─── Indicador de compás / subdivisiones ─── */
+.bar-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.bar-count {
+  min-width: 92px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.04em;
+}
+.beat-cells {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+}
+.beat-cell {
+  flex: 1;
+  height: 18px;
+  min-width: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  transition: background 0.04s;
+}
+/* Inicio de cada pulso (negra): borde más marcado */
+.beat-cell.beat { border-left: 2px solid var(--text-dim); }
+.beat-cell.playhead { background: var(--accent); }
+.beat-cell.playhead.beat-start { background: var(--gold); }
+
 /* ─── Toggle de modo ─── */
 .mode-toggle {
   display: flex;
