@@ -60,6 +60,31 @@
       patterns: { bass: 'bajoNegras', chord: 'acordesNegras',
                   drums: 'popEstandar', perc: 'percPop' },
     },
+
+    // ─── Grooves latinos ───
+    // Para el sonido completo del género, además del groove conviene
+    // elegir en la pista de percusión el preset latino correspondiente
+    // (Percusión merengue / cumbia / salsa / bachata en presets.js).
+    {
+      id: 'merengue', nombre: 'Merengue', genero: 'latino', tempo: 132,
+      patterns: { bass: 'bajoMerengue', chord: 'acordesContratiempo',
+                  drums: 'merengueDrums', perc: 'percMerengue' },
+    },
+    {
+      id: 'cumbia', nombre: 'Cumbia', genero: 'latino', tempo: 95,
+      patterns: { bass: 'bajoCumbia', chord: 'acordesContratiempo',
+                  drums: 'cumbiaDrums', perc: 'percCumbia' },
+    },
+    {
+      id: 'salsa', nombre: 'Salsa', genero: 'latino', tempo: 100,
+      patterns: { bass: 'bajoTumbao', chord: 'acordesMontuno',
+                  drums: 'salsaCascara', perc: 'percSalsa' },
+    },
+    {
+      id: 'bachata', nombre: 'Bachata', genero: 'latino', tempo: 128,
+      patterns: { bass: 'bajoBachata', chord: 'acordesCorcheas',
+                  drums: 'bachataDrums', perc: 'percBachata' },
+    },
   ];
 
   function byId(id) {
