@@ -93,7 +93,9 @@
     // acorde/pad real necesita ~8-12 voces, no 32 — esto evita que
     // la RAM trepe asignando voces de más loop tras loop.
     const poly = new T.PolySynth(T.Synth);
-    poly.maxPolyphony = 12;
+    // Acotado (la mitad del default 32): suficiente para acordes/pads
+    // con solapamiento de release, sin que la RAM trepe sin control.
+    poly.maxPolyphony = 24;
     const opts = {};
     if (config.oscillator) opts.oscillator = config.oscillator;
     if (config.envelope) opts.envelope = config.envelope;

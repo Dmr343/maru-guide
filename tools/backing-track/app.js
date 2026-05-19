@@ -55,6 +55,9 @@
     bateria: 'drums', percusion: 'perc',
   };
   const MELODIC_TIPOS = ['bajo', 'acordes', 'pad', 'lead'];
+  // Tipos polifónicos: comparten todos los presets entre sí (un sitar,
+  // un pad o un lead se pueden usar en cualquier pista melódica).
+  const POLY_TIPOS = ['acordes', 'lead', 'pad'];
   const QUALITIES = [
     { v: 'major', label: 'Mayor' },
     { v: 'minor', label: 'menor' },
@@ -132,10 +135,17 @@
     }
 
     if (track.customPreset) addOption(sel, '__custom', '(editado)');
-    const fac = BT.factoryPresets.byTipo(track.tipo);
+    // Las pistas melódicas comparten el pool completo de presets;
+    // bajo y batería/percusión usan solo los de su tipo.
+    const pool = (POLY_TIPOS.indexOf(track.tipo) >= 0) ? POLY_TIPOS : [track.tipo];
+    let fac = [], usr = [];
+    pool.forEach(t => {
+      fac = fac.concat(BT.factoryPresets.byTipo(t));
+      usr = usr.concat(BT.userLibrary.byTipo(t));
+    });
     addGroup('Sintetizados', fac.filter(p => p.motor !== 'sampler'));
     addGroup('Con samples (internet)', fac.filter(p => p.motor === 'sampler'));
-    addGroup('Mis presets', BT.userLibrary.byTipo(track.tipo));
+    addGroup('Mis presets', usr);
     return sel;
   }
 

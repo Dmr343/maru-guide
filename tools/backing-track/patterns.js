@@ -66,11 +66,47 @@
         lane('cymbal', [0, 8], 0.8)) },
 
     // ─── Percusión (lanes bongo/conga/shaker) ───
-    { id: 'percLatina', nombre: 'Percusión latina', tipo: 'perc',
+    { id: 'percLatina', nombre: 'Latina', tipo: 'perc',
       steps: 16, lanes: PERC_LANES, hits: [].concat(
         lane('conga',    [0, 3, 6, 8, 11, 14], 0.7),
         lane('bongo_hi', [2, 10], 0.6),
         lane('shaker',   [0, 2, 4, 6, 8, 10, 12, 14], 0.4)) },
+    { id: 'percAfro', nombre: 'Afro', tipo: 'perc',
+      steps: 16, lanes: PERC_LANES, hits: [].concat(
+        lane('conga',    [0, 2, 5, 7, 10, 12, 15], 0.7),
+        lane('bongo_lo', [3, 11], 0.65),
+        lane('bongo_hi', [6, 14], 0.6),
+        lane('shaker',   [1, 3, 5, 7, 9, 11, 13, 15], 0.4)) },
+    { id: 'percSamba', nombre: 'Samba', tipo: 'perc',
+      steps: 16, lanes: PERC_LANES, hits: [].concat(
+        lane('conga',    [0, 3, 4, 7, 8, 11, 12, 15], 0.7),
+        lane('bongo_hi', [2, 6, 10, 14], 0.55),
+        lane('shaker',   [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], 0.35)) },
+    { id: 'percPop', nombre: 'Pop suave', tipo: 'perc',
+      steps: 16, lanes: PERC_LANES, hits: [].concat(
+        lane('shaker', [0, 2, 4, 6, 8, 10, 12, 14], 0.45),
+        lane('conga',  [4, 12], 0.6)) },
+    { id: 'percBalada', nombre: 'Balada', tipo: 'perc',
+      steps: 16, lanes: PERC_LANES, hits: [].concat(
+        lane('conga',  [0, 8], 0.55),
+        lane('shaker', [4, 12], 0.4)) },
+
+    // ─── Más grooves de batería ───
+    { id: 'bossa', nombre: 'Bossa', tipo: 'drums',
+      steps: 16, lanes: KIT_LANES, hits: [].concat(
+        lane('kick',  [0, 6, 8, 14], 0.8),
+        lane('snare', [3, 7, 10, 13], 0.5),
+        lane('hat',   [0, 2, 4, 6, 8, 10, 12, 14], 0.5)) },
+    { id: 'hipHop', nombre: 'Hip-hop', tipo: 'drums',
+      steps: 16, lanes: KIT_LANES, hits: [].concat(
+        lane('kick',  [0, 6, 10], 0.9),
+        lane('snare', [4, 12], 0.85),
+        lane('hat',   [0, 2, 4, 6, 8, 10, 12, 14], 0.5)) },
+    { id: 'popEstandar', nombre: 'Pop estándar', tipo: 'drums',
+      steps: 16, lanes: KIT_LANES, hits: [].concat(
+        lane('kick',  [0, 8, 10], 0.9),
+        lane('snare', [4, 12], 0.8),
+        lane('hat',   [0, 2, 4, 6, 8, 10, 12, 14], 0.55)) },
   ];
 
   function byId(id) {

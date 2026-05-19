@@ -41,12 +41,24 @@
 
   function createEngine() {
     const transport = Tone().getTransport();
-    const masterGain = new (Tone().Gain)(0.85).toDestination();
-    // Bus de reverb compartido: un único convolver para todas las
-    // pistas (cada una le envía una porción de su señal). Mucho más
-    // liviano en CPU/RAM que un reverb por instrumento.
-    const sharedReverb = new (Tone().Reverb)({ decay: 3, wet: 1 });
-    sharedReverb.connect(masterGain);
+    // El grafo de audio se crea recién en el primer Play (tras el
+    // gesto del usuario / Tone.start), para no tocar el AudioContext
+    // antes de tiempo — eso disparaba warnings al cargar la página.
+    let masterGain = null;
+    let sharedReverb = null;
+    let masterVol = 0.85;
+
+    // Crea el grafo de audio una sola vez. masterGain → destino, y un
+    // único bus de reverb compartido (un convolver) al que cada pista
+    // le envía una porción de su señal — mucho más liviano que un
+    // reverb por instrumento.
+    function ensureAudioGraph() {
+      if (masterGain) return;
+      const T = Tone();
+      masterGain = new T.Gain(masterVol).toDestination();
+      sharedReverb = new T.Reverb({ decay: 3, wet: 1 });
+      sharedReverb.connect(masterGain);
+    }
 
     // Nivel de envío al reverb que pide un preset (su efecto 'reverb').
     function reverbAmountOf(preset) {
@@ -421,10 +433,11 @@
 
     // ─── API: transporte ───
     function setMasterVolume(v) {
-      masterGain.gain.value = Math.max(0, Math.min(1, Number(v) || 0));
+      masterVol = Math.max(0, Math.min(1, Number(v) || 0));
+      if (masterGain) masterGain.gain.value = masterVol;
       emit('state');
     }
-    function getMasterVolume() { return masterGain.gain.value; }
+    function getMasterVolume() { return masterVol; }
 
     function setLoop(on) {
       loopEnabled = !!on;
@@ -442,6 +455,7 @@
     async function play() {
       if (playing) return;
       await Tone().start();
+      ensureAudioGraph();
       ensureInstruments();
       rebuildSchedule();
       applyTransport();
