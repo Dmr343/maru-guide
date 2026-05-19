@@ -442,6 +442,56 @@
       },
       efectos: [{ tipo: 'reverb', cantidad: 0.12 }],
     },
+    // ─── Instrumentos reales vía WebAudioFont (soundfonts GM por
+    //     CDN libre; requieren internet) ───
+    {
+      id: 'wafSitar', nombre: 'Sitar', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/1040_FluidR3_GM_sf2_file.js',
+        variable: '_tone_1040_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.3 }],
+    },
+    {
+      id: 'wafBanjo', nombre: 'Banjo', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/1050_FluidR3_GM_sf2_file.js',
+        variable: '_tone_1050_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.2 }],
+    },
+    {
+      id: 'wafShamisen', nombre: 'Shamisen', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/1060_FluidR3_GM_sf2_file.js',
+        variable: '_tone_1060_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.25 }],
+    },
+    {
+      id: 'wafKoto', nombre: 'Koto', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/1070_FluidR3_GM_sf2_file.js',
+        variable: '_tone_1070_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.3 }],
+    },
+    {
+      id: 'wafKalimba', nombre: 'Kalimba', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/1080_FluidR3_GM_sf2_file.js',
+        variable: '_tone_1080_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.35 }],
+    },
+    {
+      id: 'wafShanai', nombre: 'Shanai', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/1110_FluidR3_GM_sf2_file.js',
+        variable: '_tone_1110_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.3 }],
+    },
     {
       id: 'percBongosReal', nombre: 'Percusión bongós real', tipo: 'percusion', motor: 'sampler',
       config: {

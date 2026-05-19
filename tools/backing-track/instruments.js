@@ -256,9 +256,89 @@
     };
   }
 
+  // ─── WebAudioFont (instrumentos GM reales por CDN) ───
+
+  let _wafPlayer = null;
+  function wafPlayer() {
+    if (!_wafPlayer) {
+      if (typeof W.WebAudioFontPlayer === 'undefined') {
+        throw new Error('WebAudioFontPlayer no está cargado (vendor/)');
+      }
+      _wafPlayer = new W.WebAudioFontPlayer();
+    }
+    return _wafPlayer;
+  }
+
+  const NOTE_INDEX = {
+    'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5,
+    'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11,
+  };
+  // Nota con octava ("C#3") → número MIDI (C4 = 60).
+  function noteToMidi(name) {
+    const m = /^([A-G]#?)(-?\d+)$/.exec(String(name));
+    if (!m) return 60;
+    return (NOTE_INDEX[m[1]] || 0) + (parseInt(m[2], 10) + 1) * 12;
+  }
+
+  // Construye un instrumento WebAudioFont: carga su soundfont GM desde
+  // un CDN libre y lo reproduce con queueWaveTable. El soundfont queda
+  // listo unos instantes después de cargar (igual que un Sampler).
+  function createWebAudioFont(preset) {
+    const T = Tone();
+    const rawCtx = T.getContext().rawContext;
+    const player = wafPlayer();
+    const cfg = preset.config || {};
+
+    const inputBus = new T.Gain();
+    const outputGain = new T.Gain();
+    const effects = buildEffectChain(preset.efectos);
+    inputBus.chain.apply(inputBus, effects.concat([outputGain]));
+
+    let presetData = null;   // objeto del soundfont, una vez decodificado
+
+    if (cfg.url && cfg.variable) {
+      try {
+        player.loader.startLoad(rawCtx, cfg.url, cfg.variable);
+        player.loader.waitLoad(function () {
+          presetData = W[cfg.variable] || null;
+        });
+      } catch (err) {
+        console.warn('[backing-track] WebAudioFont: no se pudo cargar "' +
+          (preset.id || '?') + '": ' + (err && err.message ? err.message : err));
+      }
+    }
+
+    return {
+      kind: 'melodic',
+      output: outputGain,
+      triggerNote: function (notes, duration, time, velocity) {
+        if (!presetData || !notes || !notes.length) return;
+        let durSec = 0.5;
+        try { durSec = T.Time(duration).toSeconds(); } catch (e) {}
+        const vol = Number.isFinite(velocity) ? velocity : 0.8;
+        notes.forEach(function (n) {
+          player.queueWaveTable(rawCtx, inputBus.input, presetData,
+            time, noteToMidi(n), durSec, vol);
+        });
+      },
+      triggerHit: function () { /* no aplica */ },
+      setConfig: function () { /* WAF no se edita con sliders en v1 */ },
+      silence: function () {
+        try { player.cancelQueue(rawCtx); } catch (e) {}
+      },
+      dispose: function () {
+        try { player.cancelQueue(rawCtx); } catch (e) {}
+        effects.forEach(fx => { try { fx.dispose(); } catch (e) {} });
+        try { inputBus.dispose(); } catch (e) {}
+        try { outputGain.dispose(); } catch (e) {}
+      },
+    };
+  }
+
   // createInstrument — punto de entrada de la fábrica.
   function createInstrument(preset) {
     preset = preset || {};
+    if (preset.motor === 'webaudiofont') return createWebAudioFont(preset);
     if (DRUM_TIPOS.indexOf(preset.tipo) >= 0) return createDrumkit(preset);
     return createMelodic(preset);
   }
