@@ -1,7 +1,7 @@
 /* ─────────────────────────────────────────────────────────────
-   Backing Track — estilos
-   Paleta e identidad coherentes con el resto del repo. Rediseño:
-   zona de toque (héroe) separada de la configuración colapsable.
+   Backing Track — estilos (rediseño v2)
+   Zona de toque (héroe) + configuración colapsable. Al colapsar, el
+   layout reflujye a una columna centrada y el panel de toque crece.
    ───────────────────────────────────────────────────────────── */
 
 :root {
@@ -35,37 +35,41 @@ body {
   font-size: 15px;
   line-height: 1.45;
   min-height: 100vh;
-  padding: 18px 20px 56px;
+  padding: 14px 20px 56px;
 }
 
-/* ─── Encabezado ─── */
+/* ─── Encabezado compacto ─── */
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  max-width: 1240px;
+  margin: 0 auto 16px;
+  transition: opacity 0.3s, margin 0.3s;
+}
 .back-link {
-  display: inline-block;
-  font-size: 12px;
+  font-size: 18px;
   color: var(--text-dim);
   text-decoration: none;
-  letter-spacing: 0.05em;
+  line-height: 1;
 }
 .back-link:hover { color: var(--gold); }
-
-.header {
-  text-align: center;
-  margin: 10px 0 22px;
+.header h1 {
+  font-size: 19px;
+  font-weight: 400;
+  color: var(--gold);
+  letter-spacing: 0.05em;
 }
 .header-label {
   font-size: 10px;
-  letter-spacing: 0.34em;
+  letter-spacing: 0.22em;
   color: var(--text-dim);
   text-transform: uppercase;
 }
-.header h1 {
-  font-size: 26px;
-  font-weight: 300;
-  color: var(--gold);
-  letter-spacing: 0.06em;
-}
+/* Mientras suena, el header cede protagonismo. */
+body.playing .header { opacity: 0.4; margin-bottom: 8px; }
 
-/* ─── Layout: dos columnas en pantallas anchas ─── */
+/* ─── Layout ─── */
 .app {
   max-width: 1240px;
   margin: 0 auto;
@@ -76,7 +80,13 @@ body {
 }
 @media (min-width: 1040px) {
   .app { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .play-zone { position: sticky; top: 18px; }
+  /* Al colapsar la configuración, el layout reflujye a una sola
+     columna centrada con ancho cómodo de lectura. */
+  .app:has(.config.collapsed) {
+    grid-template-columns: minmax(0, 840px);
+    justify-content: center;
+  }
+  .play-zone { position: sticky; top: 14px; }
 }
 
 /* ════════════ ZONA DE TOQUE (héroe) ════════════ */
@@ -92,7 +102,7 @@ body {
 .transport {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   flex-wrap: wrap;
 }
 .btn-play {
@@ -105,12 +115,20 @@ body {
   color: var(--accent);
   border: 1px solid var(--accent);
 }
+.transport .status {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+.transport .status.playing { color: var(--accent); }
+.transport .status.error   { color: #e74c3c; }
 .transport-ctls {
   display: flex;
   flex-direction: column;
   gap: 6px;
   flex: 1;
-  min-width: 200px;
+  min-width: 220px;
 }
 .ctl {
   display: flex;
@@ -120,24 +138,11 @@ body {
   color: var(--text-mid);
 }
 .ctl label { min-width: 58px; letter-spacing: 0.04em; }
-.ctl input[type="range"] {
-  flex: 1;
-  accent-color: var(--accent);
-  cursor: pointer;
-}
-.ctl .value {
-  min-width: 62px;
-  text-align: right;
-  color: var(--gold);
-  font-weight: 700;
-}
+.ctl input[type="range"] { flex: 1; accent-color: var(--accent); cursor: pointer; }
+.ctl .value { min-width: 62px; text-align: right; color: var(--gold); font-weight: 700; }
 .ctl-loop {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 11px;
-  color: var(--text-mid);
-  cursor: pointer;
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11px; color: var(--text-mid); cursor: pointer;
   letter-spacing: 0.04em;
 }
 .ctl-loop input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
@@ -148,7 +153,7 @@ body {
   align-items: center;
   gap: 18px;
   flex-wrap: wrap;
-  margin: 20px 0 4px;
+  margin: 18px 0 4px;
   padding: 16px 18px;
   background: var(--bg);
   border: 1px solid var(--border);
@@ -168,6 +173,7 @@ body {
   font-weight: 700;
   line-height: 1;
   color: var(--gold);
+  transition: font-size 0.3s ease;
 }
 .chord-next { opacity: 0.85; }
 .chord-next-name {
@@ -176,16 +182,14 @@ body {
   font-weight: 700;
   line-height: 1;
   color: var(--text-mid);
+  transition: font-size 0.3s ease;
 }
 .metro {
   margin-left: auto;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: flex-end;
+  align-items: center;
+  gap: 10px;
 }
-
-/* ─── Metrónomo ─── */
 .subdiv-select {
   font-family: var(--font);
   font-size: 11px;
@@ -196,12 +200,13 @@ body {
   padding: 5px 8px;
   cursor: pointer;
 }
+
+/* ─── Metrónomo ─── */
 .beat-meter {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
 }
 .beat-group { display: flex; gap: 4px; align-items: center; }
 .beat-dot {
@@ -216,7 +221,7 @@ body {
   font-size: 10px;
   font-weight: 700;
   color: var(--text-dim);
-  transition: background 0.07s, transform 0.07s, color 0.07s;
+  transition: background 0.07s, transform 0.07s, color 0.07s, width 0.3s, height 0.3s;
 }
 .beat-dot.sub { width: 13px; height: 13px; }
 .beat-dot.downbeat { color: var(--gold); border-color: var(--gold-dim); }
@@ -241,7 +246,7 @@ body {
   color: var(--text-mid);
   cursor: pointer;
   text-align: center;
-  transition: border-color 0.12s, color 0.12s, background 0.12s, transform 0.08s;
+  transition: border-color 0.12s, color 0.12s, background 0.12s, font-size 0.3s;
 }
 .chord-chip:hover { border-color: var(--border2); color: var(--text); }
 .chord-chip.selected { border-color: var(--gold); color: var(--text); }
@@ -263,27 +268,24 @@ body {
 }
 .chord-chip.active .chip-bars { color: var(--accent); }
 
-/* ─── Estado ─── */
-.play-status {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 12px;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-}
-.status {
-  font-size: 12px;
-  color: var(--text-dim);
-  letter-spacing: 0.05em;
-}
-.status.playing { color: var(--accent); }
-.status.error   { color: #e74c3c; }
+/* ─── Modo reproducción: el panel de toque crece ─── */
+body.playing .chord-now-name  { font-size: 76px; }
+body.playing .chord-next-name { font-size: 32px; }
+body.playing .chord-chip      { font-size: 17px; padding: 9px 15px 6px; }
+body.playing .beat-dot        { width: 28px; height: 28px; font-size: 12px; }
+body.playing .beat-dot.sub    { width: 16px; height: 16px; }
+
+/* ─── Mixer de pistas ─── */
+.mixer { margin-top: 18px; }
+
+/* ─── Estado / diagnóstico ─── */
+.status { font-size: 12px; color: var(--text-dim); }
 .diag {
+  margin-top: 10px;
   font-size: 10px;
   letter-spacing: 0.04em;
   color: var(--text-dim);
+  text-align: right;
 }
 
 /* ════════════ CONFIGURACIÓN (colapsable) ════════════ */
@@ -292,26 +294,42 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  align-self: start;
 }
 .config-header {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 14px 18px;
   background: var(--surface2);
   border: none;
-  border-bottom: 1px solid var(--border);
   color: var(--text);
   font-family: var(--font);
+  cursor: pointer;
+  text-align: left;
+}
+.config-header:hover { background: var(--surface3); }
+.config:not(.collapsed) .config-header { border-bottom: 1px solid var(--border); }
+.config-title { display: flex; flex-direction: column; gap: 2px; }
+.config-title-main {
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  cursor: pointer;
+  color: var(--gold);
 }
-.config-header:hover { color: var(--gold); }
-.chevron { font-size: 12px; transition: transform 0.25s ease; color: var(--text-mid); }
+.config-title-sub {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+.chevron {
+  font-size: 14px;
+  color: var(--accent);
+  transition: transform 0.25s ease;
+}
 .config.collapsed .chevron { transform: rotate(-90deg); }
 
 .config-body {
@@ -342,11 +360,7 @@ body {
 }
 
 /* ─── Toggle de modo ─── */
-.mode-toggle {
-  display: flex;
-  gap: 0;
-  justify-content: center;
-}
+.mode-toggle { display: flex; justify-content: center; }
 .mode-btn {
   font-family: var(--font);
   font-size: 11px;
@@ -404,39 +418,17 @@ body {
 }
 .btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
-
-.btn-primary {
-  background: var(--accent);
-  color: #1a0f0b;
-  border-color: var(--accent);
-}
+.btn-primary { background: var(--accent); color: #1a0f0b; border-color: var(--accent); }
 .btn-primary:hover { box-shadow: 0 6px 20px rgba(224, 122, 95, 0.35); }
-
-.btn-secondary {
-  background: var(--surface3);
-  color: var(--text);
-  border-color: var(--border2);
-}
+.btn-secondary { background: var(--surface3); color: var(--text); border-color: var(--border2); }
 .btn-secondary:hover { border-color: var(--text-dim); color: var(--gold); }
-
-.btn-danger {
-  background: transparent;
-  color: var(--danger);
-  border-color: var(--border2);
-}
+.btn-danger { background: transparent; color: var(--danger); border-color: var(--border2); }
 .btn-danger:hover { border-color: var(--danger); background: rgba(192, 86, 74, 0.12); }
-
-.btn.secondary { /* compat */ background: var(--surface3); color: var(--text); border-color: var(--border2); }
-
+.btn.secondary { background: var(--surface3); color: var(--text); border-color: var(--border2); }
 .icon-btn { padding: 8px 12px; }
 
 /* ─── Constructor de acordes ─── */
-.builder {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-}
+.builder { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .builder select {
   font-family: var(--font);
   font-size: 12px;
@@ -471,18 +463,9 @@ body {
   padding: 6px 7px;
   cursor: pointer;
 }
-.editor-label {
-  color: var(--text-dim);
-  letter-spacing: 0.04em;
-  font-size: 11px;
-}
+.editor-label { color: var(--text-dim); letter-spacing: 0.04em; font-size: 11px; }
 .bars-stepper { display: flex; align-items: center; gap: 6px; }
-.bars-stepper .value {
-  min-width: 18px;
-  text-align: center;
-  color: var(--gold);
-  font-weight: 700;
-}
+.bars-stepper .value { min-width: 18px; text-align: center; color: var(--gold); font-weight: 700; }
 
 /* ─── Pistas ─── */
 .track {
@@ -512,7 +495,6 @@ body {
   user-select: none;
 }
 .track-drag:active { cursor: grabbing; }
-
 .track-mute {
   width: 28px; height: 28px;
   flex-shrink: 0;
@@ -524,11 +506,7 @@ body {
   font-size: 13px;
   line-height: 1;
 }
-.track.enabled .track-mute {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--bg);
-}
+.track.enabled .track-mute { background: var(--accent); border-color: var(--accent); color: var(--bg); }
 .track-tipo {
   min-width: 66px;
   font-weight: 700;
@@ -548,7 +526,6 @@ body {
 .track-preset  { flex: 1.3; min-width: 110px; }
 .track-pattern { flex: 1;   min-width: 90px; }
 .track-vol { width: 76px; accent-color: var(--accent); cursor: pointer; }
-
 .track-btn {
   width: 28px; height: 28px;
   flex-shrink: 0;
@@ -565,12 +542,13 @@ body {
 .track-btn.danger { color: var(--danger); }
 .track-btn.danger:hover { color: var(--danger); border-color: var(--danger); }
 
-.add-track {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-  flex-wrap: wrap;
-}
+/* Variante compacta de "mixer en vivo": mientras suena se ocultan los
+   controles de edición estructural; quedan mute, nombre, patrón, volumen. */
+body.playing .track-drag,
+body.playing .track .track-btn,
+body.playing .track-preset { display: none; }
+
+.add-track { display: flex; gap: 8px; flex-wrap: wrap; }
 .add-track select {
   font-family: var(--font);
   font-size: 12px;
@@ -581,12 +559,7 @@ body {
   padding: 7px 9px;
   cursor: pointer;
 }
-
-.empty-hint {
-  font-size: 12px;
-  color: var(--text-dim);
-  padding: 10px 2px;
-}
+.empty-hint { font-size: 12px; color: var(--text-dim); padding: 10px 2px; }
 
 /* ─── Panel de edición de presets ─── */
 .preset-editor {
@@ -677,7 +650,7 @@ body {
   padding: 4px 6px;
   cursor: pointer;
 }
-.variant-toggle { display: flex; gap: 0; }
+.variant-toggle { display: flex; }
 .variant-btn {
   width: 24px; height: 22px;
   font-size: 10px; font-weight: 700;
@@ -718,8 +691,9 @@ body {
 
 /* ─── Responsive ─── */
 @media (max-width: 560px) {
-  body { padding: 14px 12px 48px; }
+  body { padding: 12px 12px 48px; }
   .chord-now-name { font-size: 40px; }
-  .metro { margin-left: 0; align-items: flex-start; }
+  body.playing .chord-now-name { font-size: 52px; }
+  .metro { margin-left: 0; }
   .now-playing { gap: 14px; }
 }
