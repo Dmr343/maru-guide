@@ -582,6 +582,112 @@
       },
       efectos: [],
     },
+
+    // Cuerdas, vientos y más, vía WebAudioFont.
+    {
+      id: 'wafViola', nombre: 'Viola', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/0410_FluidR3_GM_sf2_file.js',
+        variable: '_tone_0410_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.35 }],
+    },
+    {
+      id: 'wafArpa', nombre: 'Arpa', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/0460_FluidR3_GM_sf2_file.js',
+        variable: '_tone_0460_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.4 }],
+    },
+    {
+      id: 'wafTrombon', nombre: 'Trombón', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/0570_FluidR3_GM_sf2_file.js',
+        variable: '_tone_0570_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.28 }],
+    },
+    {
+      id: 'wafCornoFrances', nombre: 'Corno francés', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/0600_FluidR3_GM_sf2_file.js',
+        variable: '_tone_0600_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.32 }],
+    },
+    {
+      id: 'wafSaxoAlto', nombre: 'Saxo alto', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/0650_FluidR3_GM_sf2_file.js',
+        variable: '_tone_0650_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.3 }],
+    },
+    {
+      id: 'wafSaxoTenor', nombre: 'Saxo tenor', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/0660_FluidR3_GM_sf2_file.js',
+        variable: '_tone_0660_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.3 }],
+    },
+    {
+      id: 'wafClarinete', nombre: 'Clarinete', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/0710_FluidR3_GM_sf2_file.js',
+        variable: '_tone_0710_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.32 }],
+    },
+    {
+      id: 'wafOboe', nombre: 'Oboe', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/0680_FluidR3_GM_sf2_file.js',
+        variable: '_tone_0680_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.34 }],
+    },
+    {
+      id: 'wafVibrafono', nombre: 'Vibráfono', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/0110_FluidR3_GM_sf2_file.js',
+        variable: '_tone_0110_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.35 }],
+    },
+    {
+      id: 'wafMarimba', nombre: 'Marimba', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/0120_FluidR3_GM_sf2_file.js',
+        variable: '_tone_0120_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.28 }],
+    },
+    {
+      id: 'wafAcordeon', nombre: 'Acordeón', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/0210_FluidR3_GM_sf2_file.js',
+        variable: '_tone_0210_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.2 }],
+    },
+    {
+      id: 'wafCoro', nombre: 'Coro', tipo: 'lead', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/0520_FluidR3_GM_sf2_file.js',
+        variable: '_tone_0520_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.5 }],
+    },
+    {
+      id: 'wafTuba', nombre: 'Tuba', tipo: 'bajo', motor: 'webaudiofont',
+      config: {
+        url: 'https://surikov.github.io/webaudiofontdata/sound/0580_FluidR3_GM_sf2_file.js',
+        variable: '_tone_0580_FluidR3_GM_sf2_file',
+      },
+      efectos: [{ tipo: 'reverb', cantidad: 0.25 }],
+    },
     {
       id: 'percBongosReal', nombre: 'Percusión bongós real', tipo: 'percusion', motor: 'sampler',
       config: {
