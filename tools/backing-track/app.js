@@ -857,6 +857,11 @@
 
   ctlLoop.addEventListener('change', () => engine.setLoop(ctlLoop.checked));
 
+  // Tecla Esc: detener la reproducción.
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && engine.isPlaying()) engine.stop();
+  });
+
   progSelect.addEventListener('change', function () {
     const id = progSelect.value;
     if (!id) return;

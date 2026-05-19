@@ -195,6 +195,16 @@
       if (chordPart) { try { chordPart.dispose(); } catch (e) {} chordPart = null; }
     }
 
+    // silenceAll — corta las notas que estén sonando en todos los
+    // instrumentos. Evita que notas largas (pad, bajo sostenido) sigan
+    // sonando tras un Stop o se apilen al reconstruir el scheduling.
+    function silenceAll() {
+      Object.keys(runtime).forEach(function (id) {
+        const rt = runtime[id];
+        if (rt && rt.instrument && rt.instrument.silence) rt.instrument.silence();
+      });
+    }
+
     function dispatchEvent(time, ev) {
       const rt = runtime[ev.trackId];
       if (!rt) return;
@@ -210,6 +220,7 @@
     // largo del loop en compases.
     function rebuildSchedule() {
       disposeParts();
+      silenceAll();          // corta notas colgadas antes de reprogramar
       const T = Tone();
 
       // Cada pista usa su patrón efectivo (variante editada o de
@@ -425,6 +436,7 @@
       transport.stop();
       transport.position = 0;
       disposeParts();
+      silenceAll();          // corta las notas que sigan sonando
       playing = false;
       activeChordIndex = -1;
       emit('chord', -1);

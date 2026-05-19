@@ -147,6 +147,15 @@
         instrument.triggerAttackRelease(payload, duration, time, velocity);
       },
       triggerHit: function () { /* no aplica a instrumentos melódicos */ },
+      // silence — corta las notas que estén sonando (release inmediato).
+      // Evita que las notas largas (p. ej. del pad) sigan sonando tras
+      // un Stop o se apilen al reconstruir el scheduling.
+      silence: function () {
+        try {
+          if (typeof instrument.releaseAll === 'function') instrument.releaseAll();
+          else if (typeof instrument.triggerRelease === 'function') instrument.triggerRelease();
+        } catch (e) {}
+      },
       // setConfig — actualiza en vivo los parámetros de síntesis sin
       // reconstruir el instrumento (oscilador, envolvente, filtro).
       setConfig: function (config) {
@@ -207,6 +216,7 @@
       output: outputGain,
       triggerNote: function () { /* no aplica a un kit de batería */ },
       setConfig: function () { /* la edición de kit no aplica en v1 */ },
+      silence: function () { /* los golpes de batería son one-shots cortos */ },
       triggerHit: function (lane, time, velocity) {
         const v = voices[lane];
         if (!v) return;   // lane sin pieza registrada: se ignora
