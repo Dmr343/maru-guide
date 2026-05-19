@@ -51,7 +51,9 @@
     const amt = Number.isFinite(spec.cantidad) ? spec.cantidad : 0.3;
     switch (spec.tipo) {
       case 'reverb':
-        return new T.Reverb({ decay: spec.decay || 2, wet: amt });
+        // El reverb ya no se construye por instrumento: el motor lo
+        // maneja como un bus compartido (un solo convolver + envíos).
+        return null;
       case 'distortion':
         return new T.Distortion({ distortion: amt, wet: 1 });
       case 'chorus':
@@ -87,8 +89,11 @@
             baseFrequency: 200, octaves: 3 },
       });
     }
-    // Acordes / pad / lead: polifónico.
+    // Acordes / pad / lead: polifónico. maxPolyphony acotado: un
+    // acorde/pad real necesita ~8-12 voces, no 32 — esto evita que
+    // la RAM trepe asignando voces de más loop tras loop.
     const poly = new T.PolySynth(T.Synth);
+    poly.maxPolyphony = 12;
     const opts = {};
     if (config.oscillator) opts.oscillator = config.oscillator;
     if (config.envelope) opts.envelope = config.envelope;

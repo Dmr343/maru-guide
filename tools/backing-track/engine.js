@@ -42,6 +42,18 @@
   function createEngine() {
     const transport = Tone().getTransport();
     const masterGain = new (Tone().Gain)(0.85).toDestination();
+    // Bus de reverb compartido: un único convolver para todas las
+    // pistas (cada una le envía una porción de su señal). Mucho más
+    // liviano en CPU/RAM que un reverb por instrumento.
+    const sharedReverb = new (Tone().Reverb)({ decay: 3, wet: 1 });
+    sharedReverb.connect(masterGain);
+
+    // Nivel de envío al reverb que pide un preset (su efecto 'reverb').
+    function reverbAmountOf(preset) {
+      const fx = (preset && preset.efectos) || [];
+      const r = fx.filter(function (e) { return e && e.tipo === 'reverb'; })[0];
+      return (r && Number.isFinite(r.cantidad)) ? r.cantidad : 0;
+    }
 
     // ─── Estado (datos) ───
     let progression = [];          // [{root,quality,bars}]
@@ -90,7 +102,14 @@
         Number.isFinite(track.volumen) ? track.volumen : 0.8);
       instrument.output.connect(gain);
       gain.connect(masterGain);
-      return { instrument, gain, preset: preset, sig: JSON.stringify(preset) };
+      // Envío al bus de reverb compartido, con el nivel del preset.
+      const reverbSend = new (Tone().Gain)(reverbAmountOf(preset));
+      gain.connect(reverbSend);
+      reverbSend.connect(sharedReverb);
+      return {
+        instrument: instrument, gain: gain, reverbSend: reverbSend,
+        preset: preset, sig: JSON.stringify(preset),
+      };
     }
 
     function disposeRuntime(id) {
@@ -98,6 +117,7 @@
       if (!rt) return;
       try { rt.instrument.dispose(); } catch (e) {}
       try { rt.gain.dispose(); } catch (e) {}
+      try { rt.reverbSend.dispose(); } catch (e) {}
       delete runtime[id];
     }
 
@@ -481,6 +501,7 @@
     function dispose() {
       stop();
       Object.keys(runtime).forEach(disposeRuntime);
+      try { sharedReverb.dispose(); } catch (e) {}
       try { masterGain.dispose(); } catch (e) {}
     }
 
