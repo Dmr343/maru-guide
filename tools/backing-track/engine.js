@@ -262,8 +262,9 @@
       if (ev.type === 'hit') {
         rt.instrument.triggerHit(ev.lane, time, ev.velocity);
       } else {
-        rt.instrument.triggerNote(
-          ev.notes, ev.durationSteps + '*16n', time, ev.velocity);
+        // Duración en segundos (la calcula el scheduler) — sin texto
+        // musical: evita ambigüedad de parseo en synth y WebAudioFont.
+        rt.instrument.triggerNote(ev.notes, ev.duration, time, ev.velocity);
       }
     }
 
@@ -565,6 +566,19 @@
     function isPlaying() { return playing; }
     function getActiveChordIndex() { return activeChordIndex; }
 
+    // getActiveVoices — diagnóstico: total de voces sonando ahora mismo
+    // en todos los instrumentos. Si crece sin parar, hay acumulación.
+    function getActiveVoices() {
+      let n = 0;
+      Object.keys(runtime).forEach(function (id) {
+        const rt = runtime[id];
+        if (rt && rt.instrument && rt.instrument.voiceCount) {
+          n += rt.instrument.voiceCount() || 0;
+        }
+      });
+      return n;
+    }
+
     // ─── Persistencia (usada por storage.js, #60) ───
     function snapshot() {
       return {
@@ -625,7 +639,7 @@
       setSubdivision, getSubdivision,
       setFocusChord,
       setMode, getMode,
-      play, stop, isPlaying, getActiveChordIndex,
+      play, stop, isPlaying, getActiveChordIndex, getActiveVoices,
       snapshot, restore, dispose,
       onChordChange: function (fn) { on('chord', fn); },
       onStateChange: function (fn) { on('state', fn); },

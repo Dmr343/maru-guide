@@ -154,6 +154,10 @@
         instrument.triggerAttackRelease(payload, duration, time, velocity);
       },
       triggerHit: function () { /* no aplica a instrumentos melódicos */ },
+      voiceCount: function () {
+        return (typeof instrument.activeVoices === 'number')
+          ? instrument.activeVoices : 0;
+      },
       // silence — corta las notas que estén sonando (release inmediato).
       // Evita que las notas largas (p. ej. del pad) sigan sonando tras
       // un Stop o se apilen al reconstruir el scheduling.
@@ -233,6 +237,7 @@
       output: outputGain,
       triggerNote: function () { /* no aplica a un kit de batería */ },
       setConfig: function () { /* la edición de kit no aplica en v1 */ },
+      voiceCount: function () { return 0; },   // golpes one-shot cortos
       silence: function () { /* los golpes de batería son one-shots cortos */ },
       triggerHit: function (lane, time, velocity) {
         const v = voices[lane];
@@ -258,17 +263,6 @@
 
   // ─── WebAudioFont (instrumentos GM reales por CDN) ───
 
-  let _wafPlayer = null;
-  function wafPlayer() {
-    if (!_wafPlayer) {
-      if (typeof W.WebAudioFontPlayer === 'undefined') {
-        throw new Error('WebAudioFontPlayer no está cargado (vendor/)');
-      }
-      _wafPlayer = new W.WebAudioFontPlayer();
-    }
-    return _wafPlayer;
-  }
-
   const NOTE_INDEX = {
     'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5,
     'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11,
@@ -281,12 +275,22 @@
   }
 
   // Construye un instrumento WebAudioFont: carga su soundfont GM desde
-  // un CDN libre y lo reproduce con queueWaveTable. El soundfont queda
-  // listo unos instantes después de cargar (igual que un Sampler).
+  // un CDN libre y lo reproduce con queueWaveTable.
+  //
+  // Cada instrumento tiene su PROPIO player (no uno compartido): así
+  // sus voces se pueden cortar de forma aislada y, al hacer dispose,
+  // el player y su pool de envolventes se liberan con él (un player
+  // global acumulaba envolventes para siempre).
+  //
+  // Además se lleva registro de las voces activas para poder cortarlas
+  // explícitamente — no alcanza con cancelQueue.
   function createWebAudioFont(preset) {
     const T = Tone();
     const rawCtx = T.getContext().rawContext;
-    const player = wafPlayer();
+    if (typeof W.WebAudioFontPlayer === 'undefined') {
+      throw new Error('WebAudioFontPlayer no está cargado (vendor/)');
+    }
+    const player = new W.WebAudioFontPlayer();
     const cfg = preset.config || {};
 
     const inputBus = new T.Gain();
@@ -295,6 +299,7 @@
     inputBus.chain.apply(inputBus, effects.concat([outputGain]));
 
     let presetData = null;   // objeto del soundfont, una vez decodificado
+    let voices = [];         // envolventes activas (devueltas por queueWaveTable)
 
     if (cfg.url && cfg.variable) {
       try {
@@ -308,26 +313,61 @@
       }
     }
 
+    // Descarta del registro las voces que ya terminaron.
+    function pruneVoices() {
+      const now = rawCtx.currentTime;
+      voices = voices.filter(function (env) {
+        return env && (env.when + env.duration + 0.1 > now);
+      });
+    }
+
+    // Corta de forma definitiva todas las voces activas: detiene el
+    // buffer source y baja la ganancia a cero. cancelQueue por sí solo
+    // no garantiza que las notas dejen de sonar.
+    function stopAllVoices() {
+      voices.forEach(function (env) {
+        if (!env) return;
+        try {
+          if (env.audioBufferSourceNode) {
+            env.audioBufferSourceNode.stop(0);
+            env.audioBufferSourceNode.disconnect();
+          }
+        } catch (e) {}
+        try {
+          if (env.gain) {
+            env.gain.cancelScheduledValues(0);
+            env.gain.setValueAtTime(0.000001, rawCtx.currentTime);
+          }
+        } catch (e) {}
+      });
+      voices = [];
+    }
+
     return {
       kind: 'melodic',
       output: outputGain,
       triggerNote: function (notes, duration, time, velocity) {
         if (!presetData || !notes || !notes.length) return;
-        let durSec = 0.5;
-        try { durSec = T.Time(duration).toSeconds(); } catch (e) {}
+        let durSec = Number(duration);          // ya viene en segundos
+        if (!(durSec > 0)) durSec = 0.5;         // nunca duración inválida
         const vol = Number.isFinite(velocity) ? velocity : 0.8;
+        pruneVoices();
         notes.forEach(function (n) {
-          player.queueWaveTable(rawCtx, inputBus.input, presetData,
-            time, noteToMidi(n), durSec, vol);
+          const env = player.queueWaveTable(rawCtx, inputBus.input,
+            presetData, time, noteToMidi(n), durSec, vol);
+          if (env) voices.push(env);
         });
       },
       triggerHit: function () { /* no aplica */ },
       setConfig: function () { /* WAF no se edita con sliders en v1 */ },
+      voiceCount: function () { pruneVoices(); return voices.length; },
       silence: function () {
         try { player.cancelQueue(rawCtx); } catch (e) {}
+        stopAllVoices();
       },
       dispose: function () {
         try { player.cancelQueue(rawCtx); } catch (e) {}
+        stopAllVoices();
         effects.forEach(fx => { try { fx.dispose(); } catch (e) {} });
         try { inputBus.dispose(); } catch (e) {}
         try { outputGain.dispose(); } catch (e) {}
