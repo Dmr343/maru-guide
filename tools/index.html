@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Guitarra con Maru — Herramientas</title>
+  <title>Herramientas de Guitarra</title>
   <style>
     /* ─── Design System ─── */
     :root {
@@ -15,94 +15,64 @@
       --text-dim:  #666;
       --text-mid:  #999;
       --gold:      #d4a847;
-      --gold-dim:  #3a2e0a;
 
-      --c-diapason: #d4a847;
-      --c-escalas:  #2ecc71;
-      --c-acordes:  #3498db;
-      --c-oido:     #9b59b6;
-      --c-guia:     #e67e22;
+      /* Acento propio de cada herramienta */
+      --c-diapason:  #d4a847;
+      --c-escalas:   #2ecc71;
+      --c-acordes:   #3498db;
+      --c-atlas:     #f0c060;
+      --c-improv:    #00cec9;
+      --c-backing:   #e07a5f;
+      --c-oido:      #9b59b6;
 
       --radius: 12px;
       --font: 'Trebuchet MS', 'Segoe UI', sans-serif;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { zoom: 1.4; }
 
     body {
       background: var(--bg);
       color: var(--text);
       font-family: var(--font);
       min-height: 100vh;
-      padding: 24px 16px 40px;
+      padding: 56px 20px 40px;
+      line-height: 1.5;
     }
 
     /* ─── Header ─── */
     .header {
       text-align: center;
-      margin-bottom: 40px;
+      margin-bottom: 48px;
     }
     .header-label {
-      font-size: 10px;
-      letter-spacing: 0.35em;
+      font-size: 11px;
+      letter-spacing: 0.32em;
       color: var(--text-dim);
       text-transform: uppercase;
-      margin-bottom: 8px;
+      margin-bottom: 14px;
     }
     .header h1 {
-      font-size: clamp(20px, 5vw, 32px);
+      font-size: clamp(28px, 4.5vw, 40px);
       font-weight: 300;
       color: var(--gold);
-      letter-spacing: 0.06em;
-      margin-bottom: 6px;
+      letter-spacing: 0.04em;
+      margin-bottom: 12px;
     }
     .header p {
-      font-size: 13px;
+      font-size: 15px;
       color: var(--text-mid);
-      max-width: 380px;
+      max-width: 480px;
       margin: 0 auto;
-      line-height: 1.5;
-    }
-
-    /* ─── Progress bar ─── */
-    .progress-global {
-      max-width: 560px;
-      margin: 0 auto 36px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px 20px;
-    }
-    .progress-global-label {
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      color: var(--text-dim);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-    }
-    .progress-global-label span:last-child { color: var(--gold); }
-    .progress-bar-track {
-      height: 4px;
-      background: var(--border);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-    .progress-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--gold), #f0c060);
-      border-radius: 2px;
-      transition: width 0.5s ease;
+      line-height: 1.6;
     }
 
     /* ─── Grid ─── */
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 16px;
-      max-width: 900px;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 18px;
+      max-width: 960px;
       margin: 0 auto;
     }
 
@@ -111,16 +81,28 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 22px 20px;
+      padding: 24px 22px;
       text-decoration: none;
       color: inherit;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+      gap: 14px;
       position: relative;
       overflow: hidden;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+      opacity: 0;
+      transform: translateY(14px);
+      animation: rise 0.5s ease forwards;
     }
+    @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+    .card:nth-child(1) { animation-delay: 0.04s; }
+    .card:nth-child(2) { animation-delay: 0.10s; }
+    .card:nth-child(3) { animation-delay: 0.16s; }
+    .card:nth-child(4) { animation-delay: 0.22s; }
+    .card:nth-child(5) { animation-delay: 0.28s; }
+    .card:nth-child(6) { animation-delay: 0.34s; }
+    .card:nth-child(7) { animation-delay: 0.40s; }
+
     .card::before {
       content: '';
       position: absolute;
@@ -132,300 +114,139 @@
     }
     .card:hover {
       border-color: var(--accent);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.45);
     }
     .card:hover::before { opacity: 1; }
 
-    .card-icon {
-      font-size: 28px;
-      line-height: 1;
-    }
-    .card-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--accent);
-      letter-spacing: 0.02em;
-    }
-    .card-desc {
-      font-size: 12px;
-      color: var(--text-mid);
-      line-height: 1.5;
-      flex: 1;
-    }
-    .card-fase {
-      font-size: 10px;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--text-dim);
-      border-top: 1px solid var(--border);
-      padding-top: 10px;
-      margin-top: 4px;
-    }
-    .card-fase strong { color: var(--accent); opacity: 0.8; }
-
-    .card-progress {
+    .card-head {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-top: 4px;
+      justify-content: space-between;
+      gap: 12px;
     }
-    .card-progress-bar {
-      flex: 1;
-      height: 3px;
-      background: var(--border);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-    .card-progress-fill {
-      height: 100%;
-      background: var(--accent);
-      border-radius: 2px;
-      transition: width 0.4s;
-    }
-    .card-progress-label {
-      font-size: 10px;
-      color: var(--text-dim);
-      min-width: 28px;
-      text-align: right;
-    }
-
-    /* ─── Phase indicator ─── */
-    .phase-map {
-      max-width: 560px;
-      margin: 40px auto 0;
-      text-align: center;
-    }
-    .phase-map-label {
-      font-size: 10px;
-      letter-spacing: 0.2em;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      margin-bottom: 14px;
-    }
-    .phases {
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      flex-shrink: 0;
       display: flex;
-      gap: 4px;
+      align-items: center;
       justify-content: center;
-      flex-wrap: wrap;
+      font-size: 25px;
+      border-radius: 11px;
+      background: color-mix(in srgb, var(--accent) 14%, transparent);
     }
-    .phase-pill {
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 11px;
+    .card-cat {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      opacity: 0.85;
+    }
+    .card-title {
+      font-size: 17px;
       font-weight: 700;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text-dim);
-      transition: all 0.2s;
-      cursor: default;
-      letter-spacing: 0.05em;
+      color: var(--accent);
+      letter-spacing: 0.01em;
     }
-    .phase-pill.active {
-      background: var(--gold-dim);
-      border-color: var(--gold);
-      color: var(--gold);
-      box-shadow: 0 0 12px rgba(212,168,71,0.2);
-    }
-    .phase-pill.done {
-      background: #0a1a0a;
-      border-color: #2ecc71;
-      color: #2ecc71;
+    .card-desc {
+      font-size: 13.5px;
+      color: var(--text-mid);
+      line-height: 1.6;
     }
 
     /* ─── Footer ─── */
     footer {
       text-align: center;
-      margin-top: 48px;
-      font-size: 10px;
+      margin-top: 56px;
+      font-size: 11px;
       color: var(--text-dim);
-      letter-spacing: 0.08em;
+      letter-spacing: 0.1em;
     }
-    footer a {
-      color: var(--gold);
-      text-decoration: none;
-      opacity: 0.7;
+
+    @media (prefers-reduced-motion: reduce) {
+      .card { animation: none; opacity: 1; transform: none; }
     }
   </style>
 </head>
 <body>
 
   <div class="header">
-    <div class="header-label">Método Maru Martinez</div>
-    <h1>Guitarra — Herramientas</h1>
-    <p>Cada app acompaña una fase de tu aprendizaje. Podés usarlas en cualquier orden.</p>
-  </div>
-
-  <div class="progress-global">
-    <div class="progress-global-label">
-      <span>Progreso global</span>
-      <span id="global-pct">0%</span>
-    </div>
-    <div class="progress-bar-track">
-      <div class="progress-bar-fill" id="global-bar" style="width:0%"></div>
-    </div>
+    <div class="header-label">Herramientas interactivas</div>
+    <h1>Herramientas de Guitarra</h1>
+    <p>Una colección de apps para practicar el mástil, las escalas, la armonía y el oído. Usalas en el orden que quieras.</p>
   </div>
 
   <div class="grid">
 
-    <a href="guia.html" class="card" style="--accent: var(--c-guia);">
-      <div class="card-icon">📖</div>
-      <div class="card-title">Guía de Aprendizaje</div>
-      <div class="card-desc">La ruta completa, fase por fase. Con el material de Maru destilado, ejercicios concretos y checklists de progreso.</div>
-      <div class="card-progress">
-        <div class="card-progress-bar"><div class="card-progress-fill" id="prog-guia" style="width:0%"></div></div>
-        <div class="card-progress-label" id="pct-guia">0%</div>
-      </div>
-      <div class="card-fase">Todas las fases · <strong>Base del método</strong></div>
-    </a>
-
     <a href="diapason.html" class="card" style="--accent: var(--c-diapason);">
-      <div class="card-icon">🎸</div>
+      <div class="card-head">
+        <div class="card-icon">🎸</div>
+        <div class="card-cat">Mástil</div>
+      </div>
       <div class="card-title">Diapasón Interactivo</div>
       <div class="card-desc">Aprendé las 12 notas en todo el mástil. Seleccioná una nota y mirá todas sus posiciones. Modo ejercicio con metrónomo.</div>
-      <div class="card-progress">
-        <div class="card-progress-bar"><div class="card-progress-fill" id="prog-diapason" style="width:0%"></div></div>
-        <div class="card-progress-label" id="pct-diapason">0%</div>
-      </div>
-      <div class="card-fase">Fase 2 · <strong>Geografía del diapasón</strong></div>
     </a>
 
     <a href="escalas.html" class="card" style="--accent: var(--c-escalas);">
-      <div class="card-icon">🎵</div>
+      <div class="card-head">
+        <div class="card-icon">🎵</div>
+        <div class="card-cat">Escalas</div>
+      </div>
       <div class="card-title">Escalas</div>
       <div class="card-desc">Visualizá patrones de escalas, conectá posiciones en el mástil y poné a prueba lo que sabés con el modo quiz.</div>
-      <div class="card-progress">
-        <div class="card-progress-bar"><div class="card-progress-fill" id="prog-escalas" style="width:0%"></div></div>
-        <div class="card-progress-label" id="pct-escalas">0%</div>
-      </div>
-      <div class="card-fase">Fases 1 y 4 · <strong>Escalera pentatónica · CAGED</strong></div>
     </a>
 
     <a href="acordes.html" class="card" style="--accent: var(--c-acordes);">
-      <div class="card-icon">🎸</div>
+      <div class="card-head">
+        <div class="card-icon">🎸</div>
+        <div class="card-cat">Armonía</div>
+      </div>
       <div class="card-title">CAGED — 5 Formas</div>
       <div class="card-desc">Sistema CAGED en 4 modos: forma movible con cejilla, las 5 formas de un acorde, zona de improvisación con chord tones por función, y progresión de cambios con metrónomo.</div>
-      <div class="card-progress">
-        <div class="card-progress-bar"><div class="card-progress-fill" id="prog-acordes" style="width:0%"></div></div>
-        <div class="card-progress-label" id="pct-acordes">0%</div>
+    </a>
+
+    <a href="intervallic.html" class="card" style="--accent: var(--c-atlas);">
+      <div class="card-head">
+        <div class="card-icon">🗺️</div>
+        <div class="card-cat">Armonía</div>
       </div>
-      <div class="card-fase">Fase 4 · <strong>CAGED · Mástil completo</strong></div>
-    </a>
-
-    <a href="improvisar.html" class="card" style="--accent: #00cec9;">
-      <div class="card-icon">🎯</div>
-      <div class="card-title">Improvisar</div>
-      <div class="card-desc">Visualizá los acordes diatónicos de tu escala en el mástil. Armá progresiones y ve las nubes de notas de cada acorde superpuestas para improvisar sin perder el mapa.</div>
-      <div class="card-fase">Improvisación · <strong>Escala + Progresiones</strong></div>
-    </a>
-
-    <a href="intervallic.html" class="card" style="--accent: #f0c060;">
-      <div class="card-icon">🗺️</div>
       <div class="card-title">Interval Atlas</div>
       <div class="card-desc">Visualizá los intervalos del mástil en los 22 trastes sobre una progresión de acordes. Capas para chord tones, guide tones, escala, tensiones y aproximación. Para improvisar con contexto armónico móvil.</div>
-      <div class="card-fase">Improvisación · <strong>Intervalos · Progresiones · 22 trastes</strong></div>
     </a>
 
-    <a href="backing-track/index.html" class="card" style="--accent: #e07a5f;">
-      <div class="card-icon">🎚️</div>
+    <a href="improvisar.html" class="card" style="--accent: var(--c-improv);">
+      <div class="card-head">
+        <div class="card-icon">🎯</div>
+        <div class="card-cat">Improvisación</div>
+      </div>
+      <div class="card-title">Improvisar</div>
+      <div class="card-desc">Visualizá los acordes diatónicos de tu escala en el mástil. Armá progresiones y ve las nubes de notas de cada acorde superpuestas para improvisar sin perder el mapa.</div>
+    </a>
+
+    <a href="backing-track/index.html" class="card" style="--accent: var(--c-backing);">
+      <div class="card-head">
+        <div class="card-icon">🎚️</div>
+        <div class="card-cat">Práctica</div>
+      </div>
       <div class="card-title">Backing Track</div>
       <div class="card-desc">Generá un acompañamiento en loop (bajo, acordes, batería, pads) sobre una progresión y improvisá encima. Elegí, editá y guardá tus propios sonidos.</div>
-      <div class="card-fase">Improvisación · <strong>Acompañamiento · Práctica · Arreglo</strong></div>
     </a>
 
     <a href="oido.html" class="card" style="--accent: var(--c-oido);">
-      <div class="card-icon">👂</div>
-      <div class="card-title">Entrenador de Oído</div>
-      <div class="card-desc">Modo escucha (sin guitarra, en el bus) y modo guitarra. Intervalos, mayor/menor, progresiones. El oído es la base de todo.</div>
-      <div class="card-progress">
-        <div class="card-progress-bar"><div class="card-progress-fill" id="prog-oido" style="width:0%"></div></div>
-        <div class="card-progress-label" id="pct-oido">0%</div>
+      <div class="card-head">
+        <div class="card-icon">👂</div>
+        <div class="card-cat">Oído</div>
       </div>
-      <div class="card-fase">Fase 5 · <strong>Horizonte abierto</strong></div>
+      <div class="card-title">Entrenador de Oído</div>
+      <div class="card-desc">Modo escucha (sin guitarra) y modo guitarra. Intervalos, mayor/menor, progresiones. El oído es la base de todo.</div>
     </a>
 
   </div>
 
-  <div class="phase-map">
-    <div class="phase-map-label">Tu ruta de aprendizaje</div>
-    <div class="phases">
-      <div class="phase-pill" id="p0">Fase 0 — Ignición</div>
-      <div class="phase-pill" id="p1">Fase 1 — Escalera</div>
-      <div class="phase-pill" id="p2">Fase 2 — Diapasón</div>
-      <div class="phase-pill" id="p3">Fase 3 — Acordes</div>
-      <div class="phase-pill" id="p4">Fase 4 — Mástil</div>
-      <div class="phase-pill" id="p5">Fase 5 — Horizonte</div>
-    </div>
-  </div>
-
   <footer>
-    Basado en el método de <a href="https://www.youtube.com/@marumartinezguitar" target="_blank">Maru Martinez</a>
-    &nbsp;·&nbsp; Afinación estándar E A D G B e
+    Afinación estándar &nbsp;E A D G B e
   </footer>
 
-  <script>
-    // Read progress from localStorage (written by individual apps)
-    const KEYS = {
-      guia:     'maru_progress_guia',
-      diapason: 'maru_progress_diapason',
-      escalas:  'maru_progress_escalas',
-      acordes:  'maru_progress_acordes',
-      oido:     'maru_progress_oido',
-    };
-
-    const PHASES = {
-      guia:     [0,1,2,3,4,5],
-      diapason: [2],
-      escalas:  [1,4],
-      acordes:  [3],
-      oido:     [5],
-    };
-
-    function getPct(key) {
-      try {
-        const data = JSON.parse(localStorage.getItem(key) || '{}');
-        return Math.round((data.pct || 0));
-      } catch { return 0; }
-    }
-
-    function updateUI() {
-      let total = 0;
-      let count = 0;
-
-      Object.entries(KEYS).forEach(([name, key]) => {
-        const pct = getPct(key);
-        total += pct;
-        count++;
-        const bar = document.getElementById('prog-' + name);
-        const label = document.getElementById('pct-' + name);
-        if (bar) bar.style.width = pct + '%';
-        if (label) label.textContent = pct + '%';
-      });
-
-      const globalPct = count ? Math.round(total / count) : 0;
-      document.getElementById('global-bar').style.width = globalPct + '%';
-      document.getElementById('global-pct').textContent = globalPct + '%';
-
-      // Phase indicators based on guia progress
-      try {
-        const guiaData = JSON.parse(localStorage.getItem(KEYS.guia) || '{}');
-        const currentPhase = guiaData.currentPhase || 0;
-        const completedPhases = guiaData.completedPhases || [];
-
-        for (let i = 0; i <= 5; i++) {
-          const el = document.getElementById('p' + i);
-          if (!el) continue;
-          el.className = 'phase-pill';
-          if (completedPhases.includes(i)) el.classList.add('done');
-          else if (i === currentPhase) el.classList.add('active');
-        }
-      } catch {}
-    }
-
-    updateUI();
-    // Refresh when coming back from another tab
-    window.addEventListener('focus', updateUI);
-    window.addEventListener('storage', updateUI);
-  </script>
 </body>
 </html>
