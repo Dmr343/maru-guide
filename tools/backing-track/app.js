@@ -74,8 +74,14 @@
     { v: 'dom7',  label: 'Dominante 7' },
     { v: 'maj7',  label: 'Mayor 7' },
     { v: 'min7',  label: 'menor 7' },
-    { v: 'm7b5',  label: 'Semidisminuido (m7♭5)' },
+    { v: 'm7b5',  label: 'Semidisminuido' },
   ];
+  // Glifos del cifrado jazz (Real Book). Solo display: los datos
+  // internos siguen siendo 'maj7', 'm7b5', etc.
+  const QUALITY_GLYPH = {
+    major: '', minor: 'm', dom7: '7', maj7: '△', min7: 'm7',
+    m7b5: 'ø', dim: '°',
+  };
   const ROOTS = (theory && theory.CHROMATIC) ||
     ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
   const OSC_TYPES = ['sine', 'triangle', 'sawtooth', 'square',
@@ -202,10 +208,21 @@
     setupDefaultTracks();
   }
 
+  // ─── Glifos musicales (solo display) ───
+  // Nota con símbolos reales: C# → C♯, Bb → B♭.
+  function fmtNote(name) {
+    return String(name).replace(/#/g, '♯').replace(/([A-G])b/g, '$1♭');
+  }
+  // Etiqueta de una cualidad en el desplegable: glifo + nombre.
+  function qualityLabel(q) {
+    const g = QUALITY_GLYPH[q.v] || '';
+    return g ? g + '  ' + q.label : q.label;
+  }
+
   // ─── Tira de acordes ───
+  // Cifrado jazz: raíz con glifos + sufijo de cualidad (C△, Cø, C°…).
   function chordLabel(c) {
-    if (theory && theory.chordName) return theory.chordName(c.root, c.quality);
-    return c.root + (c.quality === 'major' ? '' : ' ' + c.quality);
+    return fmtNote(c.root) + (QUALITY_GLYPH[c.quality] || '');
   }
   // Shift+clic en un acorde marca / extiende / limpia el rango de loop
   // (mismo comportamiento que el Intervalic Atlas).
@@ -345,14 +362,14 @@
     chordEditor.appendChild(lbl);
 
     const rootSel = fld('select');
-    fillSelect(rootSel, ROOTS);
+    fillSelect(rootSel, ROOTS, null, fmtNote);
     rootSel.value = chord.root;
     rootSel.addEventListener('change',
       () => model.editChordAt(idx, { root: rootSel.value }));
     chordEditor.appendChild(rootSel);
 
     const qSel = fld('select');
-    fillSelect(qSel, QUALITIES, 'v', it => it.label);
+    fillSelect(qSel, QUALITIES, 'v', qualityLabel);
     qSel.value = chord.quality;
     qSel.addEventListener('change',
       () => model.editChordAt(idx, { quality: qSel.value }));
@@ -475,7 +492,10 @@
 
     const ptipo = PATTERN_TIPO[track.tipo];
     if (ptipo) {
-      const pats = BT.factoryPatterns.byTipo(ptipo);
+      // Patrones ordenados de figura más lenta a más rápida (por
+      // cantidad de golpes: menos golpes = figura más larga).
+      const pats = BT.factoryPatterns.byTipo(ptipo)
+        .slice().sort((a, b) => a.hits.length - b.hits.length);
       const patSel = makeSelect('track-pattern', pats, track.patternId);
       patSel.addEventListener('change',
         () => engine.updateTrack(track.id, { patternId: patSel.value }));
@@ -1069,19 +1089,25 @@
   function setPlayUI(playing) {
     btnPlay.textContent = playing ? '■  Detener' : '▶  Play';
     btnPlay.classList.toggle('is-playing', playing);
+    document.body.classList.toggle('playing', playing);   // agranda el panel
     setConfigCollapsed(playing);   // la configuración se pliega al tocar
-    if (playing) setStatus('Sonando — modo ' + engine.getMode(), 'playing');
+    if (playing) setStatus('Sonando — ' + engine.getMode(), 'playing');
     else setStatus('Detenido');
   }
 
-  btnPlay.addEventListener('click', async function () {
+  // Alterna reproducción / parada. Disparado por el botón y por la
+  // tecla P (ambos cuentan como gesto de usuario → Tone.start() puede
+  // reanudar el AudioContext).
+  async function togglePlay() {
     if (engine.isPlaying()) { engine.stop(); return; }
     try {
       await engine.play();
     } catch (err) {
       setStatus('Error al iniciar el audio: ' + err.message, 'error');
     }
-  });
+  }
+
+  btnPlay.addEventListener('click', togglePlay);
 
   configToggle.addEventListener('click', function () {
     setConfigCollapsed(!configEl.classList.contains('collapsed'));
@@ -1105,7 +1131,8 @@
     buildBeatMeter(SUBDIV_COUNT[subdivSelect.value] || 4);
   });
 
-  // Teclado: navegar acordes con ←→, ajustar compases con ↑↓, Esc detiene.
+  // Teclado: P alterna play/pausa, navegar acordes con ←→, ajustar
+  // compases con ↑↓, Esc detiene.
   function navChord(dir) {
     const n = model.progression.length;
     if (!n) return;
@@ -1115,6 +1142,7 @@
     const tag = e.target && e.target.tagName;
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
     switch (e.key) {
+      case 'p': case 'P': togglePlay(); e.preventDefault(); break;
       case 'Escape': if (engine.isPlaying()) engine.stop(); break;
       case 'ArrowLeft':  navChord(-1); e.preventDefault(); break;
       case 'ArrowRight': navChord(1);  e.preventDefault(); break;
@@ -1235,9 +1263,11 @@
   });
 
   // ─── Arranque ───
+  // El diagnóstico de voces solo se muestra en modo debug (?debug).
+  if (/[?&]debug\b/.test(location.search)) diagVoices.hidden = false;
   initProgSelect();
-  fillSelect(newRoot, ROOTS);
-  fillSelect(newQuality, QUALITIES, 'v', it => it.label);
+  fillSelect(newRoot, ROOTS, null, fmtNote);
+  fillSelect(newQuality, QUALITIES, 'v', qualityLabel);
 
   storage.loadLibrary();              // librería de presets del usuario
   const handoff = BT.integration && BT.integration.readHandoff();

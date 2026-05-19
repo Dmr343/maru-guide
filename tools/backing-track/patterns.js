@@ -150,6 +150,85 @@
         lane('kick',  [0, 6, 10], 0.82),
         lane('snare', [4, 12], 0.7),
         lane('hat',   [0, 2, 4, 6, 8, 10, 12, 14], 0.45)) },
+
+    // ─── Patrones latinos (usados por los grooves latinos) ───
+    // Reutilizan las 4 lanes de percusión como ranuras genéricas: el
+    // timbre concreto (güira, tambora, congas, clave...) lo aporta el
+    // preset de percusión correspondiente en presets.js.
+
+    // Bajo —
+    // Merengue: bajo activo con empujes ("a" de cada pulso).
+    { id: 'bajoMerengue', nombre: 'Merengue', tipo: 'bass',
+      steps: 16, lanes: ['main'], hits: mono([0, 3, 6, 8, 11, 14], 0.85) },
+    // Cumbia: balanceo sobre el "y" de 2 y el "y" de 4.
+    { id: 'bajoCumbia', nombre: 'Cumbia', tipo: 'bass',
+      steps: 16, lanes: ['main'], hits: mono([0, 6, 8, 11, 14], 0.84) },
+    // Tumbao de salsa: bajo anticipado — NO toca en el pulso 1.
+    { id: 'bajoTumbao', nombre: 'Tumbao (salsa)', tipo: 'bass',
+      steps: 16, lanes: ['main'], hits: mono([6, 12, 14], 0.86) },
+    // Bachata: pulso con pickups en la "a".
+    { id: 'bajoBachata', nombre: 'Bachata', tipo: 'bass',
+      steps: 16, lanes: ['main'], hits: mono([0, 3, 8, 11], 0.84) },
+
+    // Acordes —
+    // Stabs a contratiempo: acordeón/guitarra de cumbia y merengue.
+    { id: 'acordesContratiempo', nombre: 'Contratiempo', tipo: 'chord',
+      steps: 16, lanes: ['main'], hits: mono([2, 6, 10, 14], 0.66) },
+    // Montuno: comping sincopado de salsa.
+    { id: 'acordesMontuno', nombre: 'Montuno (salsa)', tipo: 'chord',
+      steps: 16, lanes: ['main'], hits: mono([0, 3, 6, 8, 11, 14], 0.62) },
+
+    // Batería —
+    { id: 'merengueDrums', nombre: 'Merengue', tipo: 'drums',
+      steps: 16, lanes: KIT_LANES, hits: [].concat(
+        lane('kick',  [0, 4, 8, 12], 0.9),
+        lane('snare', [3, 4, 11, 12], 0.78),
+        lane('hat',   [0, 2, 4, 6, 8, 10, 12, 14], 0.5)) },
+    { id: 'cumbiaDrums', nombre: 'Cumbia', tipo: 'drums',
+      steps: 16, lanes: KIT_LANES, hits: [].concat(
+        lane('kick',  [0, 8], 0.88),
+        lane('snare', [4, 12], 0.8),
+        lane('hat',   [2, 6, 10, 14], 0.5)) },
+    // Cáscara: el patrón de timbales de la salsa, sobre el hi-hat.
+    { id: 'salsaCascara', nombre: 'Cáscara (timbales)', tipo: 'drums',
+      steps: 16, lanes: KIT_LANES, hits: [].concat(
+        lane('kick',  [0, 8], 0.82),
+        lane('snare', [4, 12], 0.7),
+        lane('hat',   [0, 2, 3, 6, 8, 10, 11, 14], 0.55)) },
+    { id: 'bachataDrums', nombre: 'Bachata', tipo: 'drums',
+      steps: 16, lanes: KIT_LANES, hits: [].concat(
+        lane('kick',  [0, 8], 0.84),
+        lane('snare', [4, 12], 0.74),
+        lane('hat',   [0, 2, 4, 6, 8, 10, 12, 14], 0.48)) },
+
+    // Percusión —
+    // Merengue: güira (down-up-up) + tambora.
+    { id: 'percMerengue', nombre: 'Merengue (güira + tambora)', tipo: 'perc',
+      steps: 16, lanes: PERC_LANES, hits: [].concat(
+        lane('shaker',   [0,2,3,4,6,7,8,10,11,12,14,15], 0.45),
+        lane('conga',    [0, 4, 8, 12], 0.7),
+        lane('bongo_lo', [3, 6, 11, 14], 0.6),
+        lane('bongo_hi', [2, 10], 0.55)) },
+    // Cumbia: guacharaca (corcheas) + llamador a contratiempo.
+    { id: 'percCumbia', nombre: 'Cumbia (guacharaca)', tipo: 'perc',
+      steps: 16, lanes: PERC_LANES, hits: [].concat(
+        lane('shaker',   [0, 2, 4, 6, 8, 10, 12, 14], 0.45),
+        lane('conga',    [2, 6, 10, 14], 0.68),
+        lane('bongo_hi', [4, 12], 0.55)) },
+    // Salsa: conga tumbao + bongó martillo + clave son (3-2) + güiro.
+    { id: 'percSalsa', nombre: 'Salsa (congas + clave)', tipo: 'perc',
+      steps: 16, lanes: PERC_LANES, hits: [].concat(
+        lane('conga',    [3, 6, 7, 11, 14, 15], 0.7),
+        lane('bongo_hi', [0, 2, 4, 6, 8, 10, 12, 14], 0.5),
+        lane('bongo_lo', [0, 3, 6, 10, 12], 0.62),
+        lane('shaker',   [0, 2, 4, 6, 8, 10, 12, 14], 0.38)) },
+    // Bachata: güira + bongó (con la "a" final).
+    { id: 'percBachata', nombre: 'Bachata (güira + bongó)', tipo: 'perc',
+      steps: 16, lanes: PERC_LANES, hits: [].concat(
+        lane('shaker',   [0, 2, 4, 6, 8, 10, 12, 14, 15], 0.45),
+        lane('bongo_hi', [0, 4, 8, 12], 0.6),
+        lane('bongo_lo', [2, 6, 10, 14], 0.5),
+        lane('conga',    [0, 8], 0.5)) },
   ];
 
   function byId(id) {
